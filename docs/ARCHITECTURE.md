@@ -105,7 +105,7 @@ Invariants garantis par la base ou par transaction :
 | 5 | Finance : achats, dépenses, caisse, créances, dettes | **livrée** |
 | 6 | Rapports : tableau de bord, statistiques, exports | **livrée** |
 | 7 | Administration : paramètres, utilisateurs, audit, notifications, import | **livrée** |
-| 8 | Expérience : responsive, PWA, performances, UX, sécurité, tests | à venir |
+| 8 | Expérience : responsive, PWA, recherche globale, sécurité, tests | **livrée** |
 
 À chaque phase : développer → tester → corriger → vérifier → continuer.
 
@@ -183,6 +183,17 @@ indéfiniment. Elles sont donc calculées à chaque affichage et disparaissent
 d'elles-mêmes. Il n'y a rien à « marquer comme lu » : on les efface en
 agissant. Les vrais événements (une vente, un paiement) ne sont pas des
 alertes — ils sont déjà dans le journal d'audit et sur le tableau de bord.
+
+**Le mode hors ligne s'arrête là où l'honnêteté s'arrête.** Le service worker
+met en cache la coquille de l'application et sert une page « hors connexion »
+explicite. Il ne met **pas** les ventes en file d'attente. Ce n'est pas un
+manque de temps : une file d'écritures suppose de trancher des conflits
+qu'aucune interface ne peut résoudre seule — deux caissiers vendant hors ligne
+le dernier article, un numéro de facture attribué deux fois, un paiement porté
+sur une facture annulée entre-temps. Une file qui « marche presque » ferait
+croire au commerçant que sa vente est enregistrée alors qu'elle sera rejetée à
+la reconnexion, et il aurait déjà remis la marchandise. GestiOne dit donc
+franchement qu'il faut du réseau pour vendre.
 
 Une quatrième décision relève de la migration plutôt que du bug : les unités de
 mesure sont installées à la création d'une entreprise, ce qui laissait sans

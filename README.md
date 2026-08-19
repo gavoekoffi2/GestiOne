@@ -21,7 +21,7 @@ decimale (XOF, XAF, GNF), unites de mesure multiples.
 | 5 | Finance : achats, depenses, caisse, creances, dettes | **livree** |
 | 6 | Rapports : tableau de bord, statistiques, exports | **livree** |
 | 7 | Administration : parametres, utilisateurs, audit, notifications, import | **livree** |
-| 8 | Experience : responsive, PWA, performances, UX, securite, tests | a venir |
+| 8 | Experience : responsive, PWA, recherche globale, securite, tests | **livree** |
 
 Le menu de l'application n'affiche que les ecrans reellement livres : aucun lien
 ne mene vers une fonctionnalite inexistante.
@@ -103,7 +103,12 @@ de toute facon refuse.
 
 **Rien de fictif.** Aucun bouton inerte, aucune donnee de demonstration presentee
 comme reelle, aucun indicateur affiche avant que la donnee correspondante ne soit
-reellement mesuree.
+reellement mesuree. Le mode hors ligne ne met pas les ventes en file d'attente,
+et l'interface explique pourquoi. Les canaux de notification non branches sont
+annonces comme tels.
+
+**Les alertes sont calculees, jamais stockees.** « Stock faible » decrit un etat,
+pas un evenement : une alerte stockee ment des que le probleme est resolu.
 
 ## Documentation
 

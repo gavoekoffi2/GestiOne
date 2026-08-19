@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Icon } from '@/components/layout/icons';
+import { Connectivity } from '@/components/layout/connectivity';
+import { GlobalSearch } from '@/components/layout/global-search';
 import { cx } from '@/components/ui/primitives';
 import type { NavSection } from '@/lib/navigation';
 
@@ -117,14 +119,16 @@ export function AppShell({
           <Icon name={menuOpen ? 'close' : 'menu'} />
         </button>
 
-        <Link href="/tableau-de-bord" className="flex items-center gap-2">
+        <Link href="/tableau-de-bord" className="flex shrink-0 items-center gap-2">
           <span className="grid size-8 place-items-center rounded-lg bg-brand-700 text-sm font-bold text-white">
             G
           </span>
           <span className="hidden font-semibold text-ink-900 sm:inline">GestiOne</span>
         </Link>
 
-        <div className="ml-auto flex items-center gap-2">
+        <GlobalSearch />
+
+        <div className="flex shrink-0 items-center gap-2">
           {memberships.length > 1 && (
             <label className="hidden items-center gap-2 sm:flex">
               <span className="sr-only">Entreprise active</span>
@@ -160,6 +164,8 @@ export function AppShell({
           </button>
         </div>
       </header>
+
+      <Connectivity />
 
       <div className="mx-auto flex w-full max-w-[1600px]">
         <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 border-r border-ink-200 bg-white lg:block">

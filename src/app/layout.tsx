@@ -9,6 +9,15 @@ export const metadata: Metadata = {
   description:
     "GestiOne : la gestion complete de votre entreprise — ventes, stock, factures, caisse et rapports — depuis un seul endroit.",
   applicationName: 'GestiOne',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'GestiOne',
+    statusBarStyle: 'default',
+  },
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export const viewport: Viewport = {

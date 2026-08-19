@@ -102,7 +102,7 @@ Invariants garantis par la base ou par transaction :
 | 2 | Référentiels : clients, fournisseurs, catégories, unités, produits, services | **livrée** |
 | 3 | Stock : entrées, sorties, transferts, inventaire, alertes | **livrée** |
 | 4 | Ventes : ventes, devis, factures, paiements, ventes à crédit | **livrée** |
-| 5 | Finance : achats, dépenses, caisse, créances, dettes | à venir |
+| 5 | Finance : achats, dépenses, caisse, créances, dettes | **livrée** |
 | 6 | Rapports : tableau de bord, statistiques, exports | à venir |
 | 7 | Administration : paramètres, utilisateurs, audit, notifications | à venir |
 | 8 | Expérience : responsive, PWA, performances, UX, sécurité, tests | à venir |
@@ -147,6 +147,15 @@ un devis accepté se convertit en facture, et `Invoice.balanceDue` est le seul
 endroit où se lit une créance. Le solde n'est jamais incrémenté : il est
 recalculé à partir des paiements réellement en base, dans la transaction de
 chaque encaissement.
+
+**Zod retire silencieusement les clés absentes d'un schéma.** Un règlement
+fournisseur enregistré via l'API renvoyait `201` sans jamais réduire la dette :
+le service lisait `orderId`, mais le schéma de validation ne le déclarait pas,
+si bien que Zod le supprimait avant l'appel. Les tests d'intégration ne
+pouvaient pas le voir — ils appellent les services directement. Seul un essai
+bout en bout sur l'application l'a révélé. Une suite dédiée
+(`tests/unit/schema-contract.test.ts`) vérifie désormais que chaque champ lu par
+un service survit à la validation.
 
 Une quatrième décision relève de la migration plutôt que du bug : les unités de
 mesure sont installées à la création d'une entreprise, ce qui laissait sans

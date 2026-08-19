@@ -18,7 +18,7 @@ decimale (XOF, XAF, GNF), unites de mesure multiples.
 | 2 | Referentiels : clients, fournisseurs, categories, unites, produits, services | **livree** |
 | 3 | Stock : entrees, sorties, transferts, inventaire, alertes | **livree** |
 | 4 | Ventes : ventes, devis, factures, paiements, ventes a credit | **livree** |
-| 5 | Finance : achats, depenses, caisse, creances, dettes | a venir |
+| 5 | Finance : achats, depenses, caisse, creances, dettes | **livree** |
 | 6 | Rapports : tableau de bord, statistiques, exports | a venir |
 | 7 | Administration : parametres, utilisateurs, audit, notifications | partiellement livree (phase 1) |
 | 8 | Experience : responsive, PWA, performances, UX, securite, tests | a venir |

@@ -4,6 +4,8 @@ import { ConflictError, NotFoundError, ValidationError } from '@/server/errors';
 import { recordAuditTx } from '@/server/audit';
 import { nextDocumentNumber } from '@/server/sequences';
 import { refreshInvoiceBalance } from '@/server/services/invoices';
+import { applyCashMovement } from '@/server/services/cash';
+import { refreshOrderBalance } from '@/server/services/purchases';
 
 /**
  * Paiements.
@@ -26,6 +28,8 @@ export interface PaymentContext {
 
 export interface RecordPaymentInput {
   direction: 'IN' | 'OUT';
+  /** Commande fournisseur reglee, pour un decaissement. */
+  orderId?: string;
   amount: bigint;
   invoiceId?: string;
   partnerId?: string;
@@ -101,6 +105,33 @@ export async function recordPayment(context: PaymentContext, input: RecordPaymen
     invoice = found;
   }
 
+  let order: { id: string; number: string; balanceDue: bigint; status: string; supplierId: string | null } | null =
+    null;
+
+  if (input.orderId) {
+    const found = await prisma.purchaseOrder.findFirst({
+      where: { id: input.orderId, companyId: context.companyId },
+      select: { id: true, number: true, balanceDue: true, status: true, supplierId: true },
+    });
+    if (!found) throw new NotFoundError('Commande fournisseur introuvable.');
+    if (found.status === 'CANCELLED') {
+      throw new ConflictError(
+        `La commande ${found.number} est annulee : elle ne peut plus etre reglee.`,
+      );
+    }
+    if (found.status === 'DRAFT') {
+      throw new ConflictError(
+        `La commande ${found.number} est encore un brouillon. Passez-la commande avant de la regler.`,
+      );
+    }
+    if (!input.allowOverpayment && input.amount > found.balanceDue) {
+      throw new ValidationError(
+        `Le montant depasse le solde restant de la commande ${found.number}.`,
+      );
+    }
+    order = found;
+  }
+
   if (input.partnerId) {
     const expectedKind = input.direction === 'IN' ? 'CUSTOMER' : 'SUPPLIER';
     const partner = await prisma.partner.findFirst({
@@ -137,8 +168,9 @@ export async function recordPayment(context: PaymentContext, input: RecordPaymen
         direction: input.direction,
         // Un encaissement rattache a une facture herite du client de celle-ci :
         // le "qui a paye" ne doit pas dependre de ce que l'ecran a transmis.
-        partnerId: input.partnerId ?? invoice?.customerId ?? null,
+        partnerId: input.partnerId ?? invoice?.customerId ?? order?.supplierId ?? null,
         invoiceId: invoice?.id ?? null,
+        orderId: order?.id ?? null,
         methodId: input.methodId ?? null,
         locationId: input.locationId ?? null,
         amount: input.amount,
@@ -150,6 +182,26 @@ export async function recordPayment(context: PaymentContext, input: RecordPaymen
     });
 
     if (invoice) await refreshInvoiceBalance(tx, invoice.id);
+    if (order) await refreshOrderBalance(tx, order.id);
+
+    // Un reglement en especes alimente ou vide la caisse du point de vente.
+    // Sans ce lien, le solde de caisse serait purement decoratif : il ne
+    // refleterait aucune des ventes reellement encaissees.
+    if (method?.affectsCash && input.locationId) {
+      await applyCashMovement(tx, {
+        companyId: context.companyId,
+        locationId: input.locationId,
+        kind: input.direction === 'IN' ? 'SALE' : 'PURCHASE',
+        amount: input.direction === 'IN' ? input.amount : -input.amount,
+        reason:
+          input.direction === 'IN'
+            ? `Encaissement ${number}${invoice ? ` — facture ${invoice.number}` : ''}`
+            : `Reglement fournisseur ${number}`,
+        reference: input.reference ?? null,
+        paymentId: payment.id,
+        userId: context.userId,
+      });
+    }
 
     await recordAuditTx(tx, {
       companyId: context.companyId,
@@ -181,14 +233,38 @@ export async function deletePayment(context: PaymentContext, paymentId: string, 
 
   const payment = await prisma.payment.findFirst({
     where: { id: paymentId, companyId: context.companyId },
-    include: { invoice: { select: { id: true, number: true } } },
+    include: {
+      invoice: { select: { id: true, number: true } },
+      order: { select: { id: true, number: true } },
+    },
   });
   if (!payment) throw new NotFoundError('Paiement introuvable.');
 
   return prisma.$transaction(async (tx) => {
+    // Le mouvement de caisse genere par ce paiement est neutralise par un
+    // mouvement inverse plutot que supprime : le journal de caisse reste en
+    // ajout seul, et le rapprochement d'une session deja fermee ne change pas
+    // retroactivement.
+    const cashMovements = await tx.cashMovement.findMany({
+      where: { paymentId, companyId: context.companyId },
+      select: { id: true, locationId: true, amount: true },
+    });
+
+    for (const movement of cashMovements) {
+      await applyCashMovement(tx, {
+        companyId: context.companyId,
+        locationId: movement.locationId,
+        kind: 'ADJUSTMENT',
+        amount: -movement.amount,
+        reason: `Annulation du paiement ${payment.number}`,
+        userId: context.userId,
+      });
+    }
+
     await tx.payment.delete({ where: { id: paymentId } });
 
     if (payment.invoiceId) await refreshInvoiceBalance(tx, payment.invoiceId);
+    if (payment.orderId) await refreshOrderBalance(tx, payment.orderId);
 
     await recordAuditTx(tx, {
       companyId: context.companyId,
@@ -200,6 +276,7 @@ export async function deletePayment(context: PaymentContext, paymentId: string, 
       metadata: {
         amount: payment.amount.toString(),
         invoice: payment.invoice?.number ?? null,
+        order: payment.order?.number ?? null,
         paidAt: payment.paidAt.toISOString(),
       },
     });

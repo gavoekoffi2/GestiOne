@@ -62,6 +62,8 @@ export async function serviceContext(companyId: string, userId: string) {
     select: {
       invoicePrefix: true,
       quotePrefix: true,
+      salePrefix: true,
+      purchasePrefix: true,
       paymentPrefix: true,
       defaultDueDays: true,
     },

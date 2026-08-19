@@ -1,0 +1,173 @@
+import { describe, expect, it } from 'vitest';
+import { paymentSchema, invoiceSchema, saleSchema } from '@/lib/validation/commerce';
+import { purchaseSchema, expenseSchema } from '@/lib/validation/finance';
+
+/**
+ * Contrat entre les schemas de validation et les services.
+ *
+ * Zod **retire silencieusement** toute cle absente du schema. Un champ oublie
+ * ne provoque donc aucune erreur : la requete reussit, mais l'information
+ * n'atteint jamais le service. C'est exactement ainsi qu'un reglement
+ * fournisseur a pu etre accepte sans jamais reduire la dette — le service
+ * fonctionnait, le schema mangeait `orderId`.
+ *
+ * Ces tests verifient que chaque champ dont un service a besoin survit a la
+ * validation.
+ */
+
+describe('paymentSchema', () => {
+  it('conserve tous les champs lus par recordPayment', () => {
+    const parsed = paymentSchema(0).parse({
+      direction: 'OUT',
+      amount: '15 000',
+      invoiceId: 'inv_1',
+      orderId: 'po_1',
+      partnerId: 'partner_1',
+      methodId: 'method_1',
+      locationId: 'loc_1',
+      paidAt: '2026-08-19',
+      reference: 'VIR-001',
+      notes: 'Solde',
+      allowOverpayment: true,
+    });
+
+    expect(parsed.direction).toBe('OUT');
+    expect(parsed.amount).toBe(15_000n);
+    expect(parsed.invoiceId).toBe('inv_1');
+    // Le champ dont l'absence rendait les reglements fournisseur sans effet.
+    expect(parsed.orderId).toBe('po_1');
+    expect(parsed.partnerId).toBe('partner_1');
+    expect(parsed.methodId).toBe('method_1');
+    expect(parsed.locationId).toBe('loc_1');
+    expect(parsed.reference).toBe('VIR-001');
+    expect(parsed.allowOverpayment).toBe(true);
+  });
+
+  it('rend undefined pour les identifiants vides plutot que la chaine vide', () => {
+    const parsed = paymentSchema(0).parse({ amount: '100', invoiceId: '', orderId: '' });
+    expect(parsed.invoiceId).toBeUndefined();
+    expect(parsed.orderId).toBeUndefined();
+  });
+});
+
+describe('invoiceSchema', () => {
+  it('conserve tous les champs lus par createInvoice', () => {
+    const parsed = invoiceSchema(0).parse({
+      customerId: 'cust_1',
+      locationId: 'loc_1',
+      issueDate: '2026-08-19',
+      dueDate: '2026-09-18',
+      discountAmount: '5 000',
+      notes: 'Merci',
+      terms: 'Paiement a 30 jours',
+      issue: true,
+      lines: [
+        {
+          productId: 'prod_1',
+          description: 'Sac de riz',
+          quantity: '3',
+          unitPrice: '15 000',
+          discountRate: '10',
+          taxRateId: 'tax_1',
+        },
+      ],
+    });
+
+    expect(parsed.customerId).toBe('cust_1');
+    expect(parsed.locationId).toBe('loc_1');
+    expect(parsed.issue).toBe(true);
+    expect(parsed.discountAmount).toBe(5_000n);
+    expect(parsed.lines[0]).toMatchObject({
+      productId: 'prod_1',
+      description: 'Sac de riz',
+      quantity: 3_000n,
+      unitPrice: 15_000n,
+      discountRate: 1_000,
+      taxRateId: 'tax_1',
+    });
+  });
+});
+
+describe('saleSchema', () => {
+  it('conserve le reglement et son montant tendu', () => {
+    const parsed = saleSchema(0).parse({
+      customerId: 'cust_1',
+      locationId: 'loc_1',
+      lines: [{ productId: 'prod_1', quantity: '2' }],
+      payment: { methodId: 'method_1', amount: '50 000', reference: 'MP-1' },
+    });
+
+    expect(parsed.locationId).toBe('loc_1');
+    expect(parsed.payment?.methodId).toBe('method_1');
+    expect(parsed.payment?.amount).toBe(50_000n);
+    expect(parsed.payment?.reference).toBe('MP-1');
+  });
+
+  it('accepte une vente sans reglement (vente a credit)', () => {
+    const parsed = saleSchema(0).parse({
+      customerId: 'cust_1',
+      locationId: 'loc_1',
+      lines: [{ productId: 'prod_1', quantity: '2' }],
+    });
+    expect(parsed.payment).toBeUndefined();
+  });
+});
+
+describe('purchaseSchema', () => {
+  it('conserve tous les champs lus par createPurchaseOrder', () => {
+    const parsed = purchaseSchema(0).parse({
+      supplierId: 'sup_1',
+      locationId: 'loc_1',
+      orderDate: '2026-08-19',
+      expectedAt: '2026-08-25',
+      dueDate: '2026-09-18',
+      reference: 'BL-42',
+      notes: 'Livraison matin',
+      order: true,
+      receiveNow: true,
+      lines: [
+        {
+          productId: 'prod_1',
+          description: 'Sac de riz',
+          quantity: '20',
+          unitCost: '11 500',
+          taxRateId: 'tax_1',
+        },
+      ],
+    });
+
+    expect(parsed.supplierId).toBe('sup_1');
+    expect(parsed.locationId).toBe('loc_1');
+    expect(parsed.receiveNow).toBe(true);
+    expect(parsed.reference).toBe('BL-42');
+    expect(parsed.lines[0]).toMatchObject({
+      productId: 'prod_1',
+      quantity: 20_000n,
+      unitCost: 11_500n,
+      taxRateId: 'tax_1',
+    });
+  });
+});
+
+describe('expenseSchema', () => {
+  it('conserve tous les champs lus par recordExpense', () => {
+    const parsed = expenseSchema(0).parse({
+      categoryId: 'cat_1',
+      locationId: 'loc_1',
+      supplierId: 'sup_1',
+      methodId: 'method_1',
+      amount: '12 000',
+      spentAt: '2026-08-19',
+      description: 'Carburant',
+      reference: 'REC-1',
+      notes: 'Livraison',
+    });
+
+    expect(parsed.categoryId).toBe('cat_1');
+    expect(parsed.locationId).toBe('loc_1');
+    expect(parsed.supplierId).toBe('sup_1');
+    expect(parsed.methodId).toBe('method_1');
+    expect(parsed.amount).toBe(12_000n);
+    expect(parsed.description).toBe('Carburant');
+  });
+});

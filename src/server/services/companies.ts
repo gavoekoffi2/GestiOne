@@ -5,6 +5,7 @@ import { SYSTEM_ROLES } from '@/server/permissions';
 import { slugify } from '@/lib/validation/common';
 import { provisionDefaultUnits } from '@/server/services/catalog';
 import { provisionPaymentMethods } from '@/server/services/commerce-setup';
+import { provisionExpenseCategories } from '@/server/services/expenses';
 
 /**
  * Provisionnement d'une entreprise.
@@ -106,6 +107,7 @@ export async function provisionCompany(
   // Sans mode de reglement, aucune vente ne peut etre encaissee : les modes
   // courants sont installes d'emblee, l'entreprise ajustera ensuite.
   await provisionPaymentMethods(tx, company.id);
+  await provisionExpenseCategories(tx, company.id);
 
   const membership = await tx.membership.create({
     data: {

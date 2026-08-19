@@ -217,6 +217,8 @@ export function paymentSchema(decimals: number) {
     direction: z.enum(['IN', 'OUT']).default('IN'),
     amount: requiredMoney(decimals, 'Le montant'),
     invoiceId: optionalId,
+    /// Commande fournisseur reglee, pour un decaissement.
+    orderId: optionalId,
     partnerId: optionalId,
     methodId: optionalId,
     locationId: optionalId,

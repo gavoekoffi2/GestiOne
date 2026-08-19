@@ -85,6 +85,11 @@ model Company {
   quotes            Quote[]
   invoices          Invoice[]
   payments          Payment[]
+  purchaseOrders    PurchaseOrder[]
+  expenseCategories ExpenseCategory[]
+  expenses          Expense[]
+  cashSessions      CashSession[]
+  cashMovements     CashMovement[]
 
   @@index([currencyCode])
   @@map("companies")
@@ -112,6 +117,10 @@ model Location {
   quotes         Quote[]
   invoices       Invoice[]
   payments       Payment[]
+  purchaseOrders PurchaseOrder[]
+  expenses       Expense[]
+  cashSessions   CashSession[]
+  cashMovements  CashMovement[]
 
   @@unique([companyId, code])
   @@index([companyId])
@@ -140,9 +149,14 @@ model User {
   sessions       Session[]
   auditLogs      AuditLog[]
   stockMovements StockMovement[]
-  quotes         Quote[]
-  invoices       Invoice[]
-  payments       Payment[]
+  quotes             Quote[]
+  invoices           Invoice[]
+  payments           Payment[]
+  purchaseOrders     PurchaseOrder[]
+  expenses           Expense[]
+  cashMovements      CashMovement[]
+  cashSessionsOpened CashSession[]   @relation("CashSessionOpenedBy")
+  cashSessionsClosed CashSession[]   @relation("CashSessionClosedBy")
 
   @@map("users")
 }
@@ -288,9 +302,11 @@ model Partner {
 
   company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   products Product[]
-  quotes   Quote[]
-  invoices Invoice[]
-  payments Payment[]
+  quotes         Quote[]
+  invoices       Invoice[]
+  payments       Payment[]
+  purchaseOrders PurchaseOrder[]
+  expenses       Expense[]
 
   @@unique([companyId, kind, code])
   @@index([companyId, kind, isActive])
@@ -381,8 +397,9 @@ model Product {
   supplier       Partner?        @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   stockLevels    StockLevel[]
   stockMovements StockMovement[]
-  quoteLines     QuoteLine[]
-  invoiceLines   InvoiceLine[]
+  quoteLines         QuoteLine[]
+  invoiceLines       InvoiceLine[]
+  purchaseOrderLines PurchaseOrderLine[]
 
   @@unique([companyId, sku])
   @@index([companyId, isActive])
@@ -492,6 +509,7 @@ model PaymentMethod {
 
   company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   payments Payment[]
+  expenses Expense[]
 
   @@unique([companyId, code])
   @@index([companyId, isActive])
@@ -510,9 +528,10 @@ model TaxRate {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  invoiceLines InvoiceLine[]
-  quoteLines   QuoteLine[]
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoiceLines       InvoiceLine[]
+  quoteLines         QuoteLine[]
+  purchaseOrderLines PurchaseOrderLine[]
 
   @@unique([companyId, name])
   @@index([companyId, isActive])
@@ -672,6 +691,8 @@ model Payment {
   direction String   @default("IN")
   partnerId String?
   invoiceId String?
+  /// Commande fournisseur reglee, pour un decaissement.
+  orderId   String?
   methodId  String?
   locationId String?
 
@@ -685,6 +706,7 @@ model Payment {
   company  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   partner  Partner?       @relation(fields: [partnerId], references: [id], onDelete: SetNull)
   invoice  Invoice?       @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  order    PurchaseOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
   method   PaymentMethod? @relation(fields: [methodId], references: [id], onDelete: SetNull)
   location Location?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
   user     User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -694,4 +716,211 @@ model Payment {
   @@index([companyId, partnerId])
   @@index([invoiceId])
   @@map("payments")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5 — achats, depenses, caisse
+// ---------------------------------------------------------------------------
+
+/// Commande fournisseur, et **document de dette unique** de GestiOne.
+///
+/// Symetrique de `Invoice` cote clients : ce que l'entreprise doit a ses
+/// fournisseurs se lit ici et nulle part ailleurs. Un achat direct (sans
+/// commande prealable) est simplement une commande creee et receptionnee dans
+/// la foulee.
+model PurchaseOrder {
+  id         String   @id @default(cuid())
+  companyId  String
+  number     String
+  supplierId String?
+  locationId String?
+  /// DRAFT | ORDERED | PARTIALLY_RECEIVED | RECEIVED | CANCELLED
+  status     String   @default("DRAFT")
+  orderDate  DateTime @default(now())
+  expectedAt DateTime?
+  dueDate    DateTime?
+
+  subtotal       BigInt @default(0)
+  discountAmount BigInt @default(0)
+  taxTotal       BigInt @default(0)
+  total          BigInt @default(0)
+  /// Somme des reglements fournisseur affectes, recalculee a chaque paiement.
+  paidAmount     BigInt @default(0)
+  /// total - paidAmount, jamais negatif.
+  balanceDue     BigInt @default(0)
+
+  notes        String?
+  reference    String?
+  cancelledAt  DateTime?
+  cancelReason String?
+  userId       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company  Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  supplier Partner?            @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  location Location?           @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  user     User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  lines    PurchaseOrderLine[]
+  payments Payment[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status, orderDate])
+  @@index([companyId, supplierId, status])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderLine {
+  id          String @id @default(cuid())
+  orderId     String
+  productId   String?
+  description String
+  /// Quantite commandee, en milliemes d'unite.
+  quantity    BigInt
+  /// Quantite deja receptionnee. Une reception partielle est la norme.
+  receivedQuantity BigInt @default(0)
+  unitCost    BigInt
+  discountRate Int   @default(0)
+  taxRateId   String?
+  taxRate     Int    @default(0)
+  taxable     BigInt @default(0)
+  taxAmount   BigInt @default(0)
+  lineTotal   BigInt @default(0)
+  position    Int    @default(0)
+
+  order      PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product    Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  taxRateRef TaxRate?      @relation(fields: [taxRateId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@map("purchase_order_lines")
+}
+
+/// Categorie de depense, configurable par entreprise.
+model ExpenseCategory {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  isSystem  Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@unique([companyId, name])
+  @@index([companyId, isActive])
+  @@map("expense_categories")
+}
+
+/// Depense de fonctionnement : loyer, transport, salaires, electricite...
+model Expense {
+  id         String   @id @default(cuid())
+  companyId  String
+  number     String
+  categoryId String?
+  locationId String?
+  supplierId String?
+  methodId   String?
+
+  amount      BigInt
+  spentAt     DateTime @default(now())
+  description String
+  reference   String?
+  /// Chemin du justificatif televerse, le cas echeant.
+  receiptUrl  String?
+  notes       String?
+  userId      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  location Location?        @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  supplier Partner?         @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  method   PaymentMethod?   @relation(fields: [methodId], references: [id], onDelete: SetNull)
+  user     User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, number])
+  @@index([companyId, spentAt])
+  @@index([companyId, categoryId])
+  @@map("expenses")
+}
+
+/// Session de caisse : une ouverture, des mouvements, une fermeture comptee.
+///
+/// La session sert au **rapprochement** : elle compare ce que GestiOne a
+/// enregistre a ce que le caissier a reellement compte. Elle ne conditionne pas
+/// l'encaissement — refuser une vente parce qu'aucune session n'est ouverte
+/// serait ingerable dans une boutique.
+model CashSession {
+  id         String   @id @default(cuid())
+  companyId  String
+  locationId String
+  /// OPEN | CLOSED
+  status     String   @default("OPEN")
+
+  openedAt      DateTime  @default(now())
+  openedById    String?
+  /// Fonds de caisse au moment de l'ouverture.
+  openingAmount BigInt    @default(0)
+
+  closedAt       DateTime?
+  closedById     String?
+  /// Montant reellement compte a la fermeture.
+  countedAmount  BigInt?
+  /// Solde theorique a la fermeture : ouverture + mouvements.
+  expectedAmount BigInt?
+  /// countedAmount - expectedAmount. Negatif = manquant.
+  difference     BigInt?
+  closingNotes   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company   Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  location  Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  openedBy  User?          @relation("CashSessionOpenedBy", fields: [openedById], references: [id], onDelete: SetNull)
+  closedBy  User?          @relation("CashSessionClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+  movements CashMovement[]
+
+  @@index([companyId, locationId, status])
+  @@index([companyId, openedAt])
+  @@map("cash_sessions")
+}
+
+/// Mouvement de caisse. **Append-only**, comme le journal de stock.
+///
+/// `sessionId` est facultatif : un encaissement en especes hors session reste
+/// enregistre, et le solde de caisse d'un point de vente est la somme de tous
+/// ses mouvements, avec ou sans session. Sinon, l'argent encaisse pendant
+/// qu'aucune session n'est ouverte disparaitrait des comptes.
+model CashMovement {
+  id         String   @id @default(cuid())
+  companyId  String
+  locationId String
+  sessionId  String?
+
+  /// OPENING | SALE | REFUND | EXPENSE | PURCHASE | DEPOSIT | WITHDRAWAL | ADJUSTMENT
+  kind      String
+  /// Variation signee, en unite mineure : positive en entree, negative en sortie.
+  amount    BigInt
+  reason    String?
+  reference String?
+  paymentId String?
+  expenseId String?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  company  Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  location Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  session  CashSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  user     User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, locationId, createdAt])
+  @@index([sessionId])
+  @@index([paymentId])
+  @@map("cash_movements")
 }

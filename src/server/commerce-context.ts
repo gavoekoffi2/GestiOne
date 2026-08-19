@@ -13,6 +13,7 @@ export interface CommerceContext {
   invoicePrefix: string;
   quotePrefix: string;
   salePrefix: string;
+  purchasePrefix: string;
   paymentPrefix: string;
   defaultDueDays: number;
 }
@@ -24,6 +25,7 @@ export async function commerceContext(context: TenantContext): Promise<CommerceC
       invoicePrefix: true,
       quotePrefix: true,
       salePrefix: true,
+      purchasePrefix: true,
       paymentPrefix: true,
       defaultDueDays: true,
     },

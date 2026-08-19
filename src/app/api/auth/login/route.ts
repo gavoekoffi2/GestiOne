@@ -4,23 +4,42 @@ import { loginSchema } from '@/lib/validation/auth';
 import { authenticate, touchLastLogin } from '@/server/services/accounts';
 import { createSession, sessionCookieOptions, SESSION_COOKIE_NAME } from '@/server/auth/session';
 import { recordAudit } from '@/server/audit';
-import { checkRateLimit } from '@/server/rate-limit';
+import { clearRateLimit, peekRateLimit, recordAttempt } from '@/server/rate-limit';
 import { RateLimitError } from '@/server/errors';
 import { clientIp, handler, jsonOk, readJson } from '@/server/http';
+
+/**
+ * Fenetres de limitation.
+ *
+ * La limite par adresse IP est large : dans une boutique, toute l'equipe passe
+ * par la meme connexion, et seuls les **echecs** sont comptabilises. La limite
+ * par compte est stricte, car c'est elle qui arrete reellement un bourrage
+ * d'identifiants vise sur un utilisateur connu.
+ */
+const IP_LIMIT = { attempts: 30, windowSeconds: 300 };
+const ACCOUNT_LIMIT = { attempts: 8, windowSeconds: 900 };
 
 export const POST = handler(async (request: NextRequest) => {
   const ip = clientIp(request);
   const input = await readJson(request, loginSchema);
 
-  // Double limite : par adresse IP (attaque distribuee depuis une machine) et
-  // par compte (bourrage d'identifiants cible sur un utilisateur connu).
-  for (const key of [`login:ip:${ip}`, `login:user:${input.email}`]) {
-    const limit = checkRateLimit(key, 10, 300);
-    if (!limit.allowed) throw new RateLimitError(undefined, limit.retryAfterSeconds);
+  const ipKey = `login:ip:${ip}`;
+  const accountKey = `login:user:${input.email}`;
+
+  for (const [key, limit] of [
+    [ipKey, IP_LIMIT],
+    [accountKey, ACCOUNT_LIMIT],
+  ] as const) {
+    const state = peekRateLimit(key, limit.attempts, limit.windowSeconds);
+    if (!state.allowed) throw new RateLimitError(undefined, state.retryAfterSeconds);
   }
 
   try {
     const user = await authenticate(input.email, input.password);
+
+    // Le titulaire legitime s'est authentifie : les echecs precedents sur ce
+    // compte ne doivent plus peser sur ses prochaines connexions.
+    clearRateLimit(accountKey);
 
     const session = await createSession({
       userId: user.userId,
@@ -44,6 +63,9 @@ export const POST = handler(async (request: NextRequest) => {
 
     return jsonOk({ userId: user.userId });
   } catch (error) {
+    recordAttempt(ipKey, IP_LIMIT.windowSeconds);
+    recordAttempt(accountKey, ACCOUNT_LIMIT.windowSeconds);
+
     await recordAudit({
       action: 'LOGIN_FAILED',
       entityType: 'User',

@@ -104,7 +104,7 @@ Invariants garantis par la base ou par transaction :
 | 4 | Ventes : ventes, devis, factures, paiements, ventes à crédit | **livrée** |
 | 5 | Finance : achats, dépenses, caisse, créances, dettes | **livrée** |
 | 6 | Rapports : tableau de bord, statistiques, exports | **livrée** |
-| 7 | Administration : paramètres, utilisateurs, audit, notifications | à venir |
+| 7 | Administration : paramètres, utilisateurs, audit, notifications, import | **livrée** |
 | 8 | Expérience : responsive, PWA, performances, UX, sécurité, tests | à venir |
 
 À chaque phase : développer → tester → corriger → vérifier → continuer.
@@ -174,6 +174,15 @@ erreur et échoue à l'exécution : seules des valeurs sérialisables franchisse
 la frontière. Le graphique reçoit donc le format de devise comme *donnée* et
 formate lui-même. Aucun test unitaire n'aurait attrapé cela — seul l'affichage
 réel de la page l'a révélé.
+
+**Une alerte est un état, pas un événement.** « Stock faible » ou « facture en
+retard » décrit une situation qui se résout. Stocker ces notifications, c'est
+accepter qu'elles mentent : un réapprovisionnement laisserait l'alerte affichée
+jusqu'au passage d'une tâche de nettoyage — et si cette tâche ne tourne pas,
+indéfiniment. Elles sont donc calculées à chaque affichage et disparaissent
+d'elles-mêmes. Il n'y a rien à « marquer comme lu » : on les efface en
+agissant. Les vrais événements (une vente, un paiement) ne sont pas des
+alertes — ils sont déjà dans le journal d'audit et sur le tableau de bord.
 
 Une quatrième décision relève de la migration plutôt que du bug : les unités de
 mesure sont installées à la création d'une entreprise, ce qui laissait sans

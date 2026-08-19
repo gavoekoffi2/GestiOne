@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { z } from 'zod';
-import { Alert, Badge, Card, EmptyState } from '@/components/ui/primitives';
+import { Badge, Card, EmptyState } from '@/components/ui/primitives';
 import { Icon } from '@/components/layout/icons';
 import { PeriodFilter } from '@/components/layout/period-filter';
+import { AlertsPanel } from '@/components/layout/alerts-panel';
 import { RevenueChart } from '@/components/charts/revenue-chart';
 import { RankingBars } from '@/components/charts/ranking-bars';
 import { StatTile } from '@/components/charts/stat-tile';
@@ -94,6 +95,10 @@ export default async function DashboardPage({
         />
       </div>
 
+      {/* Les alertes passent avant les chiffres : ce sont elles qui appellent
+          une action aujourd'hui. */}
+      <AlertsPanel companyId={context.companyId} permissions={context.permissions} />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
           label="Chiffre d'affaires"
@@ -161,17 +166,6 @@ export default async function DashboardPage({
           )
         )}
       </div>
-
-      {stock && (stock.outCount > 0 || stock.lowCount > 0) && (
-        <Alert tone="warning" title="Reapprovisionnement">
-          {stock.outCount > 0 && `${stock.outCount} article(s) en rupture`}
-          {stock.outCount > 0 && stock.lowCount > 0 && ' · '}
-          {stock.lowCount > 0 && `${stock.lowCount} article(s) sous leur seuil`}.{' '}
-          <Link href="/stock?lowOnly=true" className="font-semibold underline">
-            Voir les articles concernes
-          </Link>
-        </Alert>
-      )}
 
       <Card
         title="Evolution"

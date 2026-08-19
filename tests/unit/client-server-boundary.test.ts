@@ -89,6 +89,28 @@ describe('frontiere client / serveur', () => {
     expect(violations).toEqual([]);
   });
 
+  it("aucun composant serveur ne passe une fonction en propriete JSX", () => {
+    // Une fonction n'est pas serialisable : la passer d'un composant serveur a
+    // un composant client fait echouer le rendu en production avec
+    // « Functions cannot be passed directly to Client Components ». Le cas est
+    // invisible au typage et au build — seule l'execution le revele. Une
+    // destination d'URL se transmet donc en chaine, jamais en fabrique.
+    const violations: string[] = [];
+    const propPattern = /^\s*([a-zA-Z][\w]*)=\{\s*(?:\(|async\b|function\b)/;
+
+    for (const file of files) {
+      const source = readFileSync(file, 'utf8');
+      if (isClientModule(source)) continue;
+
+      source.split('\n').forEach((line, index) => {
+        const match = propPattern.exec(line);
+        if (match) violations.push(`${file}:${index + 1} passe ${match[1]}`);
+      });
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it('les modules partages ne dependent pas du serveur', () => {
     // `src/lib` est importable des deux cotes : il doit rester neutre.
     const violations: string[] = [];

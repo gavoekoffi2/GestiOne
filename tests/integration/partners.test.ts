@@ -9,7 +9,7 @@ import {
   updatePartner,
 } from '@/server/services/partners';
 import { createProduct } from '@/server/services/catalog';
-import { ConflictError, NotFoundError } from '@/server/errors';
+import { NotFoundError } from '@/server/errors';
 import { createTestCompany, resetDatabase } from '../helpers';
 
 const base = {

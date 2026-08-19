@@ -42,11 +42,19 @@ describe('escapeCsvCell', () => {
     expect(escaped.startsWith('=')).toBe(false);
   });
 
-  it('ne prefixe pas un nombre negatif deja entre guillemets par la suite', () => {
-    // "-500" est un montant legitime : il est neutralise malgre tout, car le
-    // tableur ne distingue pas un nombre negatif d'une formule commencant par
-    // un tiret. Mieux vaut une apostrophe qu'une execution.
-    expect(escapeCsvCell('-500')).toBe("'-500");
+  it('laisse un nombre negatif exploitable par le tableur', () => {
+    // Un nombre pur ne peut rien executer : "-500" evalue comme formule vaut
+    // -500. Le prefixer d'une apostrophe le changerait en texte, et une colonne
+    // de sorties de stock ou d'ecarts d'inventaire cesserait d'etre sommable —
+    // ce qui vide l'export de son interet sans rien proteger.
+    expect(escapeCsvCell('-500')).toBe('-500');
+    expect(escapeCsvCell('-5.000')).toBe('-5.000');
+
+    // L'exception s'arrete au nombre : des qu'un operateur suit, la cellule
+    // redevient une formule et reste neutralisee.
+    expect(escapeCsvCell('-2+3')).toBe("'-2+3");
+    expect(escapeCsvCell('-1e2')).toBe("'-1e2");
+    expect(escapeCsvCell('-5.000 ')).toBe("'-5.000 ");
   });
 });
 

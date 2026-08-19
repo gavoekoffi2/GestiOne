@@ -45,13 +45,11 @@ export function GlobalSearch() {
 
   useEffect(() => {
     const needle = query.trim();
-    if (needle.length < 2) {
-      setHits([]);
-      return;
-    }
+    // Vider les resultats est le travail de la saisie, pas de l'effet : un
+    // setState synchrone dans un effet declenche un rendu en cascade.
+    if (needle.length < 2) return;
 
     let cancelled = false;
-    setLoading(true);
     const timer = setTimeout(async () => {
       try {
         const response = await fetch(`/api/search?q=${encodeURIComponent(needle)}`);
@@ -85,6 +83,20 @@ export function GlobalSearch() {
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, []);
 
+  /** Saisie : sous deux caracteres, il n'y a plus rien a proposer. */
+  function updateQuery(value: string) {
+    setQuery(value);
+    if (value.trim().length < 2) {
+      setHits([]);
+      setOpen(false);
+      setLoading(false);
+    } else {
+      // L'attente commence a la frappe, pas au declenchement de la requete :
+      // sinon l'indicateur n'apparait qu'apres la temporisation de 300 ms.
+      setLoading(true);
+    }
+  }
+
   function go(hit: Hit) {
     setOpen(false);
     setQuery('');
@@ -100,7 +112,7 @@ export function GlobalSearch() {
         ref={inputRef}
         type="search"
         value={query}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) => updateQuery(event.target.value)}
         onFocus={() => hits.length > 0 && setOpen(true)}
         onKeyDown={(event) => {
           if (event.key === 'Escape') setOpen(false);

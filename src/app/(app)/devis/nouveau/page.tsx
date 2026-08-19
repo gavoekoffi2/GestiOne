@@ -27,7 +27,7 @@ export default async function NewQuotePage() {
       <DocumentBuilder
         kind="quote"
         endpoint="/api/quotes"
-        redirectTo={(id) => `/devis/${id}`}
+        basePath="/devis"
         canDiscount={can(context, 'sales.discount')}
         locale={context.locale}
         {...data}

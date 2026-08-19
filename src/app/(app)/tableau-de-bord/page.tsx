@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { z } from 'zod';
 import { Badge, Card, EmptyState } from '@/components/ui/primitives';
-import { Icon } from '@/components/layout/icons';
 import { PeriodFilter } from '@/components/layout/period-filter';
 import { AlertsPanel } from '@/components/layout/alerts-panel';
 import { RevenueChart } from '@/components/charts/revenue-chart';

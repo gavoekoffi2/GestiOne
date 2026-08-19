@@ -1,7 +1,9 @@
 import { prisma } from '@/server/db';
 import { formatMoney, toDecimalString, type CurrencyFormat } from '@/lib/money';
 import { toQuantityString } from '@/lib/quantity';
+import { MOVEMENT_KIND_OPTIONS } from '@/lib/validation/stock';
 import { listStock } from '@/server/services/stock-query';
+import { INVOICE_STATUS_LABELS, type InvoiceStatus } from '@/server/services/invoices';
 import type { Period } from '@/server/services/reports';
 
 /**
@@ -22,12 +24,21 @@ import type { Period } from '@/server/services/reports';
 
 const FORMULA_PREFIXES = ['=', '+', '-', '@', '\t', '\r'];
 
+/** Nombre en notation neutre, signe compris : "-5.000", "1250.75", "0". */
+const NUMERIC_CELL = /^-\d+(\.\d+)?$/;
+
 export function escapeCsvCell(value: string): string {
   let cell = value;
 
   // Injection de formule : le fichier est ouvert par un humain dans un tableur,
-  // c'est donc bien une surface d'attaque.
-  if (cell.length > 0 && FORMULA_PREFIXES.some((prefix) => cell.startsWith(prefix))) {
+  // c'est donc bien une surface d'attaque. Un nombre negatif commence lui aussi
+  // par `-` sans etre une formule : le prefixer le transformerait en texte, et
+  // une colonne de sorties de stock cesserait d'etre sommable dans le tableur.
+  if (
+    cell.length > 0 &&
+    !NUMERIC_CELL.test(cell) &&
+    FORMULA_PREFIXES.some((prefix) => cell.startsWith(prefix))
+  ) {
     cell = `'${cell}`;
   }
 
@@ -41,12 +52,25 @@ export function toCsv(headers: readonly string[], rows: readonly (readonly strin
   const lines = [headers.map(escapeCsvCell).join(',')];
   for (const row of rows) lines.push(row.map(escapeCsvCell).join(','));
   // BOM UTF-8 : sans lui, Excel sous Windows affiche "Ã©" a la place de "é".
-  return `﻿${lines.join('\r\n')}\r\n`;
+  return `\uFEFF${lines.join('\r\n')}\r\n`;
 }
 
 function formatDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
+
+/**
+ * Horodatage d'un journal : la date seule perdrait l'ordre des mouvements d'une
+ * meme journee. Le format reste neutre (AAAA-MM-JJ HH:MM), lisible et trie
+ * correctement par un tableur, contrairement a un ISO complet en UTC.
+ */
+function formatDateTime(date: Date): string {
+  return `${date.toISOString().slice(0, 10)} ${date.toISOString().slice(11, 16)}`;
+}
+
+const MOVEMENT_KIND_LABELS: Record<string, string> = Object.fromEntries(
+  MOVEMENT_KIND_OPTIONS.map((option) => [option.value, option.label]),
+);
 
 export interface ExportContext {
   companyId: string;
@@ -169,7 +193,7 @@ export async function exportInvoices(context: ExportContext, period: Period): Pr
       invoice.customer?.code ?? '',
       invoice.location?.name ?? '',
       invoice.origin === 'POS' ? 'Vente au comptoir' : 'Facture',
-      invoice.status,
+      INVOICE_STATUS_LABELS[invoice.status as InvoiceStatus] ?? invoice.status,
       toDecimalString(invoice.subtotal, decimals),
       toDecimalString(invoice.discountAmount, decimals),
       toDecimalString(invoice.taxTotal, decimals),
@@ -316,11 +340,11 @@ export async function exportStockMovements(
   return toCsv(
     ['Date', 'Reference article', 'Article', 'Point de vente', 'Type', 'Variation', 'Stock apres', 'Motif', 'Reference', 'Utilisateur'],
     movements.map((movement) => [
-      movement.createdAt.toISOString(),
+      formatDateTime(movement.createdAt),
       movement.product.sku,
       movement.product.name,
       movement.location.name,
-      movement.kind,
+      MOVEMENT_KIND_LABELS[movement.kind] ?? movement.kind,
       toQuantityString(movement.quantity),
       toQuantityString(movement.quantityAfter),
       movement.reason ?? '',

@@ -62,6 +62,7 @@ automatiquement administrateur et proprietaire.
 | `npm run build` | Generation du client Prisma puis build de production |
 | `npm run start` | Serveur de production |
 | `npm run typecheck` | Verification TypeScript |
+| `npm run lint` | Verification du style et des regles React |
 | `npm test` | Suite de tests complete |
 | `npm run db:migrate` | Cree et applique une migration |
 | `npm run db:seed` | Installe le referentiel des devises |
@@ -69,6 +70,37 @@ automatiquement administrateur et proprietaire.
 Les tests d'integration s'executent sur la base designee par `TEST_DATABASE_URL`,
 **qui est videe a chaque execution**. Ne la faites jamais pointer vers une base
 contenant des donnees reelles.
+
+## Integration continue
+
+`.github/workflows/ci.yml` rejoue sur chaque poussee la totalite des
+verifications : types, style, tests d'integration sur un vrai PostgreSQL, et
+build de production. Une etape supplementaire compare le schema Prisma aux
+migrations versionnees : une modification de `schema.prisma` sans migration
+correspondante passerait les tests mais casserait le deploiement.
+
+Avant de proposer une modification, la meme sequence tourne en local :
+
+```bash
+npm run typecheck && npm run lint && npm test && npm run build
+```
+
+## Mise en production
+
+L'application est un serveur Next.js standard ; elle n'a besoin que de
+PostgreSQL et des variables de `.env.example`.
+
+```bash
+npm ci
+npx prisma migrate deploy   # jamais `migrate dev` en production
+npm run db:seed             # referentiel des devises, idempotent
+npm run build
+npm run start               # ecoute sur $PORT, 3000 par defaut
+```
+
+Servez l'application **derriere HTTPS** : le cookie de session porte l'attribut
+`Secure` des que `NODE_ENV=production`, et ne serait donc pas emis en clair.
+L'en-tete HSTS n'est envoye que dans ce meme cas.
 
 ## Principes de conception
 
@@ -100,6 +132,12 @@ ne permet de modifier ou supprimer un evenement, y compris a un administrateur.
 **Le frontend n'est pas une couche de securite.** Les permissions sont verifiees
 par le serveur a chaque operation. L'interface se contente de masquer ce qui est
 de toute facon refuse.
+
+**Defense en profondeur cote navigateur.** Chaque reponse porte une politique de
+securite du contenu dont le nonce change a chaque requete (`src/proxy.ts`) :
+un script injecte dans une donnee ne s'executerait pas, faute de porter le nonce
+du moment. Aucune origine tierce n'est autorisee, ni pour un script, ni pour une
+requete sortante.
 
 **Rien de fictif.** Aucun bouton inerte, aucune donnee de demonstration presentee
 comme reelle, aucun indicateur affiche avant que la donnee correspondante ne soit

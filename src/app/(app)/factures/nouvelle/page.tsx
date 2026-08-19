@@ -27,7 +27,7 @@ export default async function NewInvoicePage() {
       <DocumentBuilder
         kind="invoice"
         endpoint="/api/invoices"
-        redirectTo={(id) => `/factures/${id}`}
+        basePath="/factures"
         canDiscount={can(context, 'sales.discount')}
         locale={context.locale}
         {...data}

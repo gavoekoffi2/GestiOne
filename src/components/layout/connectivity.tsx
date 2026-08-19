@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 
 /**
  * Indicateur de connexion et enregistrement du service worker.
@@ -10,26 +10,34 @@ import { useEffect, useState } from 'react';
  * au bout de deux jours ; une banniere qui n'apparait que quand c'est vrai est
  * lue.
  */
+/**
+ * L'etat du reseau vit dans le navigateur, pas dans React : il se lit donc par
+ * `useSyncExternalStore`. Copier `navigator.onLine` dans un `useState` depuis un
+ * effet afficherait « en ligne » pendant un rendu avant de se corriger, et
+ * declencherait un rendu en cascade a chaque montage.
+ *
+ * `navigator.onLine` est faux-negatif rare mais faux-positif frequent : il dit
+ * « en ligne » des qu'une interface reseau est active, meme sans acces reel. Il
+ * reste le meilleur signal immediat ; les erreurs de requete completent le
+ * tableau lorsqu'elles surviennent.
+ */
+function subscribeToNetwork(onChange: () => void): () => void {
+  window.addEventListener('online', onChange);
+  window.addEventListener('offline', onChange);
+  return () => {
+    window.removeEventListener('online', onChange);
+    window.removeEventListener('offline', onChange);
+  };
+}
+
 export function Connectivity() {
-  const [online, setOnline] = useState(true);
-
-  useEffect(() => {
-    // `navigator.onLine` est faux-negatif rare mais faux-positif frequent : il
-    // dit "en ligne" des qu'une interface reseau est active, meme sans acces
-    // reel. Il reste le meilleur signal immediat ; les erreurs de requete
-    // completent le tableau lorsqu'elles surviennent.
-    setOnline(navigator.onLine);
-
-    const goOnline = () => setOnline(true);
-    const goOffline = () => setOnline(false);
-    window.addEventListener('online', goOnline);
-    window.addEventListener('offline', goOffline);
-
-    return () => {
-      window.removeEventListener('online', goOnline);
-      window.removeEventListener('offline', goOffline);
-    };
-  }, []);
+  const online = useSyncExternalStore(
+    subscribeToNetwork,
+    () => navigator.onLine,
+    // Rendu serveur : aucun navigateur, donc aucune raison d'annoncer une
+    // coupure. La valeur reelle est lue des l'hydratation.
+    () => true,
+  );
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;

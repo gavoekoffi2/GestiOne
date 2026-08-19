@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { Alert, Badge, Button, Card, Field, Input, Select } from '@/components/ui/primitives';
+import { Alert, Button, Card, Field, Input, Select } from '@/components/ui/primitives';
 import { Icon } from '@/components/layout/icons';
 import { MoneyInput } from '@/components/ui/money-input';
 import { useApi } from '@/components/ui/use-api';

@@ -180,7 +180,7 @@ export async function recordEntry(context: MovementContext, input: EntryInput) {
   });
 }
 
-export interface ExitInput extends EntryInput {}
+export type ExitInput = EntryInput;
 
 /** Sortie de stock : casse, perte, consommation interne, don. */
 export async function recordExit(context: MovementContext, input: ExitInput) {

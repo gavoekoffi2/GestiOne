@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { Alert, Button, Card, Field, Input, Select, Textarea } from '@/components/ui/primitives';
+import { Alert, Button, Card, Field, Input, Select } from '@/components/ui/primitives';
 import { Icon } from '@/components/layout/icons';
 import { MoneyInput } from '@/components/ui/money-input';
 import { useApi } from '@/components/ui/use-api';
@@ -74,7 +74,7 @@ export function DocumentBuilder({
   currency,
   locale,
   canDiscount,
-  redirectTo,
+  basePath,
 }: {
   kind: 'quote' | 'invoice';
   endpoint: string;
@@ -86,7 +86,8 @@ export function DocumentBuilder({
   currency: CurrencyFormat;
   locale: string;
   canDiscount: boolean;
-  redirectTo: (id: string) => string;
+  /** Prefixe de l'URL de destination : le document cree y est ajoute en segment. */
+  basePath: string;
 }) {
   const router = useRouter();
   const api = useApi();
@@ -151,7 +152,7 @@ export function DocumentBuilder({
     if (kind === 'invoice') payload.issue = issueNow;
 
     const result = await api.send<{ id: string }>(endpoint, { method: 'POST', body: payload });
-    if (result) router.push(redirectTo(result.id));
+    if (result) router.push(`${basePath}/${result.id}`);
   }
 
   return (

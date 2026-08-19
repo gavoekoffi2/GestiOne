@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Icon } from '@/components/layout/icons';
 import { Connectivity } from '@/components/layout/connectivity';
 import { GlobalSearch } from '@/components/layout/global-search';
@@ -47,10 +47,14 @@ export function AppShell({
   const [busy, setBusy] = useState(false);
 
   // Sur mobile, le menu recouvre l'ecran : le refermer a la navigation evite
-  // que l'utilisateur ait a le fermer manuellement apres chaque clic.
-  useEffect(() => {
+  // que l'utilisateur ait a le fermer manuellement apres chaque clic. L'ajuster
+  // pendant le rendu, et non dans un effet, evite d'afficher une premiere fois
+  // le menu encore ouvert sur la nouvelle page avant de le refermer.
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
     setMenuOpen(false);
-  }, [pathname]);
+  }
 
   async function logout() {
     setBusy(true);

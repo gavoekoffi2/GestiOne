@@ -84,7 +84,7 @@ export function templateFor(target: ImportTarget): string {
     target === 'clients'
       ? 'Ama Diallo,Boutique Ama,+225 07 11 22 33 44,,ama@exemple.ci,Rue 12,Abidjan,CI,,250000,'
       : 'Sac de riz 25 kg,RIZ25,6001234567890,Alimentaire,sac,12000,15000,14000,5,';
-  return `﻿${header}\r\n${example}\r\n`;
+  return `\uFEFF${header}\r\n${example}\r\n`;
 }
 
 function optional(value: string): string | undefined {

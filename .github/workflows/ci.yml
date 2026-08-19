@@ -1,0 +1,76 @@
+name: CI
+
+# Chaque poussee et chaque proposition de fusion rejouent la totalite des
+# verifications locales. Une suite qui ne tourne que sur le poste d'un
+# developpeur finit toujours par ne plus tourner du tout.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifications:
+    name: Types, style, tests et build
+    runs-on: ubuntu-latest
+
+    # Les tests d'integration parlent a une vraie base : ils verifient les
+    # contraintes, les transactions et la numerotation concurrente, qu'aucun
+    # doublon en memoire ne reproduit fidelement.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gestione
+          POSTGRES_PASSWORD: gestione
+          POSTGRES_DB: gestione_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U gestione"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://gestione:gestione@localhost:5432/gestione_test?schema=public
+      TEST_DATABASE_URL: postgresql://gestione:gestione@localhost:5432/gestione_test?schema=public
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Installer les dependances
+        run: npm ci
+
+      - name: Generer le client Prisma
+        run: npm run db:generate
+
+      - name: Verifier les types
+        run: npm run typecheck
+
+      - name: Verifier le style
+        run: npm run lint
+
+      - name: Verifier que les migrations couvrent le schema
+        # Une modification de schema.prisma sans migration correspondante passe
+        # les tests (ils appliquent le schema genere) mais casse le deploiement.
+        run: |
+          npx prisma migrate deploy
+          npx prisma migrate diff \
+            --from-config-datasource \
+            --to-schema prisma/schema.prisma \
+            --exit-code \
+          && echo "Le schema et les migrations concordent."
+
+      - name: Tests
+        run: npm test
+
+      - name: Build de production
+        run: npm run build

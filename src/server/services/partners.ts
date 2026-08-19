@@ -1,6 +1,6 @@
 import { prisma } from '@/server/db';
 import type { Prisma } from '@/generated/prisma/client';
-import { ConflictError, NotFoundError } from '@/server/errors';
+import { NotFoundError } from '@/server/errors';
 import { nextDocumentNumber } from '@/server/sequences';
 import type { PartnerInput, PartnerKind } from '@/lib/validation/catalog';
 

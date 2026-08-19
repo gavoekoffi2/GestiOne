@@ -112,6 +112,9 @@ export default async function ReportsPage({
           icon="chart"
           delta={variation(sales.revenue, previousSales.revenue)}
           deltaLabel="vs periode precedente"
+          /* Facture n'est pas encaisse : avec la vente a credit, l'ecart entre
+             les deux est precisement ce qui manque en caisse. */
+          hint={`${money(collected.collected)} encaisses sur la periode`}
         />
         <StatTile
           label="Marge brute"

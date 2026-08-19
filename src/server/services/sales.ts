@@ -114,7 +114,6 @@ export async function recordSale(context: SaleContext, input: SaleInput): Promis
   });
 
   let paymentId: string | null = null;
-  let paid = 0n;
   let changeDue = 0n;
 
   if (method && !method.isCredit) {
@@ -140,7 +139,6 @@ export async function recordSale(context: SaleContext, input: SaleInput): Promis
     });
 
     paymentId = payment.id;
-    paid = applied;
   }
 
   const refreshed = await prisma.invoice.findUniqueOrThrow({

@@ -5,7 +5,8 @@
  * mais les fichiers reels ne le sont pas. Ceux que les PME produisent viennent
  * d'Excel, de LibreOffice ou d'un export bancaire, et cumulent :
  *
- *  * un BOM UTF-8 en tete, qui transforme la premiere colonne en "﻿Nom" ;
+ *  * un BOM UTF-8 en tete, caractere invisible qui colle a la premiere
+ *    en-tete et fait echouer sa correspondance avec la colonne attendue ;
  *  * un separateur point-virgule, standard des Excel en locale francaise ;
  *  * des champs entre guillemets contenant separateurs et retours a la ligne ;
  *  * des fins de ligne CRLF.

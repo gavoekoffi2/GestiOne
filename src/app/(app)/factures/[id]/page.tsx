@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Badge, Card } from '@/components/ui/primitives';
+import { Badge } from '@/components/ui/primitives';
 import { InvoiceActions } from '@/components/commerce/invoice-actions';
 import { ShareActions } from '@/components/commerce/share-actions';
 import { formatMoney, toDecimalString } from '@/lib/money';

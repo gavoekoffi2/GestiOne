@@ -80,6 +80,11 @@ model Company {
   products          Product[]
   stockLevels       StockLevel[]
   stockMovements    StockMovement[]
+  paymentMethods    PaymentMethod[]
+  taxRates          TaxRate[]
+  quotes            Quote[]
+  invoices          Invoice[]
+  payments          Payment[]
 
   @@index([currencyCode])
   @@map("companies")
@@ -104,6 +109,9 @@ model Location {
   memberships    Membership[]
   stockLevels    StockLevel[]
   stockMovements StockMovement[]
+  quotes         Quote[]
+  invoices       Invoice[]
+  payments       Payment[]
 
   @@unique([companyId, code])
   @@index([companyId])
@@ -132,6 +140,9 @@ model User {
   sessions       Session[]
   auditLogs      AuditLog[]
   stockMovements StockMovement[]
+  quotes         Quote[]
+  invoices       Invoice[]
+  payments       Payment[]
 
   @@map("users")
 }
@@ -277,6 +288,9 @@ model Partner {
 
   company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   products Product[]
+  quotes   Quote[]
+  invoices Invoice[]
+  payments Payment[]
 
   @@unique([companyId, kind, code])
   @@index([companyId, kind, isActive])
@@ -367,6 +381,8 @@ model Product {
   supplier       Partner?        @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   stockLevels    StockLevel[]
   stockMovements StockMovement[]
+  quoteLines     QuoteLine[]
+  invoiceLines   InvoiceLine[]
 
   @@unique([companyId, sku])
   @@index([companyId, isActive])
@@ -443,4 +459,239 @@ model StockMovement {
   @@index([companyId, locationId, createdAt])
   @@index([transferId])
   @@map("stock_movements")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 4 — ventes, devis, factures, paiements
+// ---------------------------------------------------------------------------
+
+/// Mode de reglement, configurable par entreprise.
+///
+/// GestiOne installe les modes courants (especes, Mobile Money, virement,
+/// carte, cheque, credit) et l'entreprise ajoute les siens. `kind` reste un
+/// marqueur technique : c'est lui qui indique si le reglement alimente la
+/// caisse (`CASH`) ou s'il constitue une creance (`CREDIT`).
+model PaymentMethod {
+  id        String   @id @default(cuid())
+  companyId String
+  code      String
+  name      String
+  /// CASH | MOBILE_MONEY | BANK_TRANSFER | CARD | CHEQUE | CREDIT | OTHER
+  kind      String   @default("OTHER")
+  /// Un reglement a credit ne solde pas la facture : il constate une creance.
+  isCredit  Boolean  @default(false)
+  /// Alimente le solde de caisse (phase 5).
+  affectsCash Boolean @default(false)
+  /// Une reference (numero de transaction Mobile Money, numero de cheque) est-elle exigee ?
+  requiresReference Boolean @default(false)
+  isSystem  Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@unique([companyId, code])
+  @@index([companyId, isActive])
+  @@map("payment_methods")
+}
+
+/// Taux de taxe applicable aux lignes de document (TVA et equivalents).
+model TaxRate {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  /// Taux en centiemes de point : 1800 = 18,00 %.
+  rate      Int
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoiceLines InvoiceLine[]
+  quoteLines   QuoteLine[]
+
+  @@unique([companyId, name])
+  @@index([companyId, isActive])
+  @@map("tax_rates")
+}
+
+/// Devis.
+model Quote {
+  id         String   @id @default(cuid())
+  companyId  String
+  number     String
+  customerId String?
+  locationId String?
+  /// DRAFT | SENT | ACCEPTED | REJECTED | EXPIRED | CONVERTED
+  status     String   @default("DRAFT")
+  issueDate  DateTime @default(now())
+  validUntil DateTime?
+
+  subtotal       BigInt @default(0)
+  discountAmount BigInt @default(0)
+  /// Remise globale en centiemes de point, quand elle a ete saisie en pourcentage.
+  discountRate   Int?
+  taxTotal       BigInt @default(0)
+  total          BigInt @default(0)
+
+  notes     String?
+  terms     String?
+  /// Facture issue de la conversion, le cas echeant.
+  invoiceId String?  @unique
+  userId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company  Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Partner?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  location Location?   @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  user     User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  invoice  Invoice?    @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  lines    QuoteLine[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status, issueDate])
+  @@index([companyId, customerId])
+  @@map("quotes")
+}
+
+model QuoteLine {
+  id          String @id @default(cuid())
+  quoteId     String
+  productId   String?
+  /// Libelle fige a la creation : renommer un article ne doit pas reecrire un devis envoye.
+  description String
+  quantity    BigInt
+  unitPrice   BigInt
+  discountRate Int   @default(0)
+  taxRateId   String?
+  taxRate     Int    @default(0)
+  lineTotal   BigInt @default(0)
+  position    Int    @default(0)
+
+  quote     Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  taxRateRef TaxRate? @relation(fields: [taxRateId], references: [id], onDelete: SetNull)
+
+  @@index([quoteId])
+  @@map("quote_lines")
+}
+
+/// Facture — document de creance unique de GestiOne.
+///
+/// Une vente au comptoir produit elle aussi une facture (`origin = "POS"`) :
+/// c'est ce qui garantit qu'il n'existe **qu'un seul endroit** ou se calcule ce
+/// que les clients doivent. Deux tables de creances finiraient toujours par
+/// diverger, et le chiffre affiche au dirigeant serait faux.
+model Invoice {
+  id         String   @id @default(cuid())
+  companyId  String
+  number     String
+  customerId String?
+  locationId String?
+  /// INVOICE | POS
+  origin     String   @default("INVOICE")
+  /// DRAFT | ISSUED | PARTIALLY_PAID | PAID | CANCELLED
+  status     String   @default("DRAFT")
+  issueDate  DateTime @default(now())
+  dueDate    DateTime?
+
+  subtotal       BigInt @default(0)
+  discountAmount BigInt @default(0)
+  discountRate   Int?
+  taxTotal       BigInt @default(0)
+  total          BigInt @default(0)
+  /// Somme des paiements affectes, recalculee a chaque encaissement.
+  paidAmount     BigInt @default(0)
+  /// total - paidAmount, jamais negatif. Recalcule dans la meme transaction.
+  balanceDue     BigInt @default(0)
+  /// Cout d'achat total des lignes, fige a l'emission (marge des rapports).
+  costTotal      BigInt @default(0)
+
+  notes      String?
+  terms      String?
+  cancelledAt DateTime?
+  cancelReason String?
+  userId     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  company  Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Partner?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  location Location?     @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  user     User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  lines    InvoiceLine[]
+  payments Payment[]
+  quote    Quote?
+
+  @@unique([companyId, number])
+  @@index([companyId, status, issueDate])
+  @@index([companyId, customerId, status])
+  @@index([companyId, dueDate])
+  @@map("invoices")
+}
+
+model InvoiceLine {
+  id          String @id @default(cuid())
+  invoiceId   String
+  productId   String?
+  description String
+  quantity    BigInt
+  unitPrice   BigInt
+  discountRate Int   @default(0)
+  taxRateId   String?
+  taxRate     Int    @default(0)
+  /// Base taxable de la ligne, remise globale deduite.
+  taxable     BigInt @default(0)
+  taxAmount   BigInt @default(0)
+  lineTotal   BigInt @default(0)
+  /// Prix d'achat fige a l'emission : la marge historique ne doit pas bouger
+  /// quand le prix d'achat de l'article change plus tard.
+  unitCost    BigInt @default(0)
+  position    Int    @default(0)
+
+  invoice    Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product    Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  taxRateRef TaxRate? @relation(fields: [taxRateId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([productId])
+  @@map("invoice_lines")
+}
+
+/// Reglement, client (encaissement) ou fournisseur (decaissement).
+model Payment {
+  id        String   @id @default(cuid())
+  companyId String
+  number    String
+  /// IN = encaissement client, OUT = reglement fournisseur.
+  direction String   @default("IN")
+  partnerId String?
+  invoiceId String?
+  methodId  String?
+  locationId String?
+
+  amount    BigInt
+  paidAt    DateTime @default(now())
+  reference String?
+  notes     String?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  company  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  partner  Partner?       @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  invoice  Invoice?       @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  method   PaymentMethod? @relation(fields: [methodId], references: [id], onDelete: SetNull)
+  location Location?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  user     User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, number])
+  @@index([companyId, paidAt])
+  @@index([companyId, partnerId])
+  @@index([invoiceId])
+  @@map("payments")
 }

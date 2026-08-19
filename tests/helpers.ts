@@ -51,3 +51,26 @@ export async function createTestCompany(
 
   return { ...result, email, locationId: location.id };
 }
+
+/**
+ * Contexte de service pret a l'emploi pour les tests des modules commerciaux.
+ * Reprend les prefixes de numerotation reels de l'entreprise.
+ */
+export async function serviceContext(companyId: string, userId: string) {
+  const company = await prisma.company.findUniqueOrThrow({
+    where: { id: companyId },
+    select: {
+      invoicePrefix: true,
+      quotePrefix: true,
+      paymentPrefix: true,
+      defaultDueDays: true,
+    },
+  });
+  return { companyId, userId, ...company };
+}
+
+/** Identifiant d'un mode de reglement systeme (CASH, MOBILE_MONEY, CREDIT...). */
+export async function paymentMethodId(companyId: string, code: string) {
+  const method = await prisma.paymentMethod.findFirstOrThrow({ where: { companyId, code } });
+  return method.id;
+}

@@ -101,7 +101,7 @@ Invariants garantis par la base ou par transaction :
 | 1 | Fondation : architecture, base, auth, entreprises, utilisateurs, permissions, navigation | **livrée** |
 | 2 | Référentiels : clients, fournisseurs, catégories, unités, produits, services | **livrée** |
 | 3 | Stock : entrées, sorties, transferts, inventaire, alertes | **livrée** |
-| 4 | Ventes : ventes, devis, factures, paiements, ventes à crédit | à venir |
+| 4 | Ventes : ventes, devis, factures, paiements, ventes à crédit | **livrée** |
 | 5 | Finance : achats, dépenses, caisse, créances, dettes | à venir |
 | 6 | Rapports : tableau de bord, statistiques, exports | à venir |
 | 7 | Administration : paramètres, utilisateurs, audit, notifications | à venir |
@@ -136,6 +136,17 @@ espace fine insécable (U+202F) comme séparateur de milliers. Ces montants
 finissent sur des factures imprimées, des tickets thermiques et des exports
 CSV, où ce caractère se rend mal et varie selon la version d'ICU embarquée. Le
 formatage monétaire est écrit à la main, avec des séparateurs explicites.
+
+**Un seul document de créance.** La tentation était de modéliser la vente au
+comptoir, la facture et le devis comme trois objets portant chacun leurs
+totaux. Deux tables de créances finissent toujours par diverger — un paiement
+enregistré d'un côté, un avoir de l'autre — et le « combien mes clients me
+doivent-ils » affiché au dirigeant devient faux sans que personne ne s'en
+aperçoive. Une vente au comptoir produit donc une facture (`origin = "POS"`),
+un devis accepté se convertit en facture, et `Invoice.balanceDue` est le seul
+endroit où se lit une créance. Le solde n'est jamais incrémenté : il est
+recalculé à partir des paiements réellement en base, dans la transaction de
+chaque encaissement.
 
 Une quatrième décision relève de la migration plutôt que du bug : les unités de
 mesure sont installées à la création d'une entreprise, ce qui laissait sans

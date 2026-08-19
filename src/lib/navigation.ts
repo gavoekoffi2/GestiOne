@@ -36,7 +36,7 @@ export const NAVIGATION: NavSection[] = [
   {
     label: 'Commercial',
     items: [
-      { href: '/ventes', label: 'Ventes', permission: 'sales.read', icon: 'cart', phase: 4 },
+      { href: '/ventes', label: 'Vendre', permission: 'sales.create', icon: 'cart', phase: 4 },
       { href: '/devis', label: 'Devis', permission: 'quotes.read', icon: 'file', phase: 4 },
       { href: '/factures', label: 'Factures', permission: 'invoices.read', icon: 'receipt', phase: 4 },
       { href: '/paiements', label: 'Paiements', permission: 'payments.read', icon: 'wallet', phase: 4 },
@@ -72,7 +72,7 @@ export const NAVIGATION: NavSection[] = [
 ];
 
 /** Derniere phase effectivement livree. Voir docs/ARCHITECTURE.md. */
-export const SHIPPED_PHASE = 3;
+export const SHIPPED_PHASE = 4;
 
 /**
  * Menu reellement affiche : uniquement les ecrans livres, et uniquement ceux

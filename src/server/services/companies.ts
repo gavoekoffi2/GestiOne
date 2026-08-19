@@ -4,6 +4,7 @@ import { ConflictError, NotFoundError } from '@/server/errors';
 import { SYSTEM_ROLES } from '@/server/permissions';
 import { slugify } from '@/lib/validation/common';
 import { provisionDefaultUnits } from '@/server/services/catalog';
+import { provisionPaymentMethods } from '@/server/services/commerce-setup';
 
 /**
  * Provisionnement d'une entreprise.
@@ -101,6 +102,10 @@ export async function provisionCompany(
   // Le catalogue doit etre utilisable des la premiere connexion : sans unites,
   // aucun article ne peut etre saisi correctement.
   await provisionDefaultUnits(tx, company.id);
+
+  // Sans mode de reglement, aucune vente ne peut etre encaissee : les modes
+  // courants sont installes d'emblee, l'entreprise ajustera ensuite.
+  await provisionPaymentMethods(tx, company.id);
 
   const membership = await tx.membership.create({
     data: {

@@ -7,8 +7,9 @@ export const metadata: Metadata = {
     template: '%s · GestiOne',
   },
   description:
-    "GestiOne : la gestion complete de votre entreprise — ventes, stock, factures, caisse et rapports — depuis un seul endroit.",
+    "GestiOne rassemble ventes, stock, factures, achats, dépenses, caisse et rapports pour aider les commerçants et PME à piloter leur activité avec clarté.",
   applicationName: 'GestiOne',
+  keywords: ['gestion commerciale', 'stock', 'facturation', 'caisse', 'PME', 'commerce', 'GestiOne'],
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
   },
   icons: {
+    icon: '/gestione-logo.svg',
     apple: '/apple-touch-icon.png',
   },
 };

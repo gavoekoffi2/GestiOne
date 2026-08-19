@@ -74,6 +74,10 @@ model Company {
   locations         Location[]
   auditLogs         AuditLog[]
   documentSequences DocumentSequence[]
+  partners          Partner[]
+  categories        Category[]
+  units             Unit[]
+  products          Product[]
 
   @@index([currencyCode])
   @@map("companies")
@@ -236,4 +240,131 @@ model DocumentSequence {
   @@unique([companyId, documentType, period])
   @@index([companyId])
   @@map("document_sequences")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2 — referentiels
+// ---------------------------------------------------------------------------
+
+/// Tiers commercial : client ou fournisseur. Les deux partagent la meme forme
+/// (coordonnees, encours, historique) ; seul le sens de la relation change, ce
+/// qui evite de dupliquer la moitie du modele et des ecrans.
+model Partner {
+  id           String   @id @default(cuid())
+  companyId    String
+  kind         String // CUSTOMER | SUPPLIER
+  code         String
+  name         String
+  companyName  String?
+  phone        String?
+  secondPhone  String?
+  email        String?
+  addressLine  String?
+  city         String?
+  countryCode  String?
+  taxNumber    String?
+  /// Plafond d'encours autorise, en unite mineure. 0 = pas de vente a credit.
+  creditLimit  BigInt   @default(0)
+  notes        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([companyId, kind, code])
+  @@index([companyId, kind, isActive])
+  @@index([companyId, name])
+  @@index([companyId, phone])
+  @@map("partners")
+}
+
+/// Categorie d'articles. `parentId` autorise une arborescence a plusieurs
+/// niveaux (Boissons > Boissons gazeuses) sans table supplementaire.
+model Category {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company  Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryTree")
+  products Product[]
+
+  @@unique([companyId, name, parentId])
+  @@index([companyId])
+  @@map("categories")
+}
+
+/// Unite de mesure. GestiOne en fournit un jeu de depart, et chaque entreprise
+/// peut creer les siennes (regime, botte, casier, bidon de 20 L...).
+model Unit {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  symbol    String
+  isSystem  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([companyId, symbol])
+  @@index([companyId])
+  @@map("units")
+}
+
+/// Article vendable : bien physique (suivi en stock) ou service (sans stock).
+///
+/// Les prix sont des entiers en unite mineure de la devise de l'entreprise.
+/// La quantite en stock n'est **pas** stockee ici : elle depend du point de
+/// vente et se deduit du journal des mouvements (phase 3).
+model Product {
+  id          String  @id @default(cuid())
+  companyId   String
+  kind        String  @default("GOOD") // GOOD | SERVICE
+  name        String
+  sku         String
+  barcode     String?
+  description String?
+  categoryId  String?
+  unitId      String?
+  supplierId  String?
+  imageUrl    String?
+
+  /// Prix d'achat / de revient, utilise pour estimer la marge.
+  costPrice      BigInt  @default(0)
+  /// Prix de vente au detail.
+  salePrice      BigInt  @default(0)
+  /// Prix de gros, applique a partir de `wholesaleFrom` unites.
+  wholesalePrice BigInt?
+  wholesaleFrom  BigInt?
+  /// Prix negocie pour certains clients, applique manuellement a la vente.
+  specialPrice   BigInt?
+
+  /// Seuil d'alerte de rupture, en milliemes d'unite.
+  minStock  BigInt  @default(0)
+  /// Un service n'est jamais suivi en stock.
+  trackStock Boolean @default(true)
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  unit     Unit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  supplier Partner?  @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  @@unique([companyId, sku])
+  @@index([companyId, isActive])
+  @@index([companyId, name])
+  @@index([companyId, barcode])
+  @@index([companyId, categoryId])
+  @@map("products")
 }

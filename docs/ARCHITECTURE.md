@@ -98,8 +98,8 @@ Invariants garantis par la base ou par transaction :
 
 | Phase | Contenu | État |
 |-------|---------|------|
-| 1 | Fondation : architecture, base, auth, entreprises, utilisateurs, permissions, navigation | en cours |
-| 2 | Référentiels : clients, fournisseurs, catégories, unités, produits, services | à venir |
+| 1 | Fondation : architecture, base, auth, entreprises, utilisateurs, permissions, navigation | **livrée** |
+| 2 | Référentiels : clients, fournisseurs, catégories, unités, produits, services | **livrée** |
 | 3 | Stock : entrées, sorties, transferts, inventaire, alertes | à venir |
 | 4 | Ventes : ventes, devis, factures, paiements, ventes à crédit | à venir |
 | 5 | Finance : achats, dépenses, caisse, créances, dettes | à venir |
@@ -108,3 +108,36 @@ Invariants garantis par la base ou par transaction :
 | 8 | Expérience : responsive, PWA, performances, UX, sécurité, tests | à venir |
 
 À chaque phase : développer → tester → corriger → vérifier → continuer.
+
+## 7. Décisions prises en cours de route
+
+Trois problèmes découverts par les tests ont modifié la conception ; ils sont
+consignés ici parce qu'ils se reproduiraient à l'identique dans les phases
+suivantes.
+
+**Un `upsert` Prisma ne sérialise pas.** Le premier compteur de numérotation
+lisait la ligne de séquence puis l'insérait ou la mettait à jour. Sous
+concurrence, deux transactions constatent l'absence de ligne et tentent toutes
+les deux l'insertion : la seconde échoue sur la contrainte d'unicité. Un test
+lançant 25 transactions simultanées l'a montré immédiatement. La numérotation
+tient désormais dans une seule instruction `INSERT ... ON CONFLICT DO UPDATE`.
+Le même piège a resurgi sur les codes clients/fournisseurs (`count()` puis
+insertion) : ils passent maintenant par la même séquence.
+
+**Compter les succès dans la limitation de débit bloque les équipes.** La
+version initiale décomptait chaque tentative de connexion, réussie ou non, par
+adresse IP. Dans une boutique dont toute l'équipe partage un routeur 4G — donc
+une seule adresse IP publique — six caissiers prenant leur poste épuisaient le
+quota. Seuls les échecs sont désormais comptabilisés, et une authentification
+réussie remet le compteur du compte à zéro.
+
+**`Intl.NumberFormat` n'est pas déterministe.** En français, il produit une
+espace fine insécable (U+202F) comme séparateur de milliers. Ces montants
+finissent sur des factures imprimées, des tickets thermiques et des exports
+CSV, où ce caractère se rend mal et varie selon la version d'ICU embarquée. Le
+formatage monétaire est écrit à la main, avec des séparateurs explicites.
+
+Une quatrième décision relève de la migration plutôt que du bug : les unités de
+mesure sont installées à la création d'une entreprise, ce qui laissait sans
+unités toutes les entreprises créées avant la phase 2. Une migration de
+rattrapage, rejouable, les complète.

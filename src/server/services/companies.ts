@@ -3,6 +3,7 @@ import type { Prisma } from '@/generated/prisma/client';
 import { ConflictError, NotFoundError } from '@/server/errors';
 import { SYSTEM_ROLES } from '@/server/permissions';
 import { slugify } from '@/lib/validation/common';
+import { provisionDefaultUnits } from '@/server/services/catalog';
 
 /**
  * Provisionnement d'une entreprise.
@@ -96,6 +97,10 @@ export async function provisionCompany(
     },
     select: { id: true },
   });
+
+  // Le catalogue doit etre utilisable des la premiere connexion : sans unites,
+  // aucun article ne peut etre saisi correctement.
+  await provisionDefaultUnits(tx, company.id);
 
   const membership = await tx.membership.create({
     data: {

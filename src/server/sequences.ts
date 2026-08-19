@@ -9,7 +9,15 @@ import type { Prisma } from '@/generated/prisma/client';
  * numero : la seconde attend le verrou de la ligne de sequence.
  */
 
-export type DocumentType = 'INVOICE' | 'QUOTE' | 'SALE' | 'PURCHASE' | 'PAYMENT' | 'RECEIPT';
+export type DocumentType =
+  | 'INVOICE'
+  | 'QUOTE'
+  | 'SALE'
+  | 'PURCHASE'
+  | 'PAYMENT'
+  | 'RECEIPT'
+  | 'CUSTOMER'
+  | 'SUPPLIER';
 
 export interface SequenceOptions {
   prefix: string;

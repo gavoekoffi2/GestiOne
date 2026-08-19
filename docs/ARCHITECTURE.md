@@ -103,7 +103,7 @@ Invariants garantis par la base ou par transaction :
 | 3 | Stock : entrées, sorties, transferts, inventaire, alertes | **livrée** |
 | 4 | Ventes : ventes, devis, factures, paiements, ventes à crédit | **livrée** |
 | 5 | Finance : achats, dépenses, caisse, créances, dettes | **livrée** |
-| 6 | Rapports : tableau de bord, statistiques, exports | à venir |
+| 6 | Rapports : tableau de bord, statistiques, exports | **livrée** |
 | 7 | Administration : paramètres, utilisateurs, audit, notifications | à venir |
 | 8 | Expérience : responsive, PWA, performances, UX, sécurité, tests | à venir |
 
@@ -156,6 +156,24 @@ pouvaient pas le voir — ils appellent les services directement. Seul un essai
 bout en bout sur l'application l'a révélé. Une suite dédiée
 (`tests/unit/schema-contract.test.ts`) vérifie désormais que chaque champ lu par
 un service survit à la validation.
+
+**Un composant client ne doit jamais importer depuis `src/server`.** Le
+sélecteur de période importait ses libellés depuis un service — trois chaînes de
+caractères. Cet import a entraîné toute la chaîne de dépendances du service dans
+le paquet navigateur : Prisma, le pilote PostgreSQL, et un `require('dns')` qui
+a fait échouer la compilation. Le symptôme était spectaculaire ; il aurait pu
+être bien pire, car le même import depuis un module contenant une clé d'API
+l'aurait expédiée au navigateur sans qu'aucune erreur ne le signale. Les
+définitions partagées vivent désormais dans `src/lib`, et
+`tests/unit/client-server-boundary.test.ts` parcourt les sources pour refuser
+tout franchissement.
+
+**TypeScript ne voit pas tout de la frontière serveur/client.** Passer une
+fonction de formatage d'un composant serveur à un composant client compile sans
+erreur et échoue à l'exécution : seules des valeurs sérialisables franchissent
+la frontière. Le graphique reçoit donc le format de devise comme *donnée* et
+formate lui-même. Aucun test unitaire n'aurait attrapé cela — seul l'affichage
+réel de la page l'a révélé.
 
 Une quatrième décision relève de la migration plutôt que du bug : les unités de
 mesure sont installées à la création d'une entreprise, ce qui laissait sans

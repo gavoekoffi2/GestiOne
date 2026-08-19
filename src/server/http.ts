@@ -104,13 +104,21 @@ export function clientIp(request: NextRequest): string {
   return request.headers.get('x-real-ip') ?? 'inconnu';
 }
 
+/**
+ * Enveloppe commune des Route Handlers : convertit toute erreur en reponse
+ * uniforme. Le type de retour est `Response` et non `NextResponse`, car
+ * certaines routes rendent un fichier (CSV, PDF) plutot que du JSON.
+ */
 export function handler(
-  fn: (request: NextRequest, context: { params: Promise<Record<string, string>> }) => Promise<NextResponse>,
+  fn: (
+    request: NextRequest,
+    context: { params: Promise<Record<string, string>> },
+  ) => Promise<Response>,
 ) {
   return async (
     request: NextRequest,
     context: { params: Promise<Record<string, string>> },
-  ): Promise<NextResponse> => {
+  ): Promise<Response> => {
     try {
       return await fn(request, context);
     } catch (error) {

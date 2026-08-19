@@ -1,0 +1,239 @@
+// GestiOne — schema de donnees
+//
+// Regles structurantes :
+//  * Toute donnee metier porte `companyId` : l'isolation multi-entreprises est
+//    appliquee dans la couche serveur, jamais dans l'interface.
+//  * Les montants sont des entiers BigInt exprimes dans la plus petite unite de
+//    la devise (XOF : 1 = 1 franc, EUR : 1 = 1 centime). Aucun Float.
+//  * Les journaux (StockMovement, AuditLog, CashMovement) ne sont jamais modifies :
+//    une correction produit une nouvelle ecriture.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Referentiel global (partage par toutes les entreprises)
+// ---------------------------------------------------------------------------
+
+/// Devises supportees. `decimals` pilote la conversion montant <-> unite mineure.
+model Currency {
+  code           String    @id // ISO 4217 : XOF, XAF, GHS, NGN, EUR, USD...
+  name           String
+  symbol         String
+  decimals       Int       @default(2)
+  symbolPosition String    @default("after") // "before" | "after"
+  companies      Company[]
+
+  @@map("currencies")
+}
+
+// ---------------------------------------------------------------------------
+// Entreprise et parametrage
+// ---------------------------------------------------------------------------
+
+model Company {
+  id           String   @id @default(cuid())
+  name         String
+  legalName    String?
+  slug         String   @unique
+  logoUrl      String?
+  addressLine  String?
+  city         String?
+  countryCode  String   @default("CI") // ISO 3166-1 alpha-2
+  phone        String?
+  email        String?
+  website      String?
+  taxNumber    String? // NIF / RCCM / numero de TVA selon le pays
+  currencyCode String   @default("XOF")
+  locale       String   @default("fr")
+  timezone     String   @default("Africa/Abidjan")
+
+  // Personnalisation des documents
+  primaryColor    String  @default("#0F766E")
+  invoicePrefix   String  @default("FAC")
+  quotePrefix     String  @default("DEV")
+  salePrefix      String  @default("VTE")
+  purchasePrefix  String  @default("CMD")
+  paymentPrefix   String  @default("PAY")
+  documentFooter  String?
+  paymentTerms    String?
+  defaultDueDays  Int     @default(30)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  currency          Currency           @relation(fields: [currencyCode], references: [code])
+  memberships       Membership[]
+  roles             Role[]
+  locations         Location[]
+  auditLogs         AuditLog[]
+  documentSequences DocumentSequence[]
+
+  @@index([currencyCode])
+  @@map("companies")
+}
+
+/// Boutique, agence, depot, entrepot ou point de vente.
+model Location {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  code        String
+  kind        String   @default("SHOP") // SHOP | WAREHOUSE | AGENCY | POS
+  addressLine String?
+  city        String?
+  phone       String?
+  isDefault   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@map("locations")
+}
+
+// ---------------------------------------------------------------------------
+// Identite, appartenance et permissions
+// ---------------------------------------------------------------------------
+
+/// Un compte utilisateur est global ; il accede a une ou plusieurs entreprises
+/// via `Membership`. Le mot de passe est hashe avec scrypt (sel par utilisateur).
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  fullName     String
+  phone        String?
+  avatarUrl    String?
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  memberships Membership[]
+  sessions    Session[]
+  auditLogs   AuditLog[]
+
+  @@map("users")
+}
+
+/// Role portant une liste de permissions granulaires.
+/// `companyId` nul = role systeme propose a toutes les entreprises.
+model Role {
+  id          String   @id @default(cuid())
+  companyId   String?
+  key         String // ADMIN | MANAGER | SALES | STOCK | CASHIER | personnalise
+  name        String
+  description String?
+  permissions String[] // ex. ["sales.create", "customers.read"]
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company     Company?     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+
+  @@unique([companyId, key])
+  @@index([companyId])
+  @@map("roles")
+}
+
+/// Lien utilisateur <-> entreprise, porteur du role et du point de vente par defaut.
+model Membership {
+  id                String   @id @default(cuid())
+  userId            String
+  companyId         String
+  roleId            String
+  defaultLocationId String?
+  isOwner           Boolean  @default(false)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role            Role      @relation(fields: [roleId], references: [id])
+  defaultLocation Location? @relation(fields: [defaultLocationId], references: [id], onDelete: SetNull)
+  sessions        Session[]
+
+  @@unique([userId, companyId])
+  @@index([companyId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+/// Session opaque : seul le hash SHA-256 du jeton est stocke.
+/// Le jeton en clair ne vit que dans le cookie httpOnly du navigateur.
+model Session {
+  id           String   @id @default(cuid())
+  tokenHash    String   @unique
+  userId       String
+  membershipId String?
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime @default(now())
+  lastSeenAt   DateTime @default(now())
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membership Membership? @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ---------------------------------------------------------------------------
+// Tracabilite
+// ---------------------------------------------------------------------------
+
+/// Journal append-only des operations sensibles.
+model AuditLog {
+  id         String   @id @default(cuid())
+  companyId  String?
+  userId     String?
+  action     String // LOGIN | CREATE | UPDATE | DELETE | PAYMENT | STOCK_MOVE | CANCEL | PERMISSION_CHANGE
+  entityType String
+  entityId   String?
+  summary    String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([companyId, entityType, entityId])
+  @@map("audit_logs")
+}
+
+/// Compteur de numerotation des documents, incremente dans la transaction
+/// qui cree le document, ce qui rend les doublons impossibles.
+model DocumentSequence {
+  id           String   @id @default(cuid())
+  companyId    String
+  documentType String // INVOICE | QUOTE | SALE | PURCHASE | PAYMENT | RECEIPT
+  period       String // "2026" ou "2026-04" selon le format choisi
+  prefix       String
+  nextValue    Int      @default(1)
+  padding      Int      @default(5)
+  updatedAt    DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, documentType, period])
+  @@index([companyId])
+  @@map("document_sequences")
+}

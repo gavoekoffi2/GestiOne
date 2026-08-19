@@ -100,7 +100,7 @@ Invariants garantis par la base ou par transaction :
 |-------|---------|------|
 | 1 | Fondation : architecture, base, auth, entreprises, utilisateurs, permissions, navigation | **livrée** |
 | 2 | Référentiels : clients, fournisseurs, catégories, unités, produits, services | **livrée** |
-| 3 | Stock : entrées, sorties, transferts, inventaire, alertes | à venir |
+| 3 | Stock : entrées, sorties, transferts, inventaire, alertes | **livrée** |
 | 4 | Ventes : ventes, devis, factures, paiements, ventes à crédit | à venir |
 | 5 | Finance : achats, dépenses, caisse, créances, dettes | à venir |
 | 6 | Rapports : tableau de bord, statistiques, exports | à venir |

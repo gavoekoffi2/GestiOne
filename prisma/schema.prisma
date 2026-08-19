@@ -78,6 +78,8 @@ model Company {
   categories        Category[]
   units             Unit[]
   products          Product[]
+  stockLevels       StockLevel[]
+  stockMovements    StockMovement[]
 
   @@index([currencyCode])
   @@map("companies")
@@ -98,8 +100,10 @@ model Location {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  memberships Membership[]
+  company        Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  memberships    Membership[]
+  stockLevels    StockLevel[]
+  stockMovements StockMovement[]
 
   @@unique([companyId, code])
   @@index([companyId])
@@ -124,9 +128,10 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  memberships Membership[]
-  sessions    Session[]
-  auditLogs   AuditLog[]
+  memberships    Membership[]
+  sessions       Session[]
+  auditLogs      AuditLog[]
+  stockMovements StockMovement[]
 
   @@map("users")
 }
@@ -356,10 +361,12 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  unit     Unit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
-  supplier Partner?  @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  company        Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category       Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  unit           Unit?           @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  supplier       Partner?        @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  stockLevels    StockLevel[]
+  stockMovements StockMovement[]
 
   @@unique([companyId, sku])
   @@index([companyId, isActive])
@@ -367,4 +374,73 @@ model Product {
   @@index([companyId, barcode])
   @@index([companyId, categoryId])
   @@map("products")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 3 — stock
+// ---------------------------------------------------------------------------
+
+/// Solde de stock d'un article dans un point de vente.
+///
+/// C'est une valeur **derivee** : elle doit toujours etre egale a la somme des
+/// mouvements correspondants. Elle est maintenue dans la meme transaction que
+/// chaque mouvement, et sert uniquement a eviter de reagreger le journal a
+/// chaque affichage.
+model StockLevel {
+  id         String   @id @default(cuid())
+  companyId  String
+  productId  String
+  locationId String
+  /// Quantite en milliemes d'unite (voir src/lib/quantity.ts).
+  quantity   BigInt   @default(0)
+  updatedAt  DateTime @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, locationId])
+  @@index([companyId, locationId])
+  @@index([companyId, productId])
+  @@map("stock_levels")
+}
+
+/// Journal des mouvements de stock. **Append-only.**
+///
+/// Aucun service ne modifie ni ne supprime une ligne : une correction produit un
+/// nouveau mouvement de sens inverse. C'est ce qui rend l'historique opposable —
+/// un stock qui se reecrit ne prouve rien.
+model StockMovement {
+  id         String @id @default(cuid())
+  companyId  String
+  productId  String
+  locationId String
+
+  /// IN | OUT | TRANSFER_IN | TRANSFER_OUT | ADJUSTMENT | INVENTORY
+  kind String
+
+  /// Variation signee, en milliemes d'unite : positive en entree, negative en sortie.
+  quantity      BigInt
+  /// Solde du point de vente apres application du mouvement, fige a l'ecriture.
+  quantityAfter BigInt
+  /// Cout unitaire d'entree, en unite mineure de la devise (valorisation).
+  unitCost      BigInt?
+
+  reason    String?
+  reference String?
+  /// Relie les deux ecritures d'un meme transfert entre points de vente.
+  transferId String?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([companyId, productId, createdAt])
+  @@index([companyId, locationId, createdAt])
+  @@index([transferId])
+  @@map("stock_movements")
 }

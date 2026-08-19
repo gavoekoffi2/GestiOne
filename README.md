@@ -16,7 +16,7 @@ decimale (XOF, XAF, GNF), unites de mesure multiples.
 |-------|---------|------|
 | 1 | Fondation : architecture, base de donnees, authentification, entreprises, utilisateurs, permissions, navigation | **livree** |
 | 2 | Referentiels : clients, fournisseurs, categories, unites, produits, services | **livree** |
-| 3 | Stock : entrees, sorties, transferts, inventaire, alertes | a venir |
+| 3 | Stock : entrees, sorties, transferts, inventaire, alertes | **livree** |
 | 4 | Ventes : ventes, devis, factures, paiements, ventes a credit | a venir |
 | 5 | Finance : achats, depenses, caisse, creances, dettes | a venir |
 | 6 | Rapports : tableau de bord, statistiques, exports | a venir |

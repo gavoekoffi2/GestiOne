@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import {
@@ -295,7 +296,12 @@ export function PartnerManager(props: PartnerManagerProps) {
                     <tr key={row.id} className={row.isActive ? undefined : 'bg-ink-50/60'}>
                       <td className="px-4 py-3 font-mono text-xs text-ink-600 sm:px-5">{row.code}</td>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-ink-900">{row.name}</p>
+                        <Link
+                          href={`/${segment}/${row.id}`}
+                          className="font-medium text-brand-700 hover:underline"
+                        >
+                          {row.name}
+                        </Link>
                         {row.companyName && <p className="text-xs text-ink-500">{row.companyName}</p>}
                         {!row.isActive && (
                           <span className="mt-1 inline-block">

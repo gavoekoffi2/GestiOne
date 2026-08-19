@@ -28,6 +28,39 @@ export interface ShellMembership {
   roleName: string;
 }
 
+/**
+ * Entree de navigation. Extraite parce qu'elle sert aussi bien aux sections
+ * pilotees par les permissions qu'au lien « Mon compte », qui n'en depend pas.
+ */
+function NavLink({
+  href,
+  icon,
+  label,
+  pathname,
+}: {
+  href: string;
+  icon: string;
+  label: string;
+  pathname: string;
+}) {
+  const active =
+    pathname === href || (href !== '/tableau-de-bord' && pathname.startsWith(`${href}/`));
+
+  return (
+    <Link
+      href={href}
+      aria-current={active ? 'page' : undefined}
+      className={cx(
+        'flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition',
+        active ? 'bg-brand-50 text-brand-800' : 'text-ink-600 hover:bg-ink-100 hover:text-ink-900',
+      )}
+    >
+      <Icon name={icon} className={cx('size-5 shrink-0', active && 'text-brand-700')} />
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
+
 export function AppShell({
   navigation,
   user,
@@ -78,31 +111,23 @@ export function AppShell({
             {section.label}
           </p>
           <ul className="space-y-0.5">
-            {section.items.map((item) => {
-              const active =
-                pathname === item.href ||
-                (item.href !== '/tableau-de-bord' && pathname.startsWith(`${item.href}/`));
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    aria-current={active ? 'page' : undefined}
-                    className={cx(
-                      'flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition',
-                      active
-                        ? 'bg-brand-50 text-brand-800'
-                        : 'text-ink-600 hover:bg-ink-100 hover:text-ink-900',
-                    )}
-                  >
-                    <Icon name={item.icon} className={cx('size-5 shrink-0', active && 'text-brand-700')} />
-                    <span className="truncate">{item.label}</span>
-                  </Link>
-                </li>
-              );
-            })}
+            {section.items.map((item) => (
+              <li key={item.href}>
+                <NavLink href={item.href} icon={item.icon} label={item.label} pathname={pathname} />
+              </li>
+            ))}
           </ul>
         </div>
       ))}
+
+      {/*
+        Le compte personnel ne depend d'aucune permission : il est donc en
+        dehors des sections pilotees par le role, et toujours atteignable — y
+        compris sur mobile, ou l'en-tete n'a pas la place d'afficher le nom.
+      */}
+      <div className="mt-auto border-t border-ink-200 pt-3">
+        <NavLink href="/mon-compte" icon="user" label="Mon compte" pathname={pathname} />
+      </div>
     </nav>
   );
 
@@ -147,10 +172,14 @@ export function AppShell({
             </label>
           )}
 
-          <div className="hidden text-right sm:block">
+          <Link
+            href="/mon-compte"
+            className="hidden rounded-lg px-2 py-1 text-right hover:bg-ink-100 sm:block"
+            title="Mon compte"
+          >
             <p className="text-sm font-medium leading-tight text-ink-900">{user.fullName}</p>
             <p className="text-xs leading-tight text-ink-500">{user.roleName}</p>
-          </div>
+          </Link>
 
           <button
             type="button"

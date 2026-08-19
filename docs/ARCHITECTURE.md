@@ -106,8 +106,15 @@ Invariants garantis par la base ou par transaction :
 | 6 | Rapports : tableau de bord, statistiques, exports | **livrée** |
 | 7 | Administration : paramètres, utilisateurs, audit, notifications, import | **livrée** |
 | 8 | Expérience : responsive, PWA, recherche globale, sécurité, tests | **livrée** |
+| 9 | Fiches et compte : compte personnel, appareils connectés, fiches client, fournisseur et article | **livrée** |
 
 À chaque phase : développer → tester → corriger → vérifier → continuer.
+
+La phase 9 ne figurait pas au plan initial. Elle est née d'une relecture de
+l'application du point de vue de celui qui s'en sert tous les jours, et non de
+celui qui l'a écrite. Trois manques y sont apparus, dont deux où le code serveur
+existait déjà sans qu'aucun écran ne permette de l'atteindre — la fonction était
+écrite, testée, et inaccessible.
 
 ## 7. Décisions prises en cours de route
 
@@ -199,3 +206,57 @@ Une quatrième décision relève de la migration plutôt que du bug : les unité
 mesure sont installées à la création d'une entreprise, ce qui laissait sans
 unités toutes les entreprises créées avant la phase 2. Une migration de
 rattrapage, rejouable, les complète.
+
+## 8. Décisions de la phase 9
+
+**Une fonction sans écran n'est pas livrée.** `changePassword` était écrit et
+couvert par des tests depuis la phase 1 ; `productStockByLocation` depuis la
+phase 3. Aucune route ni aucun écran ne les appelait. La suite de tests était
+verte, le service correct, et l'utilisateur ne pouvait ni changer son mot de
+passe, ni voir où se trouvait son stock. Un test d'intégration qui appelle un
+service directement ne prouve rien sur l'accessibilité de ce service : il faut
+suivre le chemin complet, du menu jusqu'à la base.
+
+**Réinitialiser un mot de passe est une opération multi-entreprises.** Un compte
+peut appartenir à plusieurs entreprises de la plateforme — le comptable qui
+travaille pour trois commerces. Si l'administrateur de l'un d'eux pouvait
+réinitialiser son mot de passe, il obtiendrait du même coup l'accès aux deux
+autres. L'isolation ne tomberait pas par un `where` oublié, mais par le
+détournement d'une identité — une brèche qu'aucun test de filtrage n'aurait
+détectée, puisque chaque requête reste correctement filtrée. La réinitialisation
+est donc refusée dès que le compte a plus d'une appartenance, et la personne
+doit changer son mot de passe elle-même.
+
+**Changer son mot de passe doit révoquer les autres sessions.** Une session
+ouverte ne représente pas le mot de passe : elle lui survit. Le geste qu'on fait
+après avoir perdu son téléphone n'aurait donc eu aucun effet sur le téléphone
+perdu. La révocation fait partie de l'opération, elle n'en est pas une option ;
+seule la session courante est préservée, sinon l'utilisateur se déconnecterait
+lui-même à chaque changement et la bonne pratique deviendrait pénible.
+
+**Un total agrégé sur la page affichée est un total faux.** Le relevé de compte
+liste les cinquante derniers documents. La première version en tirait aussi les
+totaux : un client fidèle dépasse vite cinquante factures, et son solde se
+serait mis à mentir sans que rien ne le signale. Les montants sont désormais
+agrégés en base sur tout l'historique, la liste reste plafonnée, et la fiche dit
+explicitement combien de documents ne sont pas affichés.
+
+**Un bouton qui présélectionne doit vraiment présélectionner.** Le lien
+« Nouvelle facture » de la fiche client passe l'identifiant en paramètre d'URL.
+Le laisser sans effet aurait été un bouton décoratif de plus. L'identifiant reçu
+est confronté à la liste des clients déjà chargée pour l'entreprise courante : une
+valeur fabriquée dans l'URL ne présélectionne rien, et ne révèle donc pas
+l'existence d'un client d'une autre entreprise.
+
+**La marge se lit sur les coûts figés, pas sur le catalogue.** La fiche article
+calcule sa marge à partir de `InvoiceLine.unitCost`, figé à l'émission. Utiliser
+le prix d'achat courant aurait fait varier rétroactivement la rentabilité des
+ventes passées à chaque renégociation avec le fournisseur — le rapport du mois
+dernier se serait réécrit tout seul.
+
+**Trois copies d'une règle finissent par diverger.** Les contraintes de mot de
+passe étaient recopiées dans l'inscription, la création d'un collaborateur et
+— une fois de plus — dans le changement de mot de passe. La divergence se serait
+manifestée au pire moment : un mot de passe accepté à la création du compte,
+refusé le jour où son titulaire veut le changer. La règle vit maintenant dans
+`src/lib/validation/password.ts`, et nulle part ailleurs.

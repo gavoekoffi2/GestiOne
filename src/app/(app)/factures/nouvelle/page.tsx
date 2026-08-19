@@ -7,9 +7,21 @@ import { can, requireTenantWith } from '@/server/tenant';
 export const metadata: Metadata = { title: 'Nouvelle facture' };
 export const dynamic = 'force-dynamic';
 
-export default async function NewInvoicePage() {
+export default async function NewInvoicePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const context = await requireTenantWith('invoices.write');
-  const data = await loadBuilderData(context);
+  const [data, params] = await Promise.all([loadBuilderData(context), searchParams]);
+
+  // Arrivee depuis la fiche d'un client : il est deja choisi. L'identifiant est
+  // confronte a la liste chargee pour cette entreprise, donc une valeur
+  // fabriquee dans l'URL ne preselectionne rien.
+  const requested = typeof params.client === 'string' ? params.client : '';
+  const defaultCustomerId = data.customers.some((customer) => customer.id === requested)
+    ? requested
+    : '';
 
   return (
     <div className="space-y-5">
@@ -31,6 +43,7 @@ export default async function NewInvoicePage() {
         canDiscount={can(context, 'sales.discount')}
         locale={context.locale}
         {...data}
+        defaultCustomerId={defaultCustomerId}
       />
     </div>
   );

@@ -50,6 +50,7 @@ export function PurchaseBuilder({
   locations,
   taxRates,
   defaultLocationId,
+  defaultSupplierId = '',
   currency,
   locale,
   canReceive,
@@ -59,6 +60,8 @@ export function PurchaseBuilder({
   locations: PurchaseOption[];
   taxRates: Array<PurchaseOption & { rate: number }>;
   defaultLocationId: string;
+  /** Fournisseur preselectionne, lorsqu'on arrive depuis sa fiche. */
+  defaultSupplierId?: string;
   currency: CurrencyFormat;
   locale: string;
   canReceive: boolean;
@@ -66,7 +69,7 @@ export function PurchaseBuilder({
   const router = useRouter();
   const api = useApi();
   const [lines, setLines] = useState<DraftLine[]>([{ ...EMPTY_LINE }]);
-  const [supplierId, setSupplierId] = useState('');
+  const [supplierId, setSupplierId] = useState(defaultSupplierId);
   const [locationId, setLocationId] = useState(defaultLocationId);
   const [reference, setReference] = useState('');
   const [mode, setMode] = useState<'draft' | 'order' | 'receive'>(canReceive ? 'receive' : 'order');

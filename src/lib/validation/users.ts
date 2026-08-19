@@ -1,13 +1,6 @@
 import { z } from 'zod';
-import { PASSWORD_MIN_LENGTH } from '@/server/auth/password';
 import { emailSchema, optionalText, phoneSchema, requiredText } from './common';
-
-const passwordSchema = z
-  .string()
-  .min(PASSWORD_MIN_LENGTH, `Le mot de passe doit contenir au moins ${PASSWORD_MIN_LENGTH} caracteres.`)
-  .max(200)
-  .refine((value) => /[a-zA-Z]/.test(value), 'Le mot de passe doit contenir au moins une lettre.')
-  .refine((value) => /\d/.test(value), 'Le mot de passe doit contenir au moins un chiffre.');
+import { passwordRuleSchema as passwordSchema } from './password';
 
 export const createMemberSchema = z.object({
   fullName: requiredText('Le nom du collaborateur', 120),

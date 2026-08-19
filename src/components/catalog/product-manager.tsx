@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import {
@@ -400,7 +401,12 @@ export function ProductManager({
                     <tr key={row.id} className={row.isActive ? undefined : 'bg-ink-50/60'}>
                       <td className="px-4 py-3 sm:px-5">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-medium text-ink-900">{row.name}</p>
+                          <Link
+                            href={`/produits/${row.id}`}
+                            className="font-medium text-brand-700 hover:underline"
+                          >
+                            {row.name}
+                          </Link>
                           {row.kind === 'SERVICE' && <Badge tone="info">Service</Badge>}
                           {!row.isActive && <Badge tone="neutral">Inactif</Badge>}
                         </div>

@@ -183,6 +183,64 @@ export async function removeMember(companyId: string, membershipId: string) {
   await prisma.membership.delete({ where: { id: membershipId } });
 }
 
+/**
+ * Reinitialisation du mot de passe d'un collaborateur par un administrateur.
+ *
+ * Sans cela, un employe qui oublie son mot de passe est bloque definitivement :
+ * GestiOne n'envoie pas de courriel, donc aucun lien de reinitialisation ne
+ * peut lui parvenir. L'employeur, lui, est physiquement present dans la
+ * boutique et peut lui remettre un mot de passe provisoire de vive voix.
+ *
+ * **Restriction essentielle.** Un compte peut appartenir a plusieurs
+ * entreprises de la plateforme — un comptable qui travaille pour trois
+ * commerces, par exemple. Si l'administrateur de l'un d'eux pouvait
+ * reinitialiser son mot de passe, il obtiendrait du meme coup l'acces aux deux
+ * autres entreprises : l'isolation multi-entreprises tomberait, non par une
+ * requete mal filtree, mais par le detournement d'une identite. La
+ * reinitialisation n'est donc possible que pour un compte dont l'entreprise
+ * courante est la seule.
+ *
+ * Toutes les sessions de la personne sont fermees : un mot de passe remis a
+ * zero parce que le telephone a ete perdu ne protege rien si la session ouverte
+ * sur ce telephone continue de fonctionner.
+ */
+export async function resetMemberPassword(
+  companyId: string,
+  membershipId: string,
+  newPassword: string,
+): Promise<{ userId: string; fullName: string; revokedSessions: number }> {
+  const membership = await prisma.membership.findFirst({
+    where: { id: membershipId, companyId },
+    select: {
+      userId: true,
+      user: { select: { fullName: true, _count: { select: { memberships: true } } } },
+    },
+  });
+  if (!membership) throw new NotFoundError('Utilisateur introuvable dans cette entreprise.');
+
+  if (membership.user._count.memberships > 1) {
+    throw new ValidationError(
+      "Ce compte est aussi utilise dans une autre entreprise : son mot de passe ne peut pas etre reinitialise ici. La personne doit le changer elle-meme depuis « Mon compte ».",
+    );
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+
+  const [, revoked] = await prisma.$transaction([
+    prisma.user.update({ where: { id: membership.userId }, data: { passwordHash } }),
+    prisma.session.updateMany({
+      where: { userId: membership.userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    }),
+  ]);
+
+  return {
+    userId: membership.userId,
+    fullName: membership.user.fullName,
+    revokedSessions: revoked.count,
+  };
+}
+
 export async function listRoles(companyId: string) {
   return prisma.role.findMany({
     where: { companyId },

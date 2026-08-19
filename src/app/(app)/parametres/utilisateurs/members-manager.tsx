@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { Alert, Badge, Button, Card, Field, Input, Select } from '@/components/ui/primitives';
 import { useApi } from '@/components/ui/use-api';
+import { formatDate } from '@/lib/dates';
 
 export interface MemberRow {
   id: string;
@@ -19,6 +20,13 @@ export interface MemberRow {
   lastLoginAt: string | null;
 }
 
+/**
+ * Ecran ouvert : la liste seule, le formulaire de creation, ou l'un des deux
+ * formulaires portant sur un collaborateur precis. Un seul panneau a la fois :
+ * sur un telephone, deux formulaires ouverts rendent la page illisible.
+ */
+type Mode = 'none' | 'create' | { action: 'edit' | 'password'; member: MemberRow };
+
 export function MembersManager({
   members,
   roles,
@@ -32,7 +40,7 @@ export function MembersManager({
 }) {
   const router = useRouter();
   const api = useApi();
-  const [mode, setMode] = useState<'none' | 'create' | { member: MemberRow }>('none');
+  const [mode, setMode] = useState<Mode>('none');
 
   async function onCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,6 +74,20 @@ export function MembersManager({
         isActive: form.get('isActive') === 'on',
       },
       successMessage: 'Utilisateur mis a jour.',
+    });
+    if (result) {
+      setMode('none');
+      router.refresh();
+    }
+  }
+
+  async function onResetPassword(event: FormEvent<HTMLFormElement>, member: MemberRow) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const result = await api.send(`/api/members/${member.id}/mot-de-passe`, {
+      method: 'POST',
+      body: { password: String(form.get('password') ?? '') },
+      successMessage: `Mot de passe reinitialise. Communiquez-le a ${member.fullName} : ses sessions ouvertes ont ete fermees.`,
     });
     if (result) {
       setMode('none');
@@ -165,7 +187,39 @@ export function MembersManager({
         )
       )}
 
-      {typeof mode === 'object' && (
+      {typeof mode === 'object' && mode.action === 'password' && (
+        <Card
+          title={`Reinitialiser le mot de passe de ${mode.member.fullName}`}
+          description="A utiliser lorsque la personne a oublie son mot de passe : GestiOne n'envoie pas de courriel, le mot de passe provisoire se transmet de vive voix."
+        >
+          <form onSubmit={(event) => onResetPassword(event, mode.member)} className="space-y-4" noValidate>
+            <Alert tone="warning">
+              Toutes les sessions de {mode.member.fullName} seront fermees, sur tous ses appareils.
+              Invitez-la a choisir son propre mot de passe depuis « Mon compte » des sa prochaine
+              connexion.
+            </Alert>
+            <Field
+              label="Mot de passe provisoire"
+              htmlFor="reset-password"
+              required
+              error={api.fieldErrors.password}
+              hint="8 caracteres minimum, dont une lettre et un chiffre. Il reste visible pour que vous puissiez le lire a voix haute."
+            >
+              <Input id="reset-password" name="password" type="text" autoComplete="off" required />
+            </Field>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" disabled={api.pending}>
+                {api.pending ? 'Reinitialisation...' : 'Reinitialiser le mot de passe'}
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => { setMode('none'); api.reset(); }}>
+                Annuler
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
+
+      {typeof mode === 'object' && mode.action === 'edit' && (
         <Card title={`Modifier ${mode.member.fullName}`}>
           <form onSubmit={(event) => onUpdate(event, mode.member)} className="space-y-4" noValidate>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -239,13 +293,7 @@ export function MembersManager({
                   <td className="px-4 py-3 text-ink-600">{member.roleName}</td>
                   <td className="px-4 py-3 text-ink-600">{member.defaultLocationName || '—'}</td>
                   <td className="px-4 py-3 text-ink-600">
-                    {member.lastLoginAt
-                      ? new Date(member.lastLoginAt).toLocaleDateString('fr-FR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                        })
-                      : 'Jamais'}
+                    {member.lastLoginAt ? formatDate(new Date(member.lastLoginAt)) : 'Jamais'}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
@@ -261,9 +309,17 @@ export function MembersManager({
                         type="button"
                         variant="ghost"
                         className="min-h-9 px-2 text-xs"
-                        onClick={() => { api.reset(); setMode({ member }); }}
+                        onClick={() => { api.reset(); setMode({ action: 'edit', member }); }}
                       >
                         Modifier
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="min-h-9 px-2 text-xs"
+                        onClick={() => { api.reset(); setMode({ action: 'password', member }); }}
+                      >
+                        Mot de passe
                       </Button>
                       {!member.isOwner && member.id !== currentMembershipId && (
                         <Button

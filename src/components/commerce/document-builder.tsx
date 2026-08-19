@@ -71,6 +71,7 @@ export function DocumentBuilder({
   locations,
   taxRates,
   defaultLocationId,
+  defaultCustomerId = '',
   currency,
   locale,
   canDiscount,
@@ -83,6 +84,8 @@ export function DocumentBuilder({
   locations: BuilderOption[];
   taxRates: Array<BuilderOption & { rate: number }>;
   defaultLocationId: string;
+  /** Client preselectionne, lorsqu'on arrive depuis sa fiche. */
+  defaultCustomerId?: string;
   currency: CurrencyFormat;
   locale: string;
   canDiscount: boolean;
@@ -91,7 +94,7 @@ export function DocumentBuilder({
   const router = useRouter();
   const api = useApi();
   const [lines, setLines] = useState<DraftLine[]>([{ ...EMPTY_LINE }]);
-  const [customerId, setCustomerId] = useState('');
+  const [customerId, setCustomerId] = useState(defaultCustomerId);
   const [locationId, setLocationId] = useState(defaultLocationId);
   const [globalDiscount, setGlobalDiscount] = useState('');
   const [issueNow, setIssueNow] = useState(kind === 'invoice');

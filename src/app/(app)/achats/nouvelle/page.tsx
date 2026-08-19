@@ -12,9 +12,14 @@ import { can, requireTenantWith } from '@/server/tenant';
 export const metadata: Metadata = { title: 'Nouvel achat' };
 export const dynamic = 'force-dynamic';
 
-export default async function NewPurchasePage() {
+export default async function NewPurchasePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const context = await requireTenantWith('purchases.write');
 
+  const params = await searchParams;
   const [products, suppliers, locations, taxRates, currency] = await Promise.all([
     listProducts(context.companyId, { page: 1, pageSize: 500 }),
     listPartners(context.companyId, 'SUPPLIER', { page: 1, pageSize: 500 }),
@@ -24,6 +29,14 @@ export default async function NewPurchasePage() {
   ]);
 
   const activeLocations = locations.filter((location) => location.isActive);
+
+  // Arrivee depuis la fiche d'un fournisseur : il est deja choisi. L'identifiant
+  // est confronte a la liste de cette entreprise, donc une valeur fabriquee dans
+  // l'URL ne preselectionne rien.
+  const requested = typeof params.fournisseur === 'string' ? params.fournisseur : '';
+  const defaultSupplierId = suppliers.items.some((supplier) => supplier.id === requested)
+    ? requested
+    : '';
 
   return (
     <div className="space-y-5">
@@ -42,6 +55,7 @@ export default async function NewPurchasePage() {
         locale={context.locale}
         canReceive={can(context, 'purchases.receive')}
         defaultLocationId={context.defaultLocationId ?? activeLocations[0]?.id ?? ''}
+        defaultSupplierId={defaultSupplierId}
         locations={activeLocations.map((location) => ({ id: location.id, label: location.name }))}
         suppliers={suppliers.items.map((supplier) => ({
           id: supplier.id,

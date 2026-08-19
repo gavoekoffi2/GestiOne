@@ -22,6 +22,7 @@ decimale (XOF, XAF, GNF), unites de mesure multiples.
 | 6 | Rapports : tableau de bord, statistiques, exports | **livree** |
 | 7 | Administration : parametres, utilisateurs, audit, notifications, import | **livree** |
 | 8 | Experience : responsive, PWA, recherche globale, securite, tests | **livree** |
+| 9 | Fiches et compte : compte personnel, appareils connectes, fiches client, fournisseur et article | **livree** |
 
 Le menu de l'application n'affiche que les ecrans reellement livres : aucun lien
 ne mene vers une fonctionnalite inexistante.
@@ -164,6 +165,15 @@ comme reelle, aucun indicateur affiche avant que la donnee correspondante ne soi
 reellement mesuree. Le mode hors ligne ne met pas les ventes en file d'attente,
 et l'interface explique pourquoi. Les canaux de notification non branches sont
 annonces comme tels.
+
+**Chacun est maitre de son mot de passe.** Un compte cree par l'employeur
+recoit un mot de passe provisoire, que son titulaire remplace lui-meme depuis
+« Mon compte » — sans quoi deux personnes le connaissent indefiniment. Le
+changement ferme les autres sessions ouvertes : sans cela, un telephone perdu
+garderait l'acces et l'operation ne protegerait rien. Un administrateur peut
+reinitialiser le mot de passe d'un collaborateur qui l'a oublie, mais **jamais**
+celui d'un compte partage avec une autre entreprise de la plateforme : ce serait
+l'isolation multi-entreprises contournee par le detournement d'une identite.
 
 **Les alertes sont calculees, jamais stockees.** « Stock faible » decrit un etat,
 pas un evenement : une alerte stockee ment des que le probleme est resolu.

@@ -3,6 +3,11 @@ import { paymentSchema, invoiceSchema, saleSchema } from '@/lib/validation/comme
 import { purchaseSchema, expenseSchema } from '@/lib/validation/finance';
 import { quoteSchema } from '@/lib/validation/commerce';
 import { updateCompanySchema } from '@/lib/validation/company';
+import {
+  changePasswordSchema,
+  profileSchema,
+  resetMemberPasswordSchema,
+} from '@/lib/validation/profile';
 
 /**
  * Contrat entre les schemas de validation et les services.
@@ -257,8 +262,6 @@ describe('updateCompanySchema — logo et format de document', () => {
   });
 
   it("refuse ce qui n'est pas une image", () => {
-    // Une URL externe ferait dependre la facture d'un serveur tiers, et un
-    // script deguise en logo n'a rien a faire dans un document imprime.
     expect(() =>
       updateCompanySchema.parse({ ...base, logoUrl: 'https://exemple.test/logo.png' }),
     ).toThrow();
@@ -269,5 +272,59 @@ describe('updateCompanySchema — logo et format de document', () => {
 
   it('traite un logo vide comme une absence de logo', () => {
     expect(updateCompanySchema.parse({ ...base, logoUrl: '' }).logoUrl).toBeUndefined();
+  });
+});
+
+describe('profileSchema', () => {
+  it('conserve les champs lus par updateProfile', () => {
+    const parsed = profileSchema.parse({
+      fullName: '  Ama Diallo  ',
+      phone: '+225 07 00 00 00 00',
+    });
+    expect(parsed.fullName).toBe('Ama Diallo');
+    expect(parsed.phone).toBe('+225 07 00 00 00 00');
+  });
+
+  it('rend undefined pour un telephone vide, pour effacer le champ', () => {
+    expect(profileSchema.parse({ fullName: 'Ama Diallo', phone: '' }).phone).toBeUndefined();
+  });
+});
+
+describe('changePasswordSchema', () => {
+  it('conserve les deux mots de passe lus par changeOwnPassword', () => {
+    const parsed = changePasswordSchema.parse({
+      currentPassword: 'MotDePasse1',
+      newPassword: 'NouveauPass2',
+    });
+    expect(parsed.currentPassword).toBe('MotDePasse1');
+    expect(parsed.newPassword).toBe('NouveauPass2');
+  });
+
+  it('ne touche pas au mot de passe actuel', () => {
+    const parsed = changePasswordSchema.parse({
+      currentPassword: ' avec espaces 1',
+      newPassword: 'NouveauPass2',
+    });
+    expect(parsed.currentPassword).toBe(' avec espaces 1');
+  });
+
+  it('applique au nouveau mot de passe les regles de l inscription', () => {
+    expect(() =>
+      changePasswordSchema.parse({ currentPassword: 'MotDePasse1', newPassword: 'court1' }),
+    ).toThrow();
+    expect(() =>
+      changePasswordSchema.parse({ currentPassword: 'MotDePasse1', newPassword: 'sanschiffre' }),
+    ).toThrow();
+    expect(() =>
+      changePasswordSchema.parse({ currentPassword: 'MotDePasse1', newPassword: '12345678' }),
+    ).toThrow();
+  });
+});
+
+describe('resetMemberPasswordSchema', () => {
+  it('conserve le mot de passe lu par resetMemberPassword', () => {
+    expect(resetMemberPasswordSchema.parse({ password: 'ProvisoireX1' }).password).toBe(
+      'ProvisoireX1',
+    );
   });
 });

@@ -1,4 +1,5 @@
 import { prisma } from '@/server/db';
+import { formatDate } from '@/lib/dates';
 import type { PermissionKey } from '@/server/permissions';
 
 /**
@@ -76,7 +77,7 @@ export async function globalSearch(
             id: row.id,
             title: row.name,
             subtitle: [row.code, row.phone].filter(Boolean).join(' · '),
-            href: '/clients',
+            href: `/clients/${row.id}`,
           })),
         ),
     );
@@ -100,7 +101,7 @@ export async function globalSearch(
             id: row.id,
             title: row.name,
             subtitle: [row.code, row.phone].filter(Boolean).join(' · '),
-            href: '/fournisseurs',
+            href: `/fournisseurs/${row.id}`,
           })),
         ),
     );
@@ -124,7 +125,7 @@ export async function globalSearch(
             id: row.id,
             title: row.name,
             subtitle: [row.sku, row.category?.name].filter(Boolean).join(' · '),
-            href: '/produits',
+            href: `/produits/${row.id}`,
           })),
         ),
     );
@@ -149,7 +150,7 @@ export async function globalSearch(
             title: row.number,
             subtitle: [
               row.customer?.name ?? 'Client de passage',
-              row.issueDate.toLocaleDateString('fr-FR'),
+              formatDate(row.issueDate),
             ].join(' · '),
             href: `/factures/${row.id}`,
           })),
@@ -171,7 +172,7 @@ export async function globalSearch(
             kind: 'quote' as const,
             id: row.id,
             title: row.number,
-            subtitle: [row.customer?.name ?? '—', row.issueDate.toLocaleDateString('fr-FR')].join(' · '),
+            subtitle: [row.customer?.name ?? '—', formatDate(row.issueDate)].join(' · '),
             href: `/devis/${row.id}`,
           })),
         ),
@@ -195,7 +196,7 @@ export async function globalSearch(
             kind: 'purchase' as const,
             id: row.id,
             title: row.number,
-            subtitle: [row.supplier?.name ?? '—', row.orderDate.toLocaleDateString('fr-FR')].join(' · '),
+            subtitle: [row.supplier?.name ?? '—', formatDate(row.orderDate)].join(' · '),
             href: `/achats/${row.id}`,
           })),
         ),
@@ -212,15 +213,24 @@ export async function globalSearch(
           },
           take: PER_KIND,
           orderBy: { paidAt: 'desc' },
-          include: { partner: { select: { name: true } } },
+          include: {
+            partner: { select: { name: true } },
+            invoice: { select: { id: true } },
+          },
         })
         .then((rows) =>
           rows.map((row) => ({
             kind: 'payment' as const,
             id: row.id,
             title: row.number,
-            subtitle: [row.partner?.name ?? '—', row.paidAt.toLocaleDateString('fr-FR')].join(' · '),
-            href: '/paiements',
+            subtitle: [row.partner?.name ?? '—', formatDate(row.paidAt)].join(' · '),
+            // Un reglement n'a pas d'ecran a lui : le document qu'il solde est
+            // l'endroit ou il se lit en contexte. A defaut — un acompte sans
+            // facture — la liste s'ouvre deja filtree sur son numero, plutot
+            // que sur la totalite des reglements de l'entreprise.
+            href: row.invoice
+              ? `/factures/${row.invoice.id}`
+              : `/paiements?search=${encodeURIComponent(row.number)}`,
           })),
         ),
     );

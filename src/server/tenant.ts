@@ -47,6 +47,30 @@ export interface SessionUser {
   activeMembershipId: string | null;
 }
 
+/**
+ * Frequence de rafraichissement de `lastSeenAt`.
+ *
+ * Ecrire a chaque requete ajouterait un UPDATE a chaque image, chaque
+ * navigation, chaque appel d'API — pour une information dont la precision
+ * utile se compte en minutes. L'ecran « appareils connectes » a besoin de
+ * distinguer « en ce moment » de « la semaine derniere », pas la seconde
+ * exacte.
+ */
+const LAST_SEEN_REFRESH_MS = 5 * 60 * 1000;
+
+async function touchSession(sessionId: string, lastSeenAt: Date): Promise<void> {
+  if (Date.now() - lastSeenAt.getTime() < LAST_SEEN_REFRESH_MS) return;
+  try {
+    await prisma.session.update({
+      where: { id: sessionId },
+      data: { lastSeenAt: new Date() },
+    });
+  } catch {
+    // Un horodatage de confort ne doit jamais empecher l'utilisateur de
+    // travailler : si l'ecriture echoue, la session reste valide.
+  }
+}
+
 /** Resout une session a partir du jeton brut. Sans dependance a Next : testable. */
 export async function resolveSession(token: string | undefined): Promise<SessionUser | null> {
   if (!token) return null;
@@ -73,6 +97,8 @@ export async function resolveSession(token: string | undefined): Promise<Session
   if (session.revokedAt) return null;
   if (session.expiresAt.getTime() <= Date.now()) return null;
   if (!session.user.isActive) return null;
+
+  await touchSession(session.id, session.lastSeenAt);
 
   return {
     sessionId: session.id,

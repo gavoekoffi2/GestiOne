@@ -74,7 +74,7 @@ export const NAVIGATION: NavSection[] = [
 ];
 
 /** Derniere phase effectivement livree. Voir docs/ARCHITECTURE.md. */
-export const SHIPPED_PHASE = 7;
+export const SHIPPED_PHASE = 9;
 
 /**
  * Menu reellement affiche : uniquement les ecrans livres, et uniquement ceux

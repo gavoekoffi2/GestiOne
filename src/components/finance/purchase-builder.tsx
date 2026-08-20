@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Alert, Button, Card, Field, Input, Select } from '@/components/ui/primitives';
+import { Combobox, EMPTY_COMBOBOX, type ComboboxValue } from '@/components/ui/combobox';
 import { Icon } from '@/components/layout/icons';
 import { MoneyInput } from '@/components/ui/money-input';
 import { useApi } from '@/components/ui/use-api';
@@ -13,6 +14,8 @@ import { parseQuantity } from '@/lib/quantity';
 export interface PurchaseOption {
   id: string;
   label: string;
+  /** Code ou telephone : departage deux homonymes. */
+  hint?: string;
 }
 
 export interface PurchaseProduct extends PurchaseOption {
@@ -66,7 +69,7 @@ export function PurchaseBuilder({
   const router = useRouter();
   const api = useApi();
   const [lines, setLines] = useState<DraftLine[]>([{ ...EMPTY_LINE }]);
-  const [supplierId, setSupplierId] = useState('');
+  const [supplier, setSupplier] = useState<ComboboxValue>(EMPTY_COMBOBOX);
   const [locationId, setLocationId] = useState(defaultLocationId);
   const [reference, setReference] = useState('');
   const [mode, setMode] = useState<'draft' | 'order' | 'receive'>(canReceive ? 'receive' : 'order');
@@ -110,7 +113,8 @@ export function PurchaseBuilder({
     const result = await api.send<{ id: string }>('/api/purchases', {
       method: 'POST',
       body: {
-        supplierId: supplierId || undefined,
+        supplierId: supplier.id || undefined,
+        supplierName: supplier.id ? undefined : supplier.name.trim() || undefined,
         locationId: locationId || undefined,
         reference: reference || undefined,
         order: mode === 'order',
@@ -135,17 +139,20 @@ export function PurchaseBuilder({
 
       <Card title="Fournisseur">
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Fournisseur" htmlFor="supplierId" error={api.fieldErrors.supplierId}>
-            <Select
+          <Field
+            label="Fournisseur"
+            htmlFor="supplierId"
+            error={api.fieldErrors.supplierId ?? api.fieldErrors.supplierName}
+            hint="Tapez le nom : la fiche est creee si elle n existe pas."
+          >
+            <Combobox
               id="supplierId"
-              value={supplierId}
-              onChange={(event) => setSupplierId(event.target.value)}
-            >
-              <option value="">Non precise</option>
-              {suppliers.map((supplier) => (
-                <option key={supplier.id} value={supplier.id}>{supplier.label}</option>
-              ))}
-            </Select>
+              options={suppliers}
+              value={supplier}
+              onChange={setSupplier}
+              placeholder="Nom du fournisseur"
+              createLabel={(typed) => `Nouveau fournisseur : ${typed}`}
+            />
           </Field>
           <Field
             label="Point de vente"

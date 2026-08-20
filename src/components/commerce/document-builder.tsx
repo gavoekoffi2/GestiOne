@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Alert, Button, Card, Field, Input, Select } from '@/components/ui/primitives';
+import { Combobox, EMPTY_COMBOBOX, type ComboboxValue } from '@/components/ui/combobox';
 import { Icon } from '@/components/layout/icons';
 import { MoneyInput } from '@/components/ui/money-input';
 import { useApi } from '@/components/ui/use-api';
@@ -23,6 +24,8 @@ import { parseQuantity } from '@/lib/quantity';
 export interface BuilderOption {
   id: string;
   label: string;
+  /** Telephone ou code : distingue deux homonymes dans la liste. */
+  hint?: string;
 }
 
 export interface BuilderProduct extends BuilderOption {
@@ -92,7 +95,7 @@ export function DocumentBuilder({
   const router = useRouter();
   const api = useApi();
   const [lines, setLines] = useState<DraftLine[]>([{ ...EMPTY_LINE }]);
-  const [customerId, setCustomerId] = useState('');
+  const [customer, setCustomer] = useState<ComboboxValue>(EMPTY_COMBOBOX);
   const [locationId, setLocationId] = useState(defaultLocationId);
   const [globalDiscount, setGlobalDiscount] = useState('');
   const [issueNow, setIssueNow] = useState(kind === 'invoice');
@@ -135,7 +138,8 @@ export function DocumentBuilder({
 
   async function submit() {
     const payload: Record<string, unknown> = {
-      customerId: customerId || undefined,
+      customerId: customer.id || undefined,
+      customerName: customer.id ? undefined : customer.name.trim() || undefined,
       locationId: locationId || undefined,
       discountRate: globalDiscount || undefined,
       lines: lines
@@ -164,21 +168,17 @@ export function DocumentBuilder({
           <Field
             label="Client"
             htmlFor="doc-customer"
-            error={api.fieldErrors.customerId}
-            hint={kind === 'invoice' ? 'Obligatoire pour suivre une creance.' : undefined}
+            error={api.fieldErrors.customerId ?? api.fieldErrors.customerName}
+            hint="Tapez le nom : la fiche est creee si elle n existe pas encore."
           >
-            <Select
+            <Combobox
               id="doc-customer"
-              value={customerId}
-              onChange={(event) => setCustomerId(event.target.value)}
-            >
-              <option value="">Aucun client precise</option>
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.label}
-                </option>
-              ))}
-            </Select>
+              options={customers}
+              value={customer}
+              onChange={setCustomer}
+              placeholder="Nom du client"
+              createLabel={(typed) => `Nouveau client : ${typed}`}
+            />
           </Field>
 
           {locations.length > 0 && (

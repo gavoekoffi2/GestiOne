@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Alert, Button, Card, Field, Input, Select } from '@/components/ui/primitives';
+import { Combobox, EMPTY_COMBOBOX, type ComboboxValue } from '@/components/ui/combobox';
 import { Icon } from '@/components/layout/icons';
 import { MoneyInput } from '@/components/ui/money-input';
 import { useApi } from '@/components/ui/use-api';
@@ -41,6 +42,8 @@ export interface PosProduct {
 export interface PosOption {
   id: string;
   label: string;
+  /** Telephone ou code, pour departager deux homonymes. */
+  hint?: string;
 }
 
 export interface PosMethod extends PosOption {
@@ -102,7 +105,7 @@ export function PointOfSale({
 
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [customerId, setCustomerId] = useState('');
+  const [customer, setCustomer] = useState<ComboboxValue>(EMPTY_COMBOBOX);
   const [locationId, setLocationId] = useState(defaultLocationId);
   const [methodId, setMethodId] = useState(methods[0]?.id ?? '');
   const [tendered, setTendered] = useState('');
@@ -191,7 +194,7 @@ export function PointOfSale({
 
   function reset() {
     setCart([]);
-    setCustomerId('');
+    setCustomer(EMPTY_COMBOBOX);
     setTendered('');
     setReference('');
     setGlobalDiscount('');
@@ -202,7 +205,9 @@ export function PointOfSale({
     if (cart.length === 0) return;
 
     const body: Record<string, unknown> = {
-      customerId: customerId || undefined,
+      customerId: customer.id || undefined,
+      // Nom tape sans correspondance : le serveur retrouvera la fiche ou la creera.
+      customerName: customer.id ? undefined : customer.name.trim() || undefined,
       locationId,
       discountRate: globalDiscount || undefined,
       lines: cart.map((line) => ({
@@ -243,6 +248,10 @@ export function PointOfSale({
     }
   }
 
+  // Une vente a credit sans client produirait une creance que personne ne peut
+  // reclamer : le bouton reste inactif tant que le nom n'est pas saisi.
+  const creditNeedsCustomer = isCredit && !customer.id && customer.name.trim() === '';
+
   // Alerte de stock : on previent avant l'envoi plutot que de laisser le
   // serveur refuser la vente une fois le client servi.
   const stockWarnings = cart.filter(
@@ -271,16 +280,32 @@ export function PointOfSale({
           )}
         </dl>
 
+        {/*
+          L'impression est le geste qui suit l'encaissement : elle est donc ici,
+          sous le montant, et non derriere une navigation. Le lien ouvre le
+          document et lance la boite d'impression sans clic supplementaire.
+        */}
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button type="button" onClick={() => { setReceipt(null); reset(); }}>
-            Nouvelle vente
+          <Button
+            type="button"
+            onClick={() => router.push(`/factures/${receipt.invoiceId}?impression=1`)}
+          >
+            <Icon name="printer" className="size-4" />
+            Imprimer le recu
           </Button>
           <Button
             type="button"
             variant="secondary"
+            onClick={() => { setReceipt(null); reset(); }}
+          >
+            Nouvelle vente
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
             onClick={() => router.push(`/factures/${receipt.invoiceId}`)}
           >
-            Voir le recu
+            Voir le detail
           </Button>
         </div>
       </Card>
@@ -474,20 +499,20 @@ export function PointOfSale({
             <Field
               label="Client"
               htmlFor="pos-customer"
-              hint={isCredit ? 'Obligatoire pour une vente a credit.' : 'Facultatif.'}
+              hint={
+                isCredit
+                  ? 'Obligatoire a credit. Tapez le nom : la fiche est creee si elle n existe pas.'
+                  : 'Laissez vide pour un client de passage.'
+              }
             >
-              <Select
+              <Combobox
                 id="pos-customer"
-                value={customerId}
-                onChange={(event) => setCustomerId(event.target.value)}
-              >
-                <option value="">Client de passage</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.label}
-                  </option>
-                ))}
-              </Select>
+                options={customers}
+                value={customer}
+                onChange={setCustomer}
+                placeholder="Nom du client"
+                createLabel={(typed) => `Nouveau client : ${typed}`}
+              />
             </Field>
 
             {canDiscount && (
@@ -595,14 +620,16 @@ export function PointOfSale({
 
             {isCredit && (
               <Alert tone="warning">
-                Vente a credit : la facture restera due et apparaitra dans les creances du client.
+                {creditNeedsCustomer
+                  ? 'Vente a credit : indiquez le client, sinon personne ne pourra etre relance.'
+                  : 'Vente a credit : la facture restera due et apparaitra dans les creances du client.'}
               </Alert>
             )}
 
             <Button
               type="button"
               onClick={submit}
-              disabled={api.pending || cart.length === 0}
+              disabled={api.pending || cart.length === 0 || creditNeedsCustomer}
               className="w-full"
             >
               {api.pending

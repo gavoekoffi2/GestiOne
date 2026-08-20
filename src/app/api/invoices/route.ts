@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { invoiceSchema } from '@/lib/validation/commerce';
 import { createInvoice, listInvoices } from '@/server/services/invoices';
+import { resolvePartnerReference } from '@/server/services/partners';
 import { getCurrencyFormat } from '@/server/currency';
 import { commerceContext } from '@/server/commerce-context';
 import { requireTenantWith } from '@/server/tenant';
@@ -27,8 +28,14 @@ export const POST = handler(async (request: NextRequest) => {
   const currency = await getCurrencyFormat(context.currencyCode);
   const input = await readJson(request, invoiceSchema(currency.decimals));
 
+  const customerId = await resolvePartnerReference(context.companyId, 'CUSTOMER', {
+    id: input.customerId,
+    name: input.customerName,
+  });
+
   const invoice = await createInvoice(await commerceContext(context), {
     ...input,
+    customerId,
     discountAmount: input.discountAmount,
     discountRate: input.discountRate || undefined,
   });

@@ -139,6 +139,26 @@ un script injecte dans une donnee ne s'executerait pas, faute de porter le nonce
 du moment. Aucune origine tierce n'est autorisee, ni pour un script, ni pour une
 requete sortante.
 
+**La saisie ne precede pas la vente.** Le client se tape directement dans la
+vente, la facture ou le devis : si le nom correspond a une fiche, elle est
+reutilisee ; sinon elle est creee avec ce seul nom. Obliger a creer la fiche
+avant de vendre, c'est garantir que tout finira au « client de passage » et que
+les creances deviendront introuvables. Meme chose pour le fournisseur sur un
+achat.
+
+**Un formulaire ne montre que ce qu'il exige.** Les champs facultatifs — adresse,
+identifiant fiscal, tarifs degressifs — sont replies derriere « Plus de
+details ». Une fiche article se cree avec un nom et un prix ; le reste attend
+d'etre utile.
+
+**Le document imprime est le meme partout.** Facture, devis et recu partagent un
+seul balisage ; A4, demi-feuille A5 et ticket 80 mm ne sont que des feuilles de
+style. Le format se choisit devant le document, pas dans l'administration, parce
+qu'une meme boutique imprime une facture A4 pour un client et un ticket pour le
+suivant. Le logo voyage avec la fiche de l'entreprise, encode dans la base : il
+ne depend d'aucun disque ni d'aucun serveur tiers, et survit donc a un
+redeploiement.
+
 **Rien de fictif.** Aucun bouton inerte, aucune donnee de demonstration presentee
 comme reelle, aucun indicateur affiche avant que la donnee correspondante ne soit
 reellement mesuree. Le mode hors ligne ne met pas les ventes en file d'attente,

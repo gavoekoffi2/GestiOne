@@ -1,6 +1,6 @@
 import { prisma } from '@/server/db';
 import type { Prisma } from '@/generated/prisma/client';
-import { NotFoundError } from '@/server/errors';
+import { NotFoundError, ValidationError } from '@/server/errors';
 import { nextDocumentNumber } from '@/server/sequences';
 import type { PartnerInput, PartnerKind } from '@/lib/validation/catalog';
 
@@ -116,6 +116,74 @@ export async function createPartner(companyId: string, kind: PartnerKind, input:
     const code = await nextPartnerCode(tx, companyId, kind);
     return tx.partner.create({ data: { ...toData(input), companyId, kind, code } });
   });
+}
+
+/**
+ * Tiers designe par son nom, saisi en pleine vente.
+ *
+ * Derriere un comptoir, exiger que la fiche du client existe **avant** la vente
+ * revient a la faire abandonner : le vendeur choisit « client de passage », et
+ * la creance devient introuvable. On accepte donc un simple nom.
+ *
+ * Le nom est d'abord compare aux fiches existantes, sans tenir compte de la
+ * casse ni des accents : « koffi yao » retrouve « Koffi Yao ». C'est ce qui
+ * evite qu'une meme personne existe en trois exemplaires au bout d'un mois.
+ * Sans correspondance, la fiche est creee avec ce seul nom — le telephone et
+ * l'adresse se completeront plus tard, si un jour ils servent.
+ */
+export async function findOrCreatePartnerByName(
+  companyId: string,
+  kind: PartnerKind,
+  rawName: string,
+): Promise<string> {
+  const name = rawName.trim();
+  if (!name) throw new ValidationError('Indiquez un nom.');
+
+  const existing = await prisma.partner.findFirst({
+    where: { companyId, kind, name: { equals: name, mode: 'insensitive' } },
+    select: { id: true },
+    // A doublons deja presents, on rattache au plus ancien : c'est celui qui
+    // porte l'historique.
+    orderBy: { createdAt: 'asc' },
+  });
+  if (existing) return existing.id;
+
+  const created = await createPartner(companyId, kind, {
+    name,
+    isActive: true,
+    creditLimit: undefined,
+    companyName: undefined,
+    phone: undefined,
+    secondPhone: undefined,
+    email: undefined,
+    addressLine: undefined,
+    city: undefined,
+    countryCode: undefined,
+    taxNumber: undefined,
+    notes: undefined,
+  });
+
+  return created.id;
+}
+
+/**
+ * Resout la designation d'un tiers portee par un document : un identifiant de
+ * fiche, un nom libre, ou rien du tout (vente au client de passage).
+ *
+ * La fiche est creee au moment de la resolution, donc avant l'enregistrement du
+ * document. Si celui-ci echoue ensuite — stock insuffisant, plafond d'encours —
+ * la fiche demeure. C'est assume : le vendeur vient d'en saisir le nom, et la
+ * prochaine tentative la retrouvera au lieu d'en creer une seconde.
+ */
+export async function resolvePartnerReference(
+  companyId: string,
+  kind: PartnerKind,
+  reference: { id?: string; name?: string },
+): Promise<string | undefined> {
+  if (reference.id) return reference.id;
+  const name = reference.name?.trim();
+  if (!name) return undefined;
+  return findOrCreatePartnerByName(companyId, kind, name);
 }
 
 export async function updatePartner(

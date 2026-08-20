@@ -9,6 +9,37 @@ import {
   requiredText,
 } from './common';
 
+export const DOCUMENT_FORMATS = [
+  { value: 'A4', label: 'A4 — feuille entiere', hint: 'Facture classique, imprimante bureautique.' },
+  { value: 'A5', label: 'A5 — demi-feuille', hint: 'Deux factures par page A4, economise le papier.' },
+  { value: 'RECEIPT', label: 'Ticket 80 mm', hint: 'Imprimante thermique de comptoir.' },
+] as const;
+
+export type DocumentFormat = (typeof DOCUMENT_FORMATS)[number]['value'];
+
+/**
+ * Logo transmis en `data:` plutot qu'en fichier televerse.
+ *
+ * Un fichier sur disque suppose un disque : il disparait au premier
+ * redeploiement sur un hebergement sans volume persistant, et la facture perd
+ * son en-tete sans que personne ne s'en apercoive. L'image voyage donc avec la
+ * fiche de l'entreprise, dans la base, et survit a tout.
+ *
+ * La limite de 300 000 caracteres correspond a environ 220 ko d'image : bien
+ * au-dela de ce qu'exige un logo de facture, assez bas pour ne pas alourdir
+ * chaque affichage de document.
+ */
+const logoSchema = z
+  .string()
+  .trim()
+  .max(300_000, "Le logo est trop lourd. Utilisez une image plus petite (moins de 200 ko).")
+  .optional()
+  .transform((value) => (value === '' ? undefined : value))
+  .refine(
+    (value) => value === undefined || /^data:image\/(png|jpeg|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/.test(value),
+    'Format de logo non reconnu. Choisissez une image PNG, JPEG ou WebP.',
+  );
+
 const prefixSchema = z
   .string()
   .trim()
@@ -29,6 +60,10 @@ export const updateCompanySchema = z.object({
   taxNumber: optionalText(60),
   currencyCode: currencyCodeSchema,
   primaryColor: hexColorSchema,
+  logoUrl: logoSchema,
+  documentFormat: z.enum(['A4', 'A5', 'RECEIPT'], {
+    errorMap: () => ({ message: "Choisissez un format d'impression valide." }),
+  }),
   invoicePrefix: prefixSchema,
   quotePrefix: prefixSchema,
   salePrefix: prefixSchema,

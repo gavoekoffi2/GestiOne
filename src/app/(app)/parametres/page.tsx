@@ -36,6 +36,8 @@ export default async function CompanySettingsPage() {
           taxNumber: company.taxNumber ?? '',
           currencyCode: company.currencyCode,
           primaryColor: company.primaryColor,
+          logoUrl: company.logoUrl ?? '',
+          documentFormat: company.documentFormat,
           invoicePrefix: company.invoicePrefix,
           quotePrefix: company.quotePrefix,
           salePrefix: company.salePrefix,

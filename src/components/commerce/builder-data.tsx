@@ -27,7 +27,8 @@ export async function loadBuilderData(context: TenantContext) {
     locations: activeLocations.map((location) => ({ id: location.id, label: location.name })),
     customers: customers.items.map((customer) => ({
       id: customer.id,
-      label: `${customer.name} (${customer.code})`,
+      label: customer.name,
+      hint: [customer.code, customer.phone].filter(Boolean).join(' · '),
     })),
     taxRates: taxRates.map((tax) => ({
       id: tax.id,

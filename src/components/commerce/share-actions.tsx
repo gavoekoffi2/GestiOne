@@ -5,11 +5,11 @@ import { Button } from '@/components/ui/primitives';
 import { Icon } from '@/components/layout/icons';
 
 /**
- * Impression et partage d'un document.
+ * Partage d'un document.
  *
- * L'impression utilise la boite de dialogue du navigateur : elle couvre aussi
- * bien une imprimante bureautique qu'une imprimante thermique installee sur le
- * poste, sans pilote specifique a embarquer.
+ * L'impression est assuree par `PrintControls`, qui porte aussi le choix du
+ * format : un second bouton « Imprimer » ici laisserait croire a deux sorties
+ * differentes.
  *
  * Le partage passe par l'API Web Share quand l'appareil la propose — c'est elle
  * qui ouvre WhatsApp, le courriel ou tout autre canal installe. GestiOne
@@ -55,11 +55,6 @@ export function ShareActions({
 
   return (
     <div className="flex flex-wrap gap-2 no-print">
-      <Button type="button" variant="secondary" onClick={() => window.print()}>
-        <Icon name="receipt" className="size-4" />
-        Imprimer
-      </Button>
-
       <Button type="button" variant="secondary" onClick={share}>
         <Icon name="switch" className="size-4" />
         {copied ? 'Copie dans le presse-papier' : 'Partager'}

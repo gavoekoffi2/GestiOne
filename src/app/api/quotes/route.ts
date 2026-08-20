@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { quoteSchema } from '@/lib/validation/commerce';
 import { createQuote, listQuotes } from '@/server/services/quotes';
+import { resolvePartnerReference } from '@/server/services/partners';
 import { getCurrencyFormat } from '@/server/currency';
 import { commerceContext } from '@/server/commerce-context';
 import { requireTenantWith } from '@/server/tenant';
@@ -25,8 +26,14 @@ export const POST = handler(async (request: NextRequest) => {
   const currency = await getCurrencyFormat(context.currencyCode);
   const input = await readJson(request, quoteSchema(currency.decimals));
 
+  const customerId = await resolvePartnerReference(context.companyId, 'CUSTOMER', {
+    id: input.customerId,
+    name: input.customerName,
+  });
+
   const quote = await createQuote(await commerceContext(context), {
     ...input,
+    customerId,
     discountRate: input.discountRate || undefined,
   });
 

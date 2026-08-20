@@ -2,7 +2,17 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import { Alert, Button, Card, EmptyState, Field, Input, Select, Textarea } from '@/components/ui/primitives';
+import {
+  Alert,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  Input,
+  MoreFields,
+  Select,
+  Textarea,
+} from '@/components/ui/primitives';
 import { MoneyInput } from '@/components/ui/money-input';
 import { ListToolbar, Pagination } from '@/components/ui/list-toolbar';
 import { useApi } from '@/components/ui/use-api';
@@ -102,9 +112,15 @@ export function ExpenseManager({
       {open ? (
         <Card title="Nouvelle depense">
           <form onSubmit={submit} className="space-y-4" noValidate>
+            {/*
+              Noter une depense doit prendre le temps de la noter : ce qu'elle
+              etait, combien, comment elle a ete reglee. Le fournisseur, la
+              reference du recu et les notes se completent apres coup, quand on
+              rapproche les pieces.
+            */}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Description" htmlFor="description" required error={api.fieldErrors.description}>
-                <Input id="description" name="description" required placeholder="Carburant livraison" />
+                <Input id="description" name="description" required placeholder="Carburant livraison" autoFocus />
               </Field>
               <Field label="Montant" htmlFor="amount" required error={api.fieldErrors.amount}>
                 <MoneyInput
@@ -136,39 +152,44 @@ export function ExpenseManager({
                   ))}
                 </Select>
               </Field>
-              <Field label="Point de vente" htmlFor="locationId" error={api.fieldErrors.locationId}>
-                <Select id="locationId" name="locationId" defaultValue={defaultLocationId}>
-                  <option value="">Aucun</option>
-                  {locations.map((option) => (
-                    <option key={option.id} value={option.id}>{option.label}</option>
-                  ))}
-                </Select>
-              </Field>
-              <Field label="Date" htmlFor="spentAt" error={api.fieldErrors.spentAt}>
-                <Input
-                  id="spentAt"
-                  name="spentAt"
-                  type="date"
-                  defaultValue={new Date().toISOString().slice(0, 10)}
-                />
-              </Field>
-              <Field label="Fournisseur" htmlFor="supplierId" error={api.fieldErrors.supplierId}>
-                <Select id="supplierId" name="supplierId" defaultValue="">
-                  <option value="">Aucun</option>
-                  {suppliers.map((option) => (
-                    <option key={option.id} value={option.id}>{option.label}</option>
-                  ))}
-                </Select>
-              </Field>
-              <Field label="Reference" htmlFor="reference" error={api.fieldErrors.reference}>
-                <Input id="reference" name="reference" placeholder="N° de recu" />
-              </Field>
-              <div className="sm:col-span-2">
-                <Field label="Notes" htmlFor="notes" error={api.fieldErrors.notes}>
-                  <Textarea id="notes" name="notes" className="min-h-16" />
-                </Field>
-              </div>
             </div>
+
+            <MoreFields label="Date, point de vente, fournisseur, reference">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Date" htmlFor="spentAt" error={api.fieldErrors.spentAt}>
+                  <Input
+                    id="spentAt"
+                    name="spentAt"
+                    type="date"
+                    defaultValue={new Date().toISOString().slice(0, 10)}
+                  />
+                </Field>
+                <Field label="Point de vente" htmlFor="locationId" error={api.fieldErrors.locationId}>
+                  <Select id="locationId" name="locationId" defaultValue={defaultLocationId}>
+                    <option value="">Aucun</option>
+                    {locations.map((option) => (
+                      <option key={option.id} value={option.id}>{option.label}</option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Fournisseur" htmlFor="supplierId" error={api.fieldErrors.supplierId}>
+                  <Select id="supplierId" name="supplierId" defaultValue="">
+                    <option value="">Aucun</option>
+                    {suppliers.map((option) => (
+                      <option key={option.id} value={option.id}>{option.label}</option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Reference" htmlFor="reference" error={api.fieldErrors.reference}>
+                  <Input id="reference" name="reference" placeholder="N° de recu" />
+                </Field>
+                <div className="sm:col-span-2">
+                  <Field label="Notes" htmlFor="notes" error={api.fieldErrors.notes}>
+                    <Textarea id="notes" name="notes" className="min-h-16" />
+                  </Field>
+                </div>
+              </div>
+            </MoreFields>
 
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={api.pending}>

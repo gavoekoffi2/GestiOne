@@ -73,7 +73,8 @@ export default async function SalesPage() {
         locations={activeLocations.map((location) => ({ id: location.id, label: location.name }))}
         customers={customers.items.map((customer) => ({
           id: customer.id,
-          label: `${customer.name} (${customer.code})`,
+          label: customer.name,
+          hint: [customer.code, customer.phone].filter(Boolean).join(' · '),
         }))}
         methods={methods.map((method) => ({
           id: method.id,

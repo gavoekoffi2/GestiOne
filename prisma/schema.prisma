@@ -64,6 +64,8 @@ model Company {
   documentFooter  String?
   paymentTerms    String?
   defaultDueDays  Int     @default(30)
+  /// Format d'impression par defaut : "A4", "A5" ou "RECEIPT" (ticket 80 mm).
+  documentFormat  String  @default("A4")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

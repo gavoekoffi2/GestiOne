@@ -45,7 +45,8 @@ export default async function NewPurchasePage() {
         locations={activeLocations.map((location) => ({ id: location.id, label: location.name }))}
         suppliers={suppliers.items.map((supplier) => ({
           id: supplier.id,
-          label: `${supplier.name} (${supplier.code})`,
+          label: supplier.name,
+          hint: [supplier.code, supplier.phone].filter(Boolean).join(' · '),
         }))}
         taxRates={taxRates.map((tax) => ({
           id: tax.id,

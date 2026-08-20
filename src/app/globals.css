@@ -26,7 +26,127 @@
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: clip; }
 body { background: var(--color-ink-100); color: var(--color-ink-800); font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; overflow-x: clip; }
 .tabular { font-variant-numeric: tabular-nums; }
-@media print { .no-print { display: none !important; } body { background: #fff; } }
+
+/* =========================================================================
+   Documents imprimables — facture, devis, recu.
+
+   Un seul balisage sert les trois formats. Le format actif est porte par
+   l'attribut `data-print-format` sur <html>, pose par les commandes
+   d'impression : changer de format ne recharge donc rien, et l'apercu montre
+   exactement ce qui sortira de l'imprimante.
+   ========================================================================= */
+
+.doc-sheet {
+  --doc-line: var(--color-ink-200);
+  --doc-rule: var(--color-ink-300);
+  background: #fff;
+  color: var(--color-ink-900);
+  width: 100%;
+  max-width: 210mm;              /* A4 par defaut */
+  margin-inline: auto;
+  padding: 14mm;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgb(15 23 42 / .06);
+  border: 1px solid var(--doc-line);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.doc-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--doc-rule); }
+.doc-issuer { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.doc-logo { max-height: 64px; max-width: 150px; object-fit: contain; }
+.doc-issuer-name { margin: 0; font-size: 17px; font-weight: 700; }
+.doc-issuer-contact { margin-top: 3px; color: var(--color-ink-600); font-size: 12px; }
+.doc-issuer-contact p { margin: 0; }
+
+.doc-meta { text-align: right; margin-left: auto; }
+.doc-kind { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.doc-number { margin: 2px 0 0; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.doc-dates { margin: 8px 0 0; display: grid; gap: 2px; font-size: 12px; color: var(--color-ink-600); }
+.doc-dates > div { display: flex; justify-content: flex-end; gap: 6px; }
+.doc-dates dt::after { content: ' :'; }
+.doc-dates dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+.doc-label { margin: 0; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--color-ink-500); }
+.doc-customer { padding: 12px 0; border-bottom: 1px solid var(--doc-line); }
+.doc-customer-name { margin: 3px 0 0; font-weight: 600; }
+.doc-customer-contact { color: var(--color-ink-600); font-size: 12px; }
+.doc-customer-contact p { margin: 0; }
+
+.doc-lines { padding: 12px 0; overflow-x: auto; }
+.doc-lines table { width: 100%; border-collapse: collapse; }
+.doc-lines th { padding: 0 6px 6px; font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-ink-500); text-align: left; border-bottom: 1px solid var(--doc-rule); }
+.doc-lines td { padding: 7px 6px; border-bottom: 1px solid var(--doc-line); vertical-align: top; }
+.doc-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.doc-line-name { display: block; }
+.doc-line-sku { display: block; font-size: 10px; color: var(--color-ink-400); }
+.doc-line-total { font-weight: 600; }
+.doc-unit { font-size: 10px; color: var(--color-ink-400); }
+
+.doc-totals { display: flex; justify-content: flex-end; padding-top: 12px; border-top: 1px solid var(--doc-rule); }
+.doc-totals dl { width: 100%; max-width: 260px; display: grid; gap: 3px; }
+.doc-totals dl > div { display: flex; justify-content: space-between; gap: 12px; }
+.doc-totals dd { margin: 0; font-variant-numeric: tabular-nums; }
+.doc-total-line { padding-top: 4px; border-top: 1px solid var(--doc-rule); font-weight: 700; font-size: 15px; }
+
+.doc-payments { padding-top: 12px; border-top: 1px solid var(--doc-line); margin-top: 12px; }
+.doc-payments ul { margin: 5px 0 0; padding: 0; list-style: none; display: grid; gap: 2px; font-size: 12px; color: var(--color-ink-600); }
+.doc-payments li { display: flex; justify-content: space-between; gap: 12px; }
+
+.doc-cancelled { margin-top: 12px; padding: 7px 12px; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-weight: 600; }
+
+.doc-foot { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--doc-line); color: var(--color-ink-600); font-size: 12px; }
+.doc-foot p { margin: 0 0 4px; }
+.doc-terms, .doc-footer-note { font-size: 11px; }
+.doc-footer-note { color: var(--color-ink-400); }
+
+/* ---- A5 : demi-feuille, meme structure resserree ---- */
+:root[data-print-format='A5'] .doc-sheet { max-width: 148mm; padding: 10mm; font-size: 12px; }
+:root[data-print-format='A5'] .doc-number { font-size: 16px; }
+:root[data-print-format='A5'] .doc-logo { max-height: 48px; max-width: 110px; }
+
+/* ---- Ticket 80 mm : une seule colonne, tout en pleine largeur ---- */
+:root[data-print-format='RECEIPT'] .doc-sheet {
+  max-width: 80mm;
+  padding: 4mm;
+  font-size: 11px;
+  border-radius: 0;
+}
+:root[data-print-format='RECEIPT'] .doc-head,
+:root[data-print-format='RECEIPT'] .doc-issuer { display: block; text-align: center; }
+:root[data-print-format='RECEIPT'] .doc-meta { text-align: center; margin: 8px 0 0; }
+:root[data-print-format='RECEIPT'] .doc-dates > div { justify-content: center; }
+:root[data-print-format='RECEIPT'] .doc-logo { max-height: 40px; margin: 0 auto 6px; display: block; }
+:root[data-print-format='RECEIPT'] .doc-issuer-contact { font-size: 10px; }
+:root[data-print-format='RECEIPT'] .doc-totals dl { max-width: none; }
+:root[data-print-format='RECEIPT'] .doc-lines { overflow-x: visible; }
+:root[data-print-format='RECEIPT'] .doc-lines th { font-size: 9px; }
+:root[data-print-format='RECEIPT'] .doc-lines td { padding: 5px 2px; }
+/* Sur 80 mm, remise et taxe par ligne ne tiennent pas : le detail reste dans
+   les totaux, ou il est de toute facon lisible. */
+:root[data-print-format='RECEIPT'] .doc-lines th:nth-child(3),
+:root[data-print-format='RECEIPT'] .doc-lines td:nth-child(3) { display: none; }
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+
+  /* La feuille occupe la page : ni ombre, ni marge d'ecran, ni fond gris. */
+  .doc-sheet {
+    max-width: none !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Une ligne de facture coupee en deux entre deux pages est illisible. */
+  .doc-lines tr { break-inside: avoid; }
+  .doc-totals { break-inside: avoid; }
+}
+
 
 /* Hallmark · macrostructure: Marquee Hero · tone: editorial-modern · anchor hue: teal */
 .landing-page { --night: #092f35; --night-2: #0d4245; --mint: #dff8f2; --paper: #f7fbfa; background: var(--paper); color: var(--night); overflow: clip; }

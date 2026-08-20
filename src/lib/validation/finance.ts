@@ -113,6 +113,8 @@ export function purchaseSchema(decimals: number) {
   return z
     .object({
       supplierId: optionalId,
+      /** Nom saisi directement : la fiche fournisseur est retrouvee ou creee. */
+      supplierName: optionalText(120),
       locationId: optionalId,
       orderDate: optionalDate,
       expectedAt: optionalDate,

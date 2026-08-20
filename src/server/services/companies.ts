@@ -149,6 +149,8 @@ export interface UpdateCompanyInput {
   taxNumber?: string | null;
   currencyCode?: string;
   primaryColor?: string;
+  logoUrl?: string | null;
+  documentFormat?: string;
   invoicePrefix?: string;
   quotePrefix?: string;
   salePrefix?: string;

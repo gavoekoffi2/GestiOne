@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { purchaseSchema } from '@/lib/validation/finance';
 import { createPurchaseOrder, listPurchaseOrders } from '@/server/services/purchases';
+import { resolvePartnerReference } from '@/server/services/partners';
 import { getCurrencyFormat } from '@/server/currency';
 import { commerceContext } from '@/server/commerce-context';
 import { requireTenantWith } from '@/server/tenant';
@@ -33,8 +34,14 @@ export const POST = handler(async (request: NextRequest) => {
     requirePermission(context, 'purchases.receive');
   }
 
+  const supplierId = await resolvePartnerReference(context.companyId, 'SUPPLIER', {
+    id: input.supplierId,
+    name: input.supplierName,
+  });
+
   const order = await createPurchaseOrder(await commerceContext(context), {
     ...input,
+    supplierId,
     discountRate: input.discountRate || undefined,
   });
 

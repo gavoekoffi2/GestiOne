@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/primitives';
 import { QuoteActions } from '@/components/commerce/quote-actions';
 import { ShareActions } from '@/components/commerce/share-actions';
+import { InvoiceDocument } from '@/components/commerce/invoice-document';
+import { PrintControls } from '@/components/commerce/print-controls';
 import { formatMoney } from '@/lib/money';
 import { formatQuantity } from '@/lib/quantity';
 import { getCurrencyFormat } from '@/server/currency';
@@ -91,11 +93,14 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
             )}
           </div>
         </div>
-        <ShareActions
-          title={`Devis ${quote.number}`}
-          summary={summary}
-          phone={quote.customer?.phone ?? ''}
-        />
+        <div className="flex flex-wrap items-end gap-2">
+          <ShareActions
+            title={`Devis ${quote.number}`}
+            summary={summary}
+            phone={quote.customer?.phone ?? ''}
+          />
+          <PrintControls defaultFormat={company.documentFormat} />
+        </div>
       </div>
 
       <QuoteActions
@@ -108,110 +113,65 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
         locations={activeLocations.map((location) => ({ id: location.id, label: location.name }))}
       />
 
-      <article className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-ink-200 sm:p-8">
-        <header className="flex flex-wrap items-start justify-between gap-6 border-b border-ink-200 pb-6">
-          <div>
-            <h2 className="text-xl font-bold" style={{ color: company.primaryColor }}>
-              {company.legalName || company.name}
-            </h2>
-            <div className="mt-1 space-y-0.5 text-sm text-ink-600">
-              {company.addressLine && <p>{company.addressLine}</p>}
-              {company.phone && <p>{company.phone}</p>}
-              {company.email && <p>{company.email}</p>}
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">Devis</p>
-            <p className="font-mono text-lg font-bold text-ink-900">{quote.number}</p>
-            <dl className="mt-2 space-y-0.5 text-sm text-ink-600">
-              <div className="flex justify-end gap-2">
-                <dt>Date :</dt>
-                <dd className="tabular">{quote.issueDate.toLocaleDateString('fr-FR')}</dd>
-              </div>
-              {quote.validUntil && (
-                <div className="flex justify-end gap-2">
-                  <dt>Valable jusqu&apos;au :</dt>
-                  <dd className="tabular">{quote.validUntil.toLocaleDateString('fr-FR')}</dd>
-                </div>
-              )}
-            </dl>
-          </div>
-        </header>
-
-        {quote.customer && (
-          <section className="border-b border-ink-200 py-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">Client</p>
-            <p className="mt-1 font-medium text-ink-900">{quote.customer.name}</p>
-            <div className="text-sm text-ink-600">
-              {quote.customer.companyName && <p>{quote.customer.companyName}</p>}
-              {quote.customer.phone && <p>{quote.customer.phone}</p>}
-            </div>
-          </section>
-        )}
-
-        <div className="-mx-2 overflow-x-auto py-4">
-          <table className="w-full min-w-[32rem] text-left text-sm">
-            <thead>
-              <tr className="border-b border-ink-300 text-xs uppercase tracking-wide text-ink-500">
-                <th className="px-2 py-2 font-medium">Designation</th>
-                <th className="px-2 py-2 text-right font-medium">Qte</th>
-                <th className="px-2 py-2 text-right font-medium">P.U.</th>
-                <th className="px-2 py-2 text-right font-medium">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink-100">
-              {quote.lines.map((line) => (
-                <tr key={line.id}>
-                  <td className="px-2 py-2 text-ink-900">{line.description}</td>
-                  <td className="tabular px-2 py-2 text-right text-ink-700">
-                    {formatQuantity(line.quantity, context.locale)}
-                  </td>
-                  <td className="tabular px-2 py-2 text-right text-ink-700">
-                    {money(line.unitPrice)}
-                  </td>
-                  <td className="tabular px-2 py-2 text-right font-medium text-ink-900">
-                    {money(line.lineTotal)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex justify-end border-t border-ink-200 pt-4">
-          <dl className="w-full max-w-xs space-y-1 text-sm">
-            <Row label="Sous-total" value={money(quote.subtotal)} />
-            {quote.discountAmount > 0n && (
-              <Row label="Remise" value={`- ${money(quote.discountAmount)}`} />
-            )}
-            {quote.taxTotal > 0n && <Row label="Taxes" value={money(quote.taxTotal)} />}
-            <div className="border-t border-ink-300 pt-1">
-              <Row label="Total" value={money(quote.total)} strong />
-            </div>
-          </dl>
-        </div>
-
-        {(quote.notes || quote.terms || company.documentFooter) && (
-          <footer className="mt-4 space-y-2 border-t border-ink-200 pt-4 text-sm text-ink-600">
-            {quote.notes && <p>{quote.notes}</p>}
-            {quote.terms && <p className="text-xs">{quote.terms}</p>}
-            {company.documentFooter && (
-              <p className="text-xs text-ink-400">{company.documentFooter}</p>
-            )}
-          </footer>
-        )}
-      </article>
-    </div>
-  );
-}
-
-function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className={strong ? 'font-semibold text-ink-900' : 'text-ink-600'}>{label}</dt>
-      <dd className={`tabular ${strong ? 'text-lg font-bold text-ink-900' : 'text-ink-800'}`}>
-        {value}
-      </dd>
+      {/* Meme document que la facture : un devis accepte devient une facture,
+          les deux doivent se ressembler pour que le client s'y retrouve. */}
+      <InvoiceDocument
+        kind="Devis"
+        number={quote.number}
+        issueDate={quote.issueDate}
+        dueDate={quote.validUntil}
+        locationName={null}
+        company={{
+          name: company.name,
+          legalName: company.legalName,
+          logoUrl: company.logoUrl,
+          addressLine: company.addressLine,
+          city: company.city,
+          countryCode: company.countryCode,
+          phone: company.phone,
+          email: company.email,
+          website: company.website,
+          taxNumber: company.taxNumber,
+          primaryColor: company.primaryColor,
+          documentFooter: company.documentFooter,
+          paymentTerms: company.paymentTerms,
+        }}
+        customer={
+          quote.customer
+            ? {
+                name: quote.customer.name,
+                companyName: quote.customer.companyName,
+                addressLine: quote.customer.addressLine,
+                city: quote.customer.city,
+                phone: quote.customer.phone,
+                taxNumber: quote.customer.taxNumber,
+              }
+            : null
+        }
+        lines={quote.lines.map((line) => ({
+          id: line.id,
+          description: line.description,
+          sku: line.product?.sku ?? null,
+          unitSymbol: line.product?.unit?.symbol ?? null,
+          quantity: line.quantity,
+          unitPrice: line.unitPrice,
+          discountRate: line.discountRate,
+          taxAmount: null,
+          lineTotal: line.lineTotal,
+        }))}
+        subtotal={quote.subtotal}
+        discountAmount={quote.discountAmount}
+        taxTotal={quote.taxTotal}
+        total={quote.total}
+        paidAmount={0n}
+        balanceDue={0n}
+        payments={[]}
+        notes={quote.notes}
+        terms={quote.terms}
+        cancelledLabel={null}
+        currency={currency}
+        locale={context.locale}
+      />
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { useState, type FormEvent } from 'react';
 import { Alert, Button, Card, Field, Input, Select, Textarea } from '@/components/ui/primitives';
 import { useApi } from '@/components/ui/use-api';
 import { COUNTRIES } from '@/lib/countries';
+import { LogoPicker } from '@/components/admin/logo-picker';
+import { DOCUMENT_FORMATS } from '@/lib/validation/company';
 
 export interface CompanyFormValues {
   name: string;
@@ -25,6 +27,8 @@ export interface CompanyFormValues {
   documentFooter: string;
   paymentTerms: string;
   defaultDueDays: number;
+  logoUrl: string;
+  documentFormat: string;
 }
 
 export function CompanySettingsForm({
@@ -196,6 +200,35 @@ export function CompanySettingsForm({
           </span>
           .
         </p>
+
+        <div className="mt-5 border-t border-ink-200 pt-5">
+          <Field label="Logo" htmlFor="logo-file" error={api.fieldErrors.logoUrl}>
+            <LogoPicker name="logoUrl" defaultValue={company.logoUrl} />
+          </Field>
+        </div>
+
+        <div className="mt-4">
+          <Field
+            label="Format d'impression"
+            htmlFor="documentFormat"
+            required
+            error={api.fieldErrors.documentFormat}
+            hint="Format propose par defaut. Il reste modifiable au moment d'imprimer."
+          >
+            <Select
+              id="documentFormat"
+              name="documentFormat"
+              defaultValue={company.documentFormat}
+              className="max-w-sm"
+            >
+              {DOCUMENT_FORMATS.map((format) => (
+                <option key={format.value} value={format.value}>
+                  {format.label} — {format.hint}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field

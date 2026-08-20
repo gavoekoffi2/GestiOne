@@ -162,10 +162,21 @@ function withDiscount<T extends z.ZodRawShape>(shape: T, decimals: number) {
     });
 }
 
+/**
+ * Nom de client saisi directement dans le document.
+ *
+ * `customerId` designe une fiche existante ; `customerName` un nom tape en
+ * pleine vente, pour lequel la fiche sera retrouvee ou creee. Les deux peuvent
+ * arriver ensemble — l'identifiant l'emporte alors, puisqu'il est plus precis
+ * qu'un nom.
+ */
+const customerName = optionalText(120);
+
 export function invoiceSchema(decimals: number) {
   return withDiscount(
     {
       customerId: optionalId,
+      customerName,
       locationId: optionalId,
       issueDate: optionalDate,
       dueDate: optionalDate,
@@ -182,6 +193,7 @@ export function quoteSchema(decimals: number) {
   return withDiscount(
     {
       customerId: optionalId,
+      customerName,
       locationId: optionalId,
       issueDate: optionalDate,
       validUntil: optionalDate,
@@ -197,6 +209,7 @@ export function saleSchema(decimals: number) {
   return withDiscount(
     {
       customerId: optionalId,
+      customerName,
       locationId: z.string().trim().min(1, 'Choisissez un point de vente.'),
       lines: z.array(documentLineSchema(decimals)).min(1, 'Ajoutez au moins un article.'),
       notes: optionalText(500),

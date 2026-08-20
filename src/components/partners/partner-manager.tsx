@@ -10,6 +10,7 @@ import {
   EmptyState,
   Field,
   Input,
+  MoreFields,
   Select,
   Textarea,
 } from '@/components/ui/primitives';
@@ -156,12 +157,16 @@ export function PartnerManager(props: PartnerManagerProps) {
       {values ? (
         <Card title={editing === 'new' ? labels.createCta : `Modifier ${values.name}`}>
           <form onSubmit={onSubmit} className="space-y-4" noValidate>
+            {/*
+              Un nom et un numero suffisent a appeler quelqu'un et a lui
+              reclamer une facture. Tout le reste — adresse, identifiant fiscal,
+              plafond d'encours — ne sert qu'a une minorite de fiches, et
+              l'afficher d'emblee transforme une saisie de dix secondes en
+              formulaire administratif.
+            */}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Nom" htmlFor="name" required error={api.fieldErrors.name}>
-                <Input id="name" name="name" defaultValue={values.name} required />
-              </Field>
-              <Field label="Entreprise" htmlFor="companyName" error={api.fieldErrors.companyName}>
-                <Input id="companyName" name="companyName" defaultValue={values.companyName} />
+                <Input id="name" name="name" defaultValue={values.name} required autoFocus />
               </Field>
               <Field
                 label="Telephone"
@@ -178,57 +183,65 @@ export function PartnerManager(props: PartnerManagerProps) {
                   placeholder="+225 07 00 00 00 00"
                 />
               </Field>
-              <Field label="Second telephone" htmlFor="secondPhone" error={api.fieldErrors.secondPhone}>
-                <Input
-                  id="secondPhone"
-                  name="secondPhone"
-                  type="tel"
-                  inputMode="tel"
-                  defaultValue={values.secondPhone}
-                />
-              </Field>
-              <Field label="Email" htmlFor="email" error={api.fieldErrors.email}>
-                <Input id="email" name="email" type="email" inputMode="email" defaultValue={values.email} />
-              </Field>
-              <Field label="Identifiant fiscal" htmlFor="taxNumber" error={api.fieldErrors.taxNumber}>
-                <Input id="taxNumber" name="taxNumber" defaultValue={values.taxNumber} />
-              </Field>
-              <Field label="Adresse" htmlFor="addressLine" error={api.fieldErrors.addressLine}>
-                <Input id="addressLine" name="addressLine" defaultValue={values.addressLine} />
-              </Field>
-              <Field label="Ville" htmlFor="city" error={api.fieldErrors.city}>
-                <Input id="city" name="city" defaultValue={values.city} />
-              </Field>
-              <Field label="Pays" htmlFor="countryCode" error={api.fieldErrors.countryCode}>
-                <Select id="countryCode" name="countryCode" defaultValue={values.countryCode}>
-                  <option value="">Non precise</option>
-                  {COUNTRIES.map((country) => (
-                    <option key={country.code} value={country.code}>
-                      {country.name}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-              <Field
-                label="Plafond d'encours"
-                htmlFor="creditLimit"
-                error={api.fieldErrors.creditLimit}
-                hint={labels.creditHint}
-              >
-                <MoneyInput
-                  id="creditLimit"
-                  name="creditLimit"
-                  defaultValue={values.creditLimit}
-                  decimals={currency.decimals}
-                  symbol={currency.symbol}
-                />
-              </Field>
-              <div className="sm:col-span-2">
-                <Field label="Notes" htmlFor="notes" error={api.fieldErrors.notes}>
-                  <Textarea id="notes" name="notes" defaultValue={values.notes} />
-                </Field>
-              </div>
             </div>
+
+            <MoreFields label="Coordonnees completes, encours et notes">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Entreprise" htmlFor="companyName" error={api.fieldErrors.companyName}>
+                  <Input id="companyName" name="companyName" defaultValue={values.companyName} />
+                </Field>
+                <Field label="Second telephone" htmlFor="secondPhone" error={api.fieldErrors.secondPhone}>
+                  <Input
+                    id="secondPhone"
+                    name="secondPhone"
+                    type="tel"
+                    inputMode="tel"
+                    defaultValue={values.secondPhone}
+                  />
+                </Field>
+                <Field label="Email" htmlFor="email" error={api.fieldErrors.email}>
+                  <Input id="email" name="email" type="email" inputMode="email" defaultValue={values.email} />
+                </Field>
+                <Field label="Identifiant fiscal" htmlFor="taxNumber" error={api.fieldErrors.taxNumber}>
+                  <Input id="taxNumber" name="taxNumber" defaultValue={values.taxNumber} />
+                </Field>
+                <Field label="Adresse" htmlFor="addressLine" error={api.fieldErrors.addressLine}>
+                  <Input id="addressLine" name="addressLine" defaultValue={values.addressLine} />
+                </Field>
+                <Field label="Ville" htmlFor="city" error={api.fieldErrors.city}>
+                  <Input id="city" name="city" defaultValue={values.city} />
+                </Field>
+                <Field label="Pays" htmlFor="countryCode" error={api.fieldErrors.countryCode}>
+                  <Select id="countryCode" name="countryCode" defaultValue={values.countryCode}>
+                    <option value="">Non precise</option>
+                    {COUNTRIES.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {country.name}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field
+                  label="Plafond d'encours"
+                  htmlFor="creditLimit"
+                  error={api.fieldErrors.creditLimit}
+                  hint={labels.creditHint}
+                >
+                  <MoneyInput
+                    id="creditLimit"
+                    name="creditLimit"
+                    defaultValue={values.creditLimit}
+                    decimals={currency.decimals}
+                    symbol={currency.symbol}
+                  />
+                </Field>
+                <div className="sm:col-span-2">
+                  <Field label="Notes" htmlFor="notes" error={api.fieldErrors.notes}>
+                    <Textarea id="notes" name="notes" defaultValue={values.notes} />
+                  </Field>
+                </div>
+              </div>
+            </MoreFields>
 
             <label className="flex items-center gap-2 text-sm text-ink-700">
               <input

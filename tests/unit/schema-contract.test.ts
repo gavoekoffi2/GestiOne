@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { paymentSchema, invoiceSchema, saleSchema } from '@/lib/validation/commerce';
 import { purchaseSchema, expenseSchema } from '@/lib/validation/finance';
+import { quoteSchema } from '@/lib/validation/commerce';
+import { updateCompanySchema } from '@/lib/validation/company';
 
 /**
  * Contrat entre les schemas de validation et les services.
@@ -111,6 +113,57 @@ describe('saleSchema', () => {
     });
     expect(parsed.payment).toBeUndefined();
   });
+
+  it('laisse passer le nom d un client qui n a pas encore de fiche', () => {
+    // Sans cette cle dans le schema, le nom tape au comptoir serait retire
+    // silencieusement et la vente repartirait sans client.
+    const parsed = saleSchema(0).parse({
+      customerName: 'Mariam Sanogo',
+      locationId: 'loc_1',
+      lines: [{ productId: 'prod_1', quantity: '2' }],
+    });
+
+    expect(parsed.customerName).toBe('Mariam Sanogo');
+    expect(parsed.customerId).toBeUndefined();
+  });
+});
+
+describe('nom de tiers saisi a la volee', () => {
+  it('survit a la validation sur les trois documents commerciaux', () => {
+    expect(
+      saleSchema(0).parse({
+        customerName: 'Kone',
+        locationId: 'loc_1',
+        lines: [{ productId: 'p', quantity: '1' }],
+      }).customerName,
+    ).toBe('Kone');
+
+    expect(
+      invoiceSchema(0).parse({ customerName: 'Kone', lines: [{ productId: 'p', quantity: '1' }] })
+        .customerName,
+    ).toBe('Kone');
+
+    expect(
+      quoteSchema(0).parse({ customerName: 'Kone', lines: [{ productId: 'p', quantity: '1' }] })
+        .customerName,
+    ).toBe('Kone');
+
+    expect(
+      purchaseSchema(0).parse({
+        supplierName: 'Grossiste Central',
+        lines: [{ productId: 'p', quantity: '1' }],
+      }).supplierName,
+    ).toBe('Grossiste Central');
+  });
+
+  it('traite un nom vide comme une absence de tiers', () => {
+    const parsed = saleSchema(0).parse({
+      customerName: '   ',
+      locationId: 'loc_1',
+      lines: [{ productId: 'p', quantity: '1' }],
+    });
+    expect(parsed.customerName).toBeUndefined();
+  });
 });
 
 describe('purchaseSchema', () => {
@@ -169,5 +222,52 @@ describe('expenseSchema', () => {
     expect(parsed.methodId).toBe('method_1');
     expect(parsed.amount).toBe(12_000n);
     expect(parsed.description).toBe('Carburant');
+  });
+});
+
+describe('updateCompanySchema — logo et format de document', () => {
+  const base = {
+    name: 'Boutique Awa',
+    countryCode: 'CI',
+    currencyCode: 'XOF',
+    primaryColor: '#0F766E',
+    invoicePrefix: 'FAC',
+    quotePrefix: 'DEV',
+    salePrefix: 'VTE',
+    purchasePrefix: 'CMD',
+    defaultDueDays: 30,
+    documentFormat: 'A4',
+  };
+
+  it('accepte un logo transmis en image encodee', () => {
+    const logo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==';
+    expect(updateCompanySchema.parse({ ...base, logoUrl: logo }).logoUrl).toBe(logo);
+  });
+
+  it('accepte les trois formats d impression', () => {
+    for (const format of ['A4', 'A5', 'RECEIPT']) {
+      expect(updateCompanySchema.parse({ ...base, documentFormat: format }).documentFormat).toBe(
+        format,
+      );
+    }
+  });
+
+  it('refuse un format inconnu', () => {
+    expect(() => updateCompanySchema.parse({ ...base, documentFormat: 'A3' })).toThrow();
+  });
+
+  it("refuse ce qui n'est pas une image", () => {
+    // Une URL externe ferait dependre la facture d'un serveur tiers, et un
+    // script deguise en logo n'a rien a faire dans un document imprime.
+    expect(() =>
+      updateCompanySchema.parse({ ...base, logoUrl: 'https://exemple.test/logo.png' }),
+    ).toThrow();
+    expect(() =>
+      updateCompanySchema.parse({ ...base, logoUrl: 'data:text/html;base64,PHNjcmlwdD4=' }),
+    ).toThrow();
+  });
+
+  it('traite un logo vide comme une absence de logo', () => {
+    expect(updateCompanySchema.parse({ ...base, logoUrl: '' }).logoUrl).toBeUndefined();
   });
 });

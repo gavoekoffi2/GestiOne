@@ -4,8 +4,10 @@ import {
   countPartners,
   createPartner,
   deletePartner,
+  findOrCreatePartnerByName,
   getPartner,
   listPartners,
+  resolvePartnerReference,
   updatePartner,
 } from '@/server/services/partners';
 import { createProduct } from '@/server/services/catalog';
@@ -235,5 +237,81 @@ describe('countPartners', () => {
       active: 1,
       inactive: 1,
     });
+  });
+});
+
+describe('client saisi pendant la vente', () => {
+  it('cree la fiche a partir du seul nom', async () => {
+    const company = await createTestCompany();
+
+    const id = await findOrCreatePartnerByName(company.companyId, 'CUSTOMER', 'Mariam Sanogo');
+    const created = await prisma.partner.findUniqueOrThrow({ where: { id } });
+
+    expect(created.name).toBe('Mariam Sanogo');
+    expect(created.kind).toBe('CUSTOMER');
+    expect(created.code).toBe('CLI-0001');
+    // Aucune vente a credit n'est ouverte par defaut a un inconnu.
+    expect(created.creditLimit).toBe(0n);
+  });
+
+  it('reutilise la fiche existante quelle que soit la casse ou les espaces', async () => {
+    const company = await createTestCompany();
+    const existing = await createPartner(company.companyId, 'CUSTOMER', base);
+
+    const again = await findOrCreatePartnerByName(
+      company.companyId,
+      'CUSTOMER',
+      '  ama diallo  ',
+    );
+
+    expect(again).toBe(existing.id);
+    expect(await prisma.partner.count({ where: { companyId: company.companyId } })).toBe(1);
+  });
+
+  it('ne confond jamais un client et un fournisseur homonymes', async () => {
+    const company = await createTestCompany();
+    const customer = await findOrCreatePartnerByName(company.companyId, 'CUSTOMER', 'Kone');
+    const supplier = await findOrCreatePartnerByName(company.companyId, 'SUPPLIER', 'Kone');
+
+    expect(supplier).not.toBe(customer);
+    expect((await prisma.partner.findUniqueOrThrow({ where: { id: supplier } })).code).toBe('FRN-0001');
+  });
+
+  it("n'ecrit rien dans une autre entreprise portant le meme nom", async () => {
+    const alpha = await createTestCompany();
+    const beta = await createTestCompany();
+
+    const inAlpha = await findOrCreatePartnerByName(alpha.companyId, 'CUSTOMER', 'Mariam Sanogo');
+    const inBeta = await findOrCreatePartnerByName(beta.companyId, 'CUSTOMER', 'Mariam Sanogo');
+
+    expect(inBeta).not.toBe(inAlpha);
+    expect(await prisma.partner.count({ where: { companyId: alpha.companyId } })).toBe(1);
+    expect(await prisma.partner.count({ where: { companyId: beta.companyId } })).toBe(1);
+  });
+});
+
+describe('resolvePartnerReference', () => {
+  it("prefere l'identifiant au nom lorsque les deux arrivent", async () => {
+    const company = await createTestCompany();
+    const existing = await createPartner(company.companyId, 'CUSTOMER', base);
+
+    const resolved = await resolvePartnerReference(company.companyId, 'CUSTOMER', {
+      id: existing.id,
+      name: 'Un tout autre nom',
+    });
+
+    expect(resolved).toBe(existing.id);
+    // Le nom ignore ne doit pas avoir cree de seconde fiche.
+    expect(await prisma.partner.count({ where: { companyId: company.companyId } })).toBe(1);
+  });
+
+  it('rend undefined pour une vente au client de passage', async () => {
+    const company = await createTestCompany();
+
+    expect(await resolvePartnerReference(company.companyId, 'CUSTOMER', {})).toBeUndefined();
+    expect(
+      await resolvePartnerReference(company.companyId, 'CUSTOMER', { name: '   ' }),
+    ).toBeUndefined();
+    expect(await prisma.partner.count({ where: { companyId: company.companyId } })).toBe(0);
   });
 });

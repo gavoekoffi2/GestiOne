@@ -118,6 +118,40 @@ export function Textarea({ className, ...props }: ComponentProps<'textarea'>) {
   return <textarea className={cx(controlBase, 'min-h-24', className)} {...props} />;
 }
 
+/**
+ * Champs secondaires, replies par defaut.
+ *
+ * Un formulaire qui affiche quinze champs pour en exiger un seul se lit comme
+ * un questionnaire administratif : la personne qui saisit ralentit, hesite,
+ * et finit par remplir des cases inutiles. On ne montre donc que ce qui sert a
+ * tous, et le reste s'ouvre a la demande.
+ *
+ * `<details>` plutot qu'un etat React : le repli fonctionne sans JavaScript, le
+ * clavier et les lecteurs d'ecran le comprennent nativement, et le navigateur
+ * ouvre la section tout seul quand on y cherche du texte.
+ */
+export function MoreFields({
+  label = 'Plus de details',
+  children,
+  defaultOpen = false,
+}: {
+  label?: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  return (
+    <details className="group rounded-lg border border-ink-200 open:bg-ink-50/40" open={defaultOpen}>
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 text-sm font-medium text-ink-700 hover:text-ink-900">
+        <span className="grid size-5 place-items-center rounded border border-ink-300 text-ink-500 transition group-open:rotate-45">
+          +
+        </span>
+        {label}
+      </summary>
+      <div className="border-t border-ink-200 p-3">{children}</div>
+    </details>
+  );
+}
+
 export function Alert({
   tone = 'error',
   title,

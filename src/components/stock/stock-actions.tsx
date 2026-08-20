@@ -198,7 +198,17 @@ export function StockActions({
                   />
                 </Field>
               ) : (
-                <Field label="Quantite" htmlFor="quantity" required error={api.fieldErrors.quantity}>
+                <Field
+                  label={current.key === 'entree' ? 'Quantite a ajouter au stock' : 'Quantite'}
+                  htmlFor="quantity"
+                  required
+                  error={api.fieldErrors.quantity}
+                  hint={
+                    current.key === 'entree'
+                      ? 'Cette quantite sera ajoutee au stock du point de vente selectionne.'
+                      : undefined
+                  }
+                >
                   <Input
                     id="quantity"
                     name="quantity"

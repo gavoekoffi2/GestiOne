@@ -4,7 +4,8 @@ import { productListQuerySchema } from '@/lib/validation/list-query';
 import { createProduct, listProducts } from '@/server/services/catalog';
 import { getCurrencyFormat } from '@/server/currency';
 import { recordAudit } from '@/server/audit';
-import { requireTenantWith } from '@/server/tenant';
+import { ForbiddenError } from '@/server/errors';
+import { requireTenantWith, can } from '@/server/tenant';
 import { clientIp, handler, jsonOk, readJson, readQuery } from '@/server/http';
 
 export const GET = handler(async (request: NextRequest) => {
@@ -17,6 +18,9 @@ export const POST = handler(async (request: NextRequest) => {
   const context = await requireTenantWith('products.write');
   const currency = await getCurrencyFormat(context.currencyCode);
   const input = await readJson(request, productSchema(currency.decimals));
+  if ((input.initialQuantity ?? 0n) > 0n && !can(context, 'stock.move')) {
+    throw new ForbiddenError("Vous n'avez pas la permission d'entrer du stock.");
+  }
   const created = await createProduct(context.companyId, input);
 
   await recordAudit({

@@ -175,6 +175,25 @@ describe('articles', () => {
     expect(created.sku).toBe('SAC-DE-RIZ-25-KG');
   });
 
+  it('enregistre la quantite initiale dans le stock du point de vente', async () => {
+    const company = await createTestCompany();
+    const created = await createProduct(company.companyId, {
+      ...product,
+      initialQuantity: 12_000n,
+      initialLocationId: company.locationId,
+    });
+
+    const level = await prisma.stockLevel.findUniqueOrThrow({
+      where: { productId_locationId: { productId: created.id, locationId: company.locationId } },
+    });
+    const movement = await prisma.stockMovement.findFirstOrThrow({
+      where: { productId: created.id, locationId: company.locationId, kind: 'IN' },
+    });
+
+    expect(level.quantity).toBe(12_000n);
+    expect(movement.quantity).toBe(12_000n);
+  });
+
   it('suffixe la reference en cas d homonymie', async () => {
     const company = await createTestCompany();
     await createProduct(company.companyId, product);

@@ -6,6 +6,7 @@ import { productListQuerySchema } from '@/lib/validation/list-query';
 import { getCurrencyFormat } from '@/server/currency';
 import { countProducts, listCategories, listProducts, listUnits } from '@/server/services/catalog';
 import { listPartners } from '@/server/services/partners';
+import { listLocations } from '@/server/services/locations';
 import { can, requireTenantWith } from '@/server/tenant';
 import { ProductManager } from '@/components/catalog/product-manager';
 
@@ -28,12 +29,13 @@ export default async function ProductsPage({
     kind: typeof raw.kind === 'string' ? raw.kind : undefined,
   });
 
-  const [result, counts, categories, units, suppliers, currency] = await Promise.all([
+  const [result, counts, categories, units, suppliers, locations, currency] = await Promise.all([
     listProducts(context.companyId, query),
     countProducts(context.companyId),
     listCategories(context.companyId),
     listUnits(context.companyId),
     listPartners(context.companyId, 'SUPPLIER', { page: 1, pageSize: 200 }),
+    listLocations(context.companyId),
     getCurrencyFormat(context.currencyCode),
   ]);
 
@@ -78,6 +80,10 @@ export default async function ProductsPage({
         suppliers={suppliers.items.map((supplier) => ({
           id: supplier.id,
           label: supplier.name,
+        }))}
+        locations={locations.filter((location) => location.isActive).map((location) => ({
+          id: location.id,
+          label: location.name,
         }))}
         rows={result.items.map((item) => {
           const margin = item.salePrice - item.costPrice;

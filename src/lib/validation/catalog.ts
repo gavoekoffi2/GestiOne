@@ -140,6 +140,8 @@ export function productSchema(decimals: number) {
       wholesaleFrom: quantityField('La quantite minimale pour le prix grossiste'),
       specialPrice: optionalMoneyField(decimals, 'Le prix special'),
       minStock: quantityField('Le stock minimum'),
+      initialQuantity: quantityField("La quantite initiale"),
+      initialLocationId: optionalText(64),
       isActive: z.coerce.boolean().default(true),
     })
     .superRefine((value, ctx) => {
@@ -160,10 +162,27 @@ export function productSchema(decimals: number) {
           message: 'Indiquez a partir de quelle quantite le prix grossiste s applique.',
         });
       }
+      if (value.kind === 'SERVICE' && value.initialQuantity > 0n) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['initialQuantity'],
+          message: 'Un service ne peut pas avoir de stock initial.',
+        });
+      }
+      if (value.initialQuantity > 0n && !value.initialLocationId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['initialLocationId'],
+          message: 'Choisissez le point de vente du stock initial.',
+        });
+      }
     });
 }
 
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type UnitInput = z.infer<typeof unitSchema>;
 export type PartnerInput = z.infer<ReturnType<typeof partnerSchema>>;
-export type ProductInput = z.infer<ReturnType<typeof productSchema>>;
+export type ProductInput = Omit<z.infer<ReturnType<typeof productSchema>>, 'initialQuantity'> & {
+  initialQuantity?: bigint;
+  initialLocationId?: string;
+};

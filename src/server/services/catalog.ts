@@ -2,6 +2,9 @@ import { prisma } from '@/server/db';
 import type { Prisma } from '@/generated/prisma/client';
 import { ConflictError, NotFoundError, ValidationError } from '@/server/errors';
 import { slugify } from '@/lib/validation/common';
+import { formatQuantity } from '@/lib/quantity';
+import { applyMovement } from '@/server/services/stock';
+import { recordAuditTx } from '@/server/audit';
 import type { CategoryInput, ProductInput, UnitInput } from '@/lib/validation/catalog';
 
 /**
@@ -327,7 +330,6 @@ function toProductData(input: ProductInput) {
 
 export async function createProduct(companyId: string, input: ProductInput) {
   await assertRelations(companyId, input);
-
   if (input.barcode) {
     const duplicate = await prisma.product.findFirst({
       where: { companyId, barcode: input.barcode },
@@ -337,6 +339,8 @@ export async function createProduct(companyId: string, input: ProductInput) {
       throw new ConflictError(`Ce code-barres est deja utilise par l'article "${duplicate.name}".`);
     }
   }
+
+  const initialQuantity = input.initialQuantity ?? 0n;
 
   return prisma.$transaction(async (tx) => {
     const sku = input.sku
@@ -351,7 +355,39 @@ export async function createProduct(companyId: string, input: ProductInput) {
       if (taken) throw new ConflictError(`La reference "${sku}" est deja utilisee.`);
     }
 
-    return tx.product.create({ data: { ...toProductData(input), companyId, sku } });
+    const created = await tx.product.create({ data: { ...toProductData(input), companyId, sku } });
+
+    if (initialQuantity > 0n) {
+      const location = await tx.location.findFirst({
+        where: { id: input.initialLocationId, companyId, isActive: true },
+        select: { id: true, name: true },
+      });
+      if (!location) {
+        throw new NotFoundError('Point de vente du stock initial introuvable ou inactif.');
+      }
+
+      const movement = await applyMovement(tx, {
+        companyId,
+        productId: created.id,
+        locationId: location.id,
+        kind: 'IN',
+        delta: initialQuantity,
+        unitCost: input.costPrice,
+        reason: 'Stock initial a la creation de l article',
+        userId: null,
+      });
+
+      await recordAuditTx(tx, {
+        companyId,
+        userId: null,
+        action: 'STOCK_MOVE',
+        entityType: 'StockMovement',
+        entityId: movement.id,
+        summary: `Stock initial de ${formatQuantity(initialQuantity)} pour ${created.name} (${location.name})`,
+      });
+    }
+
+    return created;
   });
 }
 

@@ -40,6 +40,8 @@ export interface ProductRow {
   wholesaleFrom: string;
   specialPrice: string;
   minStock: string;
+  initialQuantity?: string;
+  initialLocationId?: string;
   isActive: boolean;
   costPriceLabel: string;
   salePriceLabel: string;
@@ -67,6 +69,8 @@ const EMPTY = {
   wholesaleFrom: '',
   specialPrice: '',
   minStock: '0',
+  initialQuantity: '0',
+  initialLocationId: '',
   isActive: true,
 };
 
@@ -75,6 +79,7 @@ export function ProductManager({
   categories,
   units,
   suppliers,
+  locations,
   currency,
   page,
   pageCount,
@@ -87,6 +92,7 @@ export function ProductManager({
   categories: Option[];
   units: Option[];
   suppliers: Option[];
+  locations: Option[];
   currency: { symbol: string; decimals: number };
   page: number;
   pageCount: number;
@@ -132,6 +138,8 @@ export function ProductManager({
       wholesaleFrom: String(form.get('wholesaleFrom') ?? ''),
       specialPrice: String(form.get('specialPrice') ?? ''),
       minStock: String(form.get('minStock') ?? '0'),
+      initialQuantity: String(form.get('initialQuantity') ?? '0'),
+      initialLocationId: String(form.get('initialLocationId') ?? ''),
       isActive: form.get('isActive') === 'on',
     };
 
@@ -330,7 +338,8 @@ export function ProductManager({
               qui ne serait jamais utilisee.
             */}
             {kind === 'GOOD' && (
-              <Field
+              <>
+                <Field
                 label="Stock minimum (alerte de rupture)"
                 htmlFor="minStock"
                 error={api.fieldErrors.minStock}
@@ -344,6 +353,20 @@ export function ProductManager({
                   className="max-w-40 text-right tabular"
                 />
               </Field>
+              {editing === 'new' && (
+                <>
+                  <Field label="Quantite initiale a entrer" htmlFor="initialQuantity" error={api.fieldErrors.initialQuantity}>
+                    <Input id="initialQuantity" name="initialQuantity" inputMode="decimal" defaultValue={values.initialQuantity} className="max-w-40 text-right tabular" />
+                  </Field>
+                  <Field label="Point de vente du stock initial" htmlFor="initialLocationId" error={api.fieldErrors.initialLocationId}>
+                    <Select id="initialLocationId" name="initialLocationId" defaultValue={values.initialLocationId}>
+                      <option value="">Choisir un point de vente</option>
+                      {locations.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+                    </Select>
+                  </Field>
+                </>
+              )}
+              </>
             )}
 
             <label className="flex items-center gap-2 text-sm text-ink-700">

@@ -5,6 +5,7 @@ import { QuoteActions } from '@/components/commerce/quote-actions';
 import { ShareActions } from '@/components/commerce/share-actions';
 import { InvoiceDocument } from '@/components/commerce/invoice-document';
 import { PrintControls } from '@/components/commerce/print-controls';
+import { PrintPageFormat } from '@/components/commerce/print-page-format';
 import { formatMoney } from '@/lib/money';
 import { formatQuantity } from '@/lib/quantity';
 import { getCurrencyFormat } from '@/server/currency';
@@ -113,6 +114,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
         locations={activeLocations.map((location) => ({ id: location.id, label: location.name }))}
       />
 
+      <PrintPageFormat />
       {/* Meme document que la facture : un devis accepte devient une facture,
           les deux doivent se ressembler pour que le client s'y retrouve. */}
       <InvoiceDocument

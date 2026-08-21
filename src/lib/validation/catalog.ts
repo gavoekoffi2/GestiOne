@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isSupportedImageSource } from '@/lib/image';
 import { MoneyError, parseAmount } from '@/lib/money';
 import { QuantityError, parseQuantity } from '@/lib/quantity';
 import { optionalEmail, optionalText, phoneSchema, requiredText } from './common';
@@ -116,6 +117,28 @@ export const unitSchema = z.object({
     .max(12, 'Le symbole ne doit pas depasser 12 caracteres.'),
 });
 
+/**
+ * Photo de l'article : vignette compressee par le navigateur (data URL) ou
+ * adresse d'une image deja hebergee. Le format est verifie ici, cote serveur :
+ * une chaine arbitraire finirait telle quelle dans l'attribut `src` de tous les
+ * ecrans du catalogue.
+ */
+const imageField = z
+  .union([z.string(), z.null()])
+  .optional()
+  .transform((value, ctx) => {
+    const text = (value ?? '').trim();
+    if (text === '') return undefined;
+    if (!isSupportedImageSource(text)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Photo invalide ou trop lourde.',
+      });
+      return z.NEVER;
+    }
+    return text;
+  });
+
 export const PRODUCT_KINDS = [
   { value: 'GOOD', label: 'Produit physique' },
   { value: 'SERVICE', label: 'Service' },
@@ -134,6 +157,7 @@ export function productSchema(decimals: number) {
       categoryId: optionalText(64),
       unitId: optionalText(64),
       supplierId: optionalText(64),
+      imageUrl: imageField,
       costPrice: moneyField(decimals, "Le prix d'achat"),
       salePrice: moneyField(decimals, 'Le prix de vente'),
       wholesalePrice: optionalMoneyField(decimals, 'Le prix grossiste'),

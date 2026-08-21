@@ -94,6 +94,7 @@ export default async function ProductsPage({
             unitSymbol: item.unit?.symbol ?? '',
             supplierId: item.supplierId ?? '',
             supplierName: item.supplier?.name ?? '',
+            imageUrl: item.imageUrl ?? '',
             costPrice: toDecimalString(item.costPrice, currency.decimals),
             salePrice: toDecimalString(item.salePrice, currency.decimals),
             wholesalePrice:

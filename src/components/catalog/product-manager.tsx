@@ -13,7 +13,9 @@ import {
   Select,
   Textarea,
 } from '@/components/ui/primitives';
+import { ImagePicker } from '@/components/ui/image-picker';
 import { MoneyInput } from '@/components/ui/money-input';
+import { ProductPhoto } from '@/components/ui/product-photo';
 import { ListToolbar, Pagination } from '@/components/ui/list-toolbar';
 import { useApi } from '@/components/ui/use-api';
 import { PRODUCT_KINDS } from '@/lib/validation/catalog';
@@ -31,6 +33,7 @@ export interface ProductRow {
   unitSymbol: string;
   supplierId: string;
   supplierName: string;
+  imageUrl: string;
   costPrice: string;
   salePrice: string;
   wholesalePrice: string;
@@ -57,6 +60,7 @@ const EMPTY = {
   categoryId: '',
   unitId: '',
   supplierId: '',
+  imageUrl: '',
   costPrice: '0',
   salePrice: '0',
   wholesalePrice: '',
@@ -121,6 +125,7 @@ export function ProductManager({
       categoryId: String(form.get('categoryId') ?? ''),
       unitId: String(form.get('unitId') ?? ''),
       supplierId: String(form.get('supplierId') ?? ''),
+      imageUrl: String(form.get('imageUrl') ?? ''),
       costPrice: String(form.get('costPrice') ?? '0'),
       salePrice: String(form.get('salePrice') ?? '0'),
       wholesalePrice: String(form.get('wholesalePrice') ?? ''),
@@ -237,6 +242,24 @@ export function ProductManager({
                 <Field label="Description" htmlFor="description" error={api.fieldErrors.description}>
                   <Textarea id="description" name="description" defaultValue={values.description} />
                 </Field>
+              </div>
+              {/*
+                La photo n'est pas un ornement : c'est elle que le caissier
+                cherche des yeux sur l'ecran de vente, bien avant le nom.
+              */}
+              <div className="space-y-1.5 sm:col-span-2">
+                <p className="text-sm font-medium text-ink-700">Photo de l&apos;article</p>
+                <ImagePicker
+                  name="imageUrl"
+                  defaultValue={values.imageUrl}
+                  label={values.name || 'Article'}
+                  disabled={api.pending}
+                />
+                {api.fieldErrors.imageUrl && (
+                  <p className="text-xs font-medium text-red-600" role="alert">
+                    {api.fieldErrors.imageUrl}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -399,12 +422,21 @@ export function ProductManager({
                   {rows.map((row) => (
                     <tr key={row.id} className={row.isActive ? undefined : 'bg-ink-50/60'}>
                       <td className="px-4 py-3 sm:px-5">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-medium text-ink-900">{row.name}</p>
-                          {row.kind === 'SERVICE' && <Badge tone="info">Service</Badge>}
-                          {!row.isActive && <Badge tone="neutral">Inactif</Badge>}
+                        <div className="flex items-center gap-3">
+                          <ProductPhoto
+                            src={row.imageUrl}
+                            name={row.name}
+                            className="size-10 shrink-0 text-xs"
+                          />
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-medium text-ink-900">{row.name}</p>
+                              {row.kind === 'SERVICE' && <Badge tone="info">Service</Badge>}
+                              {!row.isActive && <Badge tone="neutral">Inactif</Badge>}
+                            </div>
+                            <p className="font-mono text-xs text-ink-500">{row.sku}</p>
+                          </div>
                         </div>
-                        <p className="font-mono text-xs text-ink-500">{row.sku}</p>
                       </td>
                       <td className="px-4 py-3 text-ink-600">{row.categoryName || '—'}</td>
                       <td className="px-4 py-3 text-ink-600">{row.unitSymbol || '—'}</td>

@@ -195,6 +195,33 @@ croire au commerçant que sa vente est enregistrée alors qu'elle sera rejetée 
 la reconnexion, et il aurait déjà remis la marchandise. GestiOne dit donc
 franchement qu'il faut du réseau pour vendre.
 
+**La monnaie à rendre se calcule contre le montant dû, jamais contre le
+billet.** À la caisse, le champ « Montant reçu » restait saisissable panier
+vide. Le total valant alors zéro, la soustraction rendait le billet lui-même :
+un client tendait 25 000, l'écran annonçait « monnaie à rendre : 25 000 ». Le
+calcul est désormais une fonction unique (`changeDue` dans `src/lib/totals.ts`),
+utilisée à l'identique par l'écran de vente et par le service, et qui ne rend
+rien tant qu'il n'y a rien à payer. Le champ est verrouillé jusqu'au premier
+article, et l'encadré rappelle le reçu et le total à côté de la monnaie : un
+caissier peut vérifier d'un coup d'œil ce que la machine a compris.
+
+**La quantité réaffichée ne doit pas être une quantité formatée.** Ajouter deux
+fois le même article réécrivait la quantité avec des séparateurs de milliers
+(« 1 000 ») ; à la relecture suivante, ce texte valait 1 unité et le total
+s'effondrait sans explication. Le champ reçoit maintenant des chiffres bruts,
+le formatage restant réservé à l'affichage.
+
+**Les photos d'articles vivent dans la fiche article.** Un commerçant reconnaît
+un paquet ou un bidon bien avant d'en lire le nom : l'écran de vente présente
+donc des vignettes, pas une liste. Plutôt que d'imposer un service de stockage
+à configurer (et une facture de plus), la photo est redimensionnée et
+recompressée **par le navigateur** avant l'envoi, puis rangée en `data:` dans
+`Product.imageUrl` — quelques dizaines de kilo-octets, disponibles hors ligne
+avec le reste de la page. Le format et la taille sont revérifiés côté serveur :
+une chaîne arbitraire finirait sinon telle quelle dans l'attribut `src` de tous
+les écrans du catalogue. Une adresse http(s) reste acceptée pour les catalogues
+déjà hébergés ailleurs.
+
 Une quatrième décision relève de la migration plutôt que du bug : les unités de
 mesure sont installées à la création d'une entreprise, ce qui laissait sans
 unités toutes les entreprises créées avant la phase 2. Une migration de

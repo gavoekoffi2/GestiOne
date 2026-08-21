@@ -108,7 +108,7 @@ export function AppShell({
 
   return (
     <div className="min-h-dvh bg-ink-100">
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-ink-200 bg-white px-3 sm:px-5">
+      <header className="no-print sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-ink-200 bg-white px-3 sm:px-5">
         <button
           type="button"
           onClick={() => setMenuOpen((open) => !open)}
@@ -168,12 +168,12 @@ export function AppShell({
       <Connectivity />
 
       <div className="mx-auto flex w-full max-w-[1600px]">
-        <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 border-r border-ink-200 bg-white lg:block">
+        <aside className="no-print sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 border-r border-ink-200 bg-white lg:block">
           {sidebar}
         </aside>
 
         {menuOpen && (
-          <div className="fixed inset-0 top-14 z-20 lg:hidden">
+          <div className="no-print fixed inset-0 top-14 z-20 lg:hidden">
             <button
               type="button"
               className="absolute inset-0 bg-ink-900/40"
@@ -184,7 +184,7 @@ export function AppShell({
           </div>
         )}
 
-        <main className="min-w-0 flex-1 px-3 py-5 sm:px-6 sm:py-6">{children}</main>
+        <main className="print-main min-w-0 flex-1 px-3 py-5 sm:px-6 sm:py-6">{children}</main>
       </div>
     </div>
   );

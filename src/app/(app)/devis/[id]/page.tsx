@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Badge, Card } from '@/components/ui/primitives';
+import { PrintPageFormat } from '@/components/commerce/print-page-format';
 import { QuoteActions } from '@/components/commerce/quote-actions';
 import { ShareActions } from '@/components/commerce/share-actions';
 import { formatMoney } from '@/lib/money';
@@ -108,7 +109,9 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
         locations={activeLocations.map((location) => ({ id: location.id, label: location.name }))}
       />
 
-      <article className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-ink-200 sm:p-8">
+      <PrintPageFormat />
+
+      <article className="doc-sheet mx-auto w-full max-w-3xl rounded-xl bg-white p-6 shadow-sm ring-1 ring-ink-200 sm:p-8">
         <header className="flex flex-wrap items-start justify-between gap-6 border-b border-ink-200 pb-6">
           <div>
             <h2 className="text-xl font-bold" style={{ color: company.primaryColor }}>
@@ -149,27 +152,33 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
           </section>
         )}
 
-        <div className="-mx-2 overflow-x-auto py-4">
-          <table className="w-full min-w-[32rem] text-left text-sm">
+        <div className="overflow-x-auto py-5">
+          <table className="doc-table w-full min-w-[30rem] table-fixed text-left text-sm">
+            <colgroup>
+              <col className="w-[44%]" />
+              <col className="w-[14%]" />
+              <col className="w-[21%]" />
+              <col className="w-[21%]" />
+            </colgroup>
             <thead>
               <tr className="border-b border-ink-300 text-xs uppercase tracking-wide text-ink-500">
-                <th className="px-2 py-2 font-medium">Designation</th>
-                <th className="px-2 py-2 text-right font-medium">Qte</th>
-                <th className="px-2 py-2 text-right font-medium">P.U.</th>
-                <th className="px-2 py-2 text-right font-medium">Total</th>
+                <th className="py-3 pr-6 font-medium">Designation</th>
+                <th className="px-6 py-3 text-right font-medium">Qte</th>
+                <th className="px-6 py-3 text-right font-medium">P.U.</th>
+                <th className="py-3 pl-6 text-right font-medium">Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
               {quote.lines.map((line) => (
                 <tr key={line.id}>
-                  <td className="px-2 py-2 text-ink-900">{line.description}</td>
-                  <td className="tabular px-2 py-2 text-right text-ink-700">
+                  <td className="py-3 pr-6 text-ink-900">{line.description}</td>
+                  <td className="tabular px-6 py-3 text-right text-ink-700">
                     {formatQuantity(line.quantity, context.locale)}
                   </td>
-                  <td className="tabular px-2 py-2 text-right text-ink-700">
+                  <td className="tabular px-6 py-3 text-right text-ink-700">
                     {money(line.unitPrice)}
                   </td>
-                  <td className="tabular px-2 py-2 text-right font-medium text-ink-900">
+                  <td className="tabular py-3 pl-6 text-right font-medium text-ink-900">
                     {money(line.lineTotal)}
                   </td>
                 </tr>

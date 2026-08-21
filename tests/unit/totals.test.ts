@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   TotalsError,
   balanceDue,
+  changeDue,
   computeTotals,
   distributeProportionally,
   paymentStatus,
@@ -268,5 +269,33 @@ describe('splitEvenly', () => {
 
   it('refuse un nombre de parts nul', () => {
     expect(() => splitEvenly(100n, 0)).toThrow(TotalsError);
+  });
+});
+
+describe('changeDue', () => {
+  it('rend la difference entre le billet tendu et le montant du', () => {
+    expect(changeDue(20_000n, 25_000n)).toBe(5_000n);
+  });
+
+  it('ne rend rien quand le client donne le compte juste ou moins', () => {
+    expect(changeDue(20_000n, 20_000n)).toBe(0n);
+    expect(changeDue(20_000n, 15_000n)).toBe(0n);
+  });
+
+  it("ne rend jamais le billet lui-meme quand il n'y a rien a payer", () => {
+    // Panier vide : le total vaut zero. Une soustraction non gardee annoncerait
+    // "monnaie a rendre 25 000" au caissier pour un billet de 25 000.
+    expect(changeDue(0n, 25_000n)).toBe(0n);
+  });
+
+  it('reste coherent avec le reste a payer', () => {
+    const total = 20_000n;
+    for (const tendered of [0n, 5_000n, 20_000n, 25_000n]) {
+      const change = changeDue(total, tendered);
+      const remaining = balanceDue(total, tendered);
+      // On ne peut pas a la fois devoir de l'argent et en rendre.
+      expect(change === 0n || remaining === 0n).toBe(true);
+      expect(tendered - change).toBe(total - remaining);
+    }
   });
 });

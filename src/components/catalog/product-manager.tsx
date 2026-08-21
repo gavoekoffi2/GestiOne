@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import {
@@ -11,11 +10,12 @@ import {
   EmptyState,
   Field,
   Input,
-  MoreFields,
   Select,
   Textarea,
 } from '@/components/ui/primitives';
+import { ImagePicker } from '@/components/ui/image-picker';
 import { MoneyInput } from '@/components/ui/money-input';
+import { ProductPhoto } from '@/components/ui/product-photo';
 import { ListToolbar, Pagination } from '@/components/ui/list-toolbar';
 import { useApi } from '@/components/ui/use-api';
 import { PRODUCT_KINDS } from '@/lib/validation/catalog';
@@ -33,14 +33,13 @@ export interface ProductRow {
   unitSymbol: string;
   supplierId: string;
   supplierName: string;
+  imageUrl: string;
   costPrice: string;
   salePrice: string;
   wholesalePrice: string;
   wholesaleFrom: string;
   specialPrice: string;
   minStock: string;
-  initialQuantity?: string;
-  initialLocationId?: string;
   isActive: boolean;
   costPriceLabel: string;
   salePriceLabel: string;
@@ -61,14 +60,13 @@ const EMPTY = {
   categoryId: '',
   unitId: '',
   supplierId: '',
+  imageUrl: '',
   costPrice: '0',
   salePrice: '0',
   wholesalePrice: '',
   wholesaleFrom: '',
   specialPrice: '',
   minStock: '0',
-  initialQuantity: '0',
-  initialLocationId: '',
   isActive: true,
 };
 
@@ -77,7 +75,6 @@ export function ProductManager({
   categories,
   units,
   suppliers,
-  locations,
   currency,
   page,
   pageCount,
@@ -90,7 +87,6 @@ export function ProductManager({
   categories: Option[];
   units: Option[];
   suppliers: Option[];
-  locations: Option[];
   currency: { symbol: string; decimals: number };
   page: number;
   pageCount: number;
@@ -129,14 +125,13 @@ export function ProductManager({
       categoryId: String(form.get('categoryId') ?? ''),
       unitId: String(form.get('unitId') ?? ''),
       supplierId: String(form.get('supplierId') ?? ''),
+      imageUrl: String(form.get('imageUrl') ?? ''),
       costPrice: String(form.get('costPrice') ?? '0'),
       salePrice: String(form.get('salePrice') ?? '0'),
       wholesalePrice: String(form.get('wholesalePrice') ?? ''),
       wholesaleFrom: String(form.get('wholesaleFrom') ?? ''),
       specialPrice: String(form.get('specialPrice') ?? ''),
       minStock: String(form.get('minStock') ?? '0'),
-      initialQuantity: String(form.get('initialQuantity') ?? '0'),
-      initialLocationId: String(form.get('initialLocationId') ?? ''),
       isActive: form.get('isActive') === 'on',
     };
 
@@ -174,16 +169,7 @@ export function ProductManager({
       {values ? (
         <Card title={editing === 'new' ? 'Nouvel article' : `Modifier ${values.name}`}>
           <form onSubmit={onSubmit} className="space-y-5" noValidate>
-            {/*
-              L'essentiel d'abord : un nom, un prix de vente, un prix d'achat.
-              C'est tout ce qu'il faut pour vendre l'article et connaitre la
-              marge. Le reste — reference, categorie, unite, tarifs degressifs —
-              est utile un jour, jamais au moment ou l'on cree la fiche.
-            */}
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Nom" htmlFor="name" required error={api.fieldErrors.name}>
-                <Input id="name" name="name" defaultValue={values.name} required placeholder="Sac de riz 25 kg" />
-              </Field>
               <Field label="Type" htmlFor="kind" required error={api.fieldErrors.kind}>
                 <Select
                   id="kind"
@@ -198,192 +184,167 @@ export function ProductManager({
                   ))}
                 </Select>
               </Field>
-              <Field label="Prix de vente" htmlFor="salePrice" required error={api.fieldErrors.salePrice}>
-                <MoneyInput
-                  id="salePrice"
-                  name="salePrice"
-                  defaultValue={values.salePrice}
-                  decimals={currency.decimals}
-                  symbol={currency.symbol}
-                />
+              <Field label="Nom" htmlFor="name" required error={api.fieldErrors.name}>
+                <Input id="name" name="name" defaultValue={values.name} required placeholder="Sac de riz 25 kg" />
               </Field>
               <Field
-                label="Prix d'achat"
-                htmlFor="costPrice"
-                required
-                error={api.fieldErrors.costPrice}
-                hint="Sert a calculer votre marge. Laissez 0 si vous ne le suivez pas."
+                label="Reference"
+                htmlFor="sku"
+                error={api.fieldErrors.sku}
+                hint="Laissez vide : GestiOne la genere a partir du nom."
               >
-                <MoneyInput
-                  id="costPrice"
-                  name="costPrice"
-                  defaultValue={values.costPrice}
-                  decimals={currency.decimals}
-                  symbol={currency.symbol}
-                />
+                <Input id="sku" name="sku" defaultValue={values.sku} />
               </Field>
+              <Field
+                label="Code-barres"
+                htmlFor="barcode"
+                error={api.fieldErrors.barcode}
+                hint="Scannez-le directement dans ce champ."
+              >
+                <Input id="barcode" name="barcode" inputMode="numeric" defaultValue={values.barcode} />
+              </Field>
+              <Field label="Categorie" htmlFor="categoryId" error={api.fieldErrors.categoryId}>
+                <Select id="categoryId" name="categoryId" defaultValue={values.categoryId}>
+                  <option value="">Sans categorie</option>
+                  {categories.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field
+                label="Unite de mesure"
+                htmlFor="unitId"
+                error={api.fieldErrors.unitId}
+                hint="Carton, sac, kilogramme, litre... Creez les votres depuis l'onglet Unites."
+              >
+                <Select id="unitId" name="unitId" defaultValue={values.unitId}>
+                  <option value="">Non precisee</option>
+                  {units.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Fournisseur principal" htmlFor="supplierId" error={api.fieldErrors.supplierId}>
+                <Select id="supplierId" name="supplierId" defaultValue={values.supplierId}>
+                  <option value="">Aucun</option>
+                  {suppliers.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <div className="sm:col-span-2">
+                <Field label="Description" htmlFor="description" error={api.fieldErrors.description}>
+                  <Textarea id="description" name="description" defaultValue={values.description} />
+                </Field>
+              </div>
+              {/*
+                La photo n'est pas un ornement : c'est elle que le caissier
+                cherche des yeux sur l'ecran de vente, bien avant le nom.
+              */}
+              <div className="space-y-1.5 sm:col-span-2">
+                <p className="text-sm font-medium text-ink-700">Photo de l&apos;article</p>
+                <ImagePicker
+                  name="imageUrl"
+                  defaultValue={values.imageUrl}
+                  label={values.name || 'Article'}
+                  disabled={api.pending}
+                />
+                {api.fieldErrors.imageUrl && (
+                  <p className="text-xs font-medium text-red-600" role="alert">
+                    {api.fieldErrors.imageUrl}
+                  </p>
+                )}
+              </div>
             </div>
 
-            <MoreFields label="Reference, categorie, unite, tarifs degressifs">
-              <div className="space-y-5">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field
-                    label="Reference"
-                    htmlFor="sku"
-                    error={api.fieldErrors.sku}
-                    hint="Laissez vide : GestiOne la genere a partir du nom."
-                  >
-                    <Input id="sku" name="sku" defaultValue={values.sku} />
-                  </Field>
-                  <Field
-                    label="Code-barres"
-                    htmlFor="barcode"
-                    error={api.fieldErrors.barcode}
-                    hint="Scannez-le directement dans ce champ."
-                  >
-                    <Input id="barcode" name="barcode" inputMode="numeric" defaultValue={values.barcode} />
-                  </Field>
-                  <Field label="Categorie" htmlFor="categoryId" error={api.fieldErrors.categoryId}>
-                    <Select id="categoryId" name="categoryId" defaultValue={values.categoryId}>
-                      <option value="">Sans categorie</option>
-                      {categories.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-                  <Field
-                    label="Unite de mesure"
-                    htmlFor="unitId"
-                    error={api.fieldErrors.unitId}
-                    hint="Carton, sac, kilogramme, litre... Creez les votres depuis l'onglet Unites."
-                  >
-                    <Select id="unitId" name="unitId" defaultValue={values.unitId}>
-                      <option value="">Non precisee</option>
-                      {units.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-                  <Field label="Fournisseur principal" htmlFor="supplierId" error={api.fieldErrors.supplierId}>
-                    <Select id="supplierId" name="supplierId" defaultValue={values.supplierId}>
-                      <option value="">Aucun</option>
-                      {suppliers.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-                  {/*
-                    Un service ne se stocke pas : afficher un seuil de rupture
-                    pour une prestation inviterait a saisir une valeur qui ne
-                    servirait jamais.
-                  */}
-                  {kind === 'GOOD' && (
-                    <>
-                      <Field
-                        label="Stock minimum (alerte de rupture)"
-                        htmlFor="minStock"
-                        error={api.fieldErrors.minStock}
-                        hint="GestiOne vous alertera lorsque le stock passera sous ce seuil."
-                      >
-                        <Input
-                          id="minStock"
-                          name="minStock"
-                          inputMode="decimal"
-                          defaultValue={values.minStock}
-                          className="text-right tabular"
-                        />
-                      </Field>
-                      {editing === 'new' && (
-                        <>
-                          <Field
-                            label="Quantite initiale a entrer"
-                            htmlFor="initialQuantity"
-                            error={api.fieldErrors.initialQuantity}
-                            hint="Le nombre d'articles qui entre maintenant dans votre stock."
-                          >
-                            <Input
-                              id="initialQuantity"
-                              name="initialQuantity"
-                              inputMode="decimal"
-                              defaultValue={values.initialQuantity}
-                              className="text-right tabular"
-                            />
-                          </Field>
-                          <Field
-                            label="Point de vente du stock initial"
-                            htmlFor="initialLocationId"
-                            error={api.fieldErrors.initialLocationId}
-                          >
-                            <Select id="initialLocationId" name="initialLocationId" defaultValue={values.initialLocationId}>
-                              <option value="">Choisir un point de vente</option>
-                              {locations.map((option) => (
-                                <option key={option.id} value={option.id}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </Select>
-                          </Field>
-                        </>
-                      )}
-                    </>
-                  )}
-                  <div className="sm:col-span-2">
-                    <Field label="Description" htmlFor="description" error={api.fieldErrors.description}>
-                      <Textarea id="description" name="description" defaultValue={values.description} />
-                    </Field>
-                  </div>
-                </div>
-
-                <fieldset className="rounded-lg border border-ink-200 p-4">
-                  <legend className="px-1 text-sm font-semibold text-ink-800">Autres tarifs</legend>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <Field
-                      label="Prix special"
-                      htmlFor="specialPrice"
-                      error={api.fieldErrors.specialPrice}
-                      hint="Tarif negocie, applique manuellement a la vente."
-                    >
-                      <MoneyInput
-                        id="specialPrice"
-                        name="specialPrice"
-                        defaultValue={values.specialPrice}
-                        decimals={currency.decimals}
-                        symbol={currency.symbol}
-                      />
-                    </Field>
-                    <Field label="Prix grossiste" htmlFor="wholesalePrice" error={api.fieldErrors.wholesalePrice}>
-                      <MoneyInput
-                        id="wholesalePrice"
-                        name="wholesalePrice"
-                        defaultValue={values.wholesalePrice}
-                        decimals={currency.decimals}
-                        symbol={currency.symbol}
-                      />
-                    </Field>
-                    <Field
-                      label="A partir de"
-                      htmlFor="wholesaleFrom"
-                      error={api.fieldErrors.wholesaleFrom}
-                      hint="Quantite a partir de laquelle le prix grossiste s'applique."
-                    >
-                      <Input
-                        id="wholesaleFrom"
-                        name="wholesaleFrom"
-                        inputMode="decimal"
-                        defaultValue={values.wholesaleFrom}
-                        className="text-right tabular"
-                      />
-                    </Field>
-                  </div>
-                </fieldset>
+            <fieldset className="rounded-lg border border-ink-200 p-4">
+              <legend className="px-1 text-sm font-semibold text-ink-800">Prix</legend>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Field label="Prix d'achat" htmlFor="costPrice" required error={api.fieldErrors.costPrice}>
+                  <MoneyInput
+                    id="costPrice"
+                    name="costPrice"
+                    defaultValue={values.costPrice}
+                    decimals={currency.decimals}
+                    symbol={currency.symbol}
+                  />
+                </Field>
+                <Field label="Prix de vente" htmlFor="salePrice" required error={api.fieldErrors.salePrice}>
+                  <MoneyInput
+                    id="salePrice"
+                    name="salePrice"
+                    defaultValue={values.salePrice}
+                    decimals={currency.decimals}
+                    symbol={currency.symbol}
+                  />
+                </Field>
+                <Field
+                  label="Prix special"
+                  htmlFor="specialPrice"
+                  error={api.fieldErrors.specialPrice}
+                  hint="Tarif negocie, applique manuellement a la vente."
+                >
+                  <MoneyInput
+                    id="specialPrice"
+                    name="specialPrice"
+                    defaultValue={values.specialPrice}
+                    decimals={currency.decimals}
+                    symbol={currency.symbol}
+                  />
+                </Field>
+                <Field label="Prix grossiste" htmlFor="wholesalePrice" error={api.fieldErrors.wholesalePrice}>
+                  <MoneyInput
+                    id="wholesalePrice"
+                    name="wholesalePrice"
+                    defaultValue={values.wholesalePrice}
+                    decimals={currency.decimals}
+                    symbol={currency.symbol}
+                  />
+                </Field>
+                <Field
+                  label="A partir de"
+                  htmlFor="wholesaleFrom"
+                  error={api.fieldErrors.wholesaleFrom}
+                  hint="Quantite a partir de laquelle le prix grossiste s'applique."
+                >
+                  <Input
+                    id="wholesaleFrom"
+                    name="wholesaleFrom"
+                    inputMode="decimal"
+                    defaultValue={values.wholesaleFrom}
+                    className="text-right tabular"
+                  />
+                </Field>
               </div>
-            </MoreFields>
+            </fieldset>
+
+            {/*
+              Un service ne se stocke pas : afficher un seuil de rupture pour une
+              prestation n'aurait aucun sens et inviterait a saisir une valeur
+              qui ne serait jamais utilisee.
+            */}
+            {kind === 'GOOD' && (
+              <Field
+                label="Stock minimum (alerte de rupture)"
+                htmlFor="minStock"
+                error={api.fieldErrors.minStock}
+                hint="GestiOne vous alertera lorsque le stock passera sous ce seuil."
+              >
+                <Input
+                  id="minStock"
+                  name="minStock"
+                  inputMode="decimal"
+                  defaultValue={values.minStock}
+                  className="max-w-40 text-right tabular"
+                />
+              </Field>
+            )}
 
             <label className="flex items-center gap-2 text-sm text-ink-700">
               <input
@@ -461,17 +422,21 @@ export function ProductManager({
                   {rows.map((row) => (
                     <tr key={row.id} className={row.isActive ? undefined : 'bg-ink-50/60'}>
                       <td className="px-4 py-3 sm:px-5">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Link
-                            href={`/produits/${row.id}`}
-                            className="font-medium text-brand-700 hover:underline"
-                          >
-                            {row.name}
-                          </Link>
-                          {row.kind === 'SERVICE' && <Badge tone="info">Service</Badge>}
-                          {!row.isActive && <Badge tone="neutral">Inactif</Badge>}
+                        <div className="flex items-center gap-3">
+                          <ProductPhoto
+                            src={row.imageUrl}
+                            name={row.name}
+                            className="size-10 shrink-0 text-xs"
+                          />
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-medium text-ink-900">{row.name}</p>
+                              {row.kind === 'SERVICE' && <Badge tone="info">Service</Badge>}
+                              {!row.isActive && <Badge tone="neutral">Inactif</Badge>}
+                            </div>
+                            <p className="font-mono text-xs text-ink-500">{row.sku}</p>
+                          </div>
                         </div>
-                        <p className="font-mono text-xs text-ink-500">{row.sku}</p>
                       </td>
                       <td className="px-4 py-3 text-ink-600">{row.categoryName || '—'}</td>
                       <td className="px-4 py-3 text-ink-600">{row.unitSymbol || '—'}</td>

@@ -3,6 +3,7 @@ import { NotFoundError, ValidationError } from '@/server/errors';
 import { createInvoice, type ServiceContext } from '@/server/services/invoices';
 import { recordPayment } from '@/server/services/payments';
 import { partnerBalance } from '@/server/services/payments';
+import { changeDue as computeChangeDue } from '@/lib/totals';
 
 /**
  * Vente au comptoir.
@@ -126,7 +127,7 @@ export async function recordSale(context: SaleContext, input: SaleInput): Promis
     // on annonce la monnaie a rendre. Enregistrer le montant tendu creerait un
     // trop-percu fictif.
     const applied = tendered > invoice.total ? invoice.total : tendered;
-    changeDue = tendered > invoice.total ? tendered - invoice.total : 0n;
+    changeDue = computeChangeDue(invoice.total, tendered);
 
     const payment = await recordPayment(context, {
       direction: 'IN',

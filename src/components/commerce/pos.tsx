@@ -3,13 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Alert, Button, Card, Field, Input, Select } from '@/components/ui/primitives';
-import { Combobox, EMPTY_COMBOBOX, type ComboboxValue } from '@/components/ui/combobox';
 import { Icon } from '@/components/layout/icons';
 import { MoneyInput } from '@/components/ui/money-input';
+import { ProductPhoto } from '@/components/ui/product-photo';
 import { useApi } from '@/components/ui/use-api';
-import { computeTotals, type LineInput } from '@/lib/totals';
+import { changeDue, computeTotals, type LineInput } from '@/lib/totals';
 import { formatMoney, parseAmount, type CurrencyFormat } from '@/lib/money';
-import { formatQuantity, parseQuantity } from '@/lib/quantity';
+import { formatQuantity, parseQuantity, toQuantityString } from '@/lib/quantity';
 
 /**
  * Ecran de vente au comptoir.
@@ -37,13 +37,13 @@ export interface PosProduct {
   kind: 'GOOD' | 'SERVICE';
   stock: string;
   trackStock: boolean;
+  /** Photo de l'article, telle qu'enregistree dans la fiche (vide si aucune). */
+  imageUrl: string;
 }
 
 export interface PosOption {
   id: string;
   label: string;
-  /** Telephone ou code, pour departager deux homonymes. */
-  hint?: string;
 }
 
 export interface PosMethod extends PosOption {
@@ -54,6 +54,7 @@ export interface PosMethod extends PosOption {
 interface CartLine {
   productId: string;
   name: string;
+  imageUrl: string;
   unitSymbol: string;
   unitPriceMinor: bigint;
   unitPriceText: string;
@@ -63,6 +64,25 @@ interface CartLine {
   trackStock: boolean;
   stock: bigint;
 }
+
+/**
+ * Quantite reinjectee dans le champ de saisie.
+ *
+ * `formatQuantity` regroupe les milliers ("1 000", "1,000") : reinjecter ce
+ * texte dans le champ le ferait relire comme 1 unite a la relecture suivante,
+ * et le total s'effondrerait sans que personne ne comprenne pourquoi. On ecrit
+ * donc les chiffres bruts, sans separateur.
+ */
+function quantityText(value: bigint): string {
+  return toQuantityString(value).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+}
+
+/**
+ * Nombre de vignettes affichees d'emblee. Assez pour couvrir les articles
+ * courants d'une boutique sans transformer l'ecran en catalogue a faire defiler :
+ * au-dela, la recherche (ou la scannette) est plus rapide que l'oeil.
+ */
+const VISIBLE_PRODUCTS = 24;
 
 function safeQuantity(text: string): bigint {
   try {
@@ -105,7 +125,7 @@ export function PointOfSale({
 
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [customer, setCustomer] = useState<ComboboxValue>(EMPTY_COMBOBOX);
+  const [customerId, setCustomerId] = useState('');
   const [locationId, setLocationId] = useState(defaultLocationId);
   const [methodId, setMethodId] = useState(methods[0]?.id ?? '');
   const [tendered, setTendered] = useState('');
@@ -125,7 +145,7 @@ export function PointOfSale({
 
   const matches = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    if (!needle) return products.slice(0, 12);
+    if (!needle) return products.slice(0, VISIBLE_PRODUCTS);
     return products
       .filter(
         (product) =>
@@ -133,7 +153,7 @@ export function PointOfSale({
           product.sku.toLowerCase().includes(needle) ||
           product.barcode === search.trim(),
       )
-      .slice(0, 12);
+      .slice(0, VISIBLE_PRODUCTS);
   }, [products, search]);
 
   const totals = useMemo(() => {
@@ -162,7 +182,7 @@ export function PointOfSale({
         const line = next[existing]!;
         next[existing] = {
           ...line,
-          quantityText: formatQuantity(safeQuantity(line.quantityText) + 1000n, 'en'),
+          quantityText: quantityText(safeQuantity(line.quantityText) + 1000n),
         };
         return next;
       }
@@ -171,6 +191,7 @@ export function PointOfSale({
         {
           productId: product.id,
           name: product.name,
+          imageUrl: product.imageUrl,
           unitSymbol: product.unitSymbol,
           unitPriceMinor: BigInt(product.salePriceMinor),
           unitPriceText: product.salePrice,
@@ -194,7 +215,7 @@ export function PointOfSale({
 
   function reset() {
     setCart([]);
-    setCustomer(EMPTY_COMBOBOX);
+    setCustomerId('');
     setTendered('');
     setReference('');
     setGlobalDiscount('');
@@ -205,9 +226,7 @@ export function PointOfSale({
     if (cart.length === 0) return;
 
     const body: Record<string, unknown> = {
-      customerId: customer.id || undefined,
-      // Nom tape sans correspondance : le serveur retrouvera la fiche ou la creera.
-      customerName: customer.id ? undefined : customer.name.trim() || undefined,
+      customerId: customerId || undefined,
       locationId,
       discountRate: globalDiscount || undefined,
       lines: cart.map((line) => ({
@@ -248,10 +267,6 @@ export function PointOfSale({
     }
   }
 
-  // Une vente a credit sans client produirait une creance que personne ne peut
-  // reclamer : le bouton reste inactif tant que le nom n'est pas saisi.
-  const creditNeedsCustomer = isCredit && !customer.id && customer.name.trim() === '';
-
   // Alerte de stock : on previent avant l'envoi plutot que de laisser le
   // serveur refuser la vente une fois le client servi.
   const stockWarnings = cart.filter(
@@ -280,32 +295,16 @@ export function PointOfSale({
           )}
         </dl>
 
-        {/*
-          L'impression est le geste qui suit l'encaissement : elle est donc ici,
-          sous le montant, et non derriere une navigation. Le lien ouvre le
-          document et lance la boite d'impression sans clic supplementaire.
-        */}
         <div className="mt-5 flex flex-wrap gap-2">
-          <Button
-            type="button"
-            onClick={() => router.push(`/factures/${receipt.invoiceId}?impression=1`)}
-          >
-            <Icon name="printer" className="size-4" />
-            Imprimer le recu
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => { setReceipt(null); reset(); }}
-          >
+          <Button type="button" onClick={() => { setReceipt(null); reset(); }}>
             Nouvelle vente
           </Button>
           <Button
             type="button"
-            variant="ghost"
+            variant="secondary"
             onClick={() => router.push(`/factures/${receipt.invoiceId}`)}
           >
-            Voir le detail
+            Voir le recu
           </Button>
         </div>
       </Card>
@@ -330,35 +329,61 @@ export function PointOfSale({
             />
           </div>
 
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {/*
+            Choisir un article se fait a la photo : on reconnait un paquet ou un
+            bidon d'un coup d'oeil, sans lire, ce qui est decisif quand un client
+            attend au comptoir. Le nom et le prix restent affiches sous l'image.
+          */}
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {matches.map((product) => (
               <button
                 key={product.id}
                 type="button"
                 onClick={() => addProduct(product)}
-                className="flex min-h-16 flex-col justify-center rounded-lg border border-ink-200 px-3 py-2 text-left transition hover:border-brand-500 hover:bg-brand-50"
+                className="flex flex-col overflow-hidden rounded-xl border border-ink-200 text-left transition hover:border-brand-500 hover:bg-brand-50"
               >
-                <span className="font-medium text-ink-900">{product.name}</span>
-                <span className="tabular text-sm text-ink-600">{product.salePriceLabel}</span>
-                {product.trackStock && (
-                  <span
-                    className={
-                      BigInt(product.stock) <= 0n
-                        ? 'text-xs font-medium text-red-600'
-                        : 'text-xs text-ink-400'
-                    }
-                  >
-                    {formatQuantity(BigInt(product.stock), locale)} {product.unitSymbol} en stock
+                <ProductPhoto
+                  src={product.imageUrl}
+                  name={product.name}
+                  rounded="rounded-none"
+                  className="aspect-square w-full text-2xl"
+                />
+                <span className="flex flex-1 flex-col gap-0.5 px-2.5 py-2">
+                  <span className="line-clamp-2 text-sm font-medium text-ink-900">
+                    {product.name}
                   </span>
-                )}
+                  <span className="tabular text-sm font-semibold text-brand-700">
+                    {product.salePriceLabel}
+                  </span>
+                  {product.trackStock && (
+                    <span
+                      className={
+                        BigInt(product.stock) <= 0n
+                          ? 'text-xs font-medium text-red-600'
+                          : 'text-xs text-ink-400'
+                      }
+                    >
+                      {formatQuantity(BigInt(product.stock), locale)} {product.unitSymbol} en stock
+                    </span>
+                  )}
+                </span>
               </button>
             ))}
             {matches.length === 0 && (
               <p className="col-span-full py-4 text-center text-sm text-ink-500">
-                Aucun article ne correspond a &laquo; {search} &raquo;.
+                {search
+                  ? `Aucun article ne correspond a « ${search} ».`
+                  : 'Aucun article au catalogue : ajoutez vos produits pour les vendre ici.'}
               </p>
             )}
           </div>
+
+          {!search && products.length > matches.length && (
+            <p className="mt-3 text-center text-xs text-ink-500">
+              {products.length - matches.length} autre(s) article(s) : tapez son nom ou scannez son
+              code-barres pour l afficher.
+            </p>
+          )}
         </Card>
 
         <Card title={`Panier (${cart.length})`}>
@@ -376,13 +401,21 @@ export function PointOfSale({
                 return (
                   <li key={line.productId} className="py-3">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-medium text-ink-900">{line.name}</p>
-                        {short && (
-                          <p className="text-xs font-medium text-red-600">
-                            Stock disponible : {formatQuantity(line.stock, locale)} {line.unitSymbol}
-                          </p>
-                        )}
+                      <div className="flex min-w-0 items-center gap-3">
+                        <ProductPhoto
+                          src={line.imageUrl}
+                          name={line.name}
+                          className="size-10 shrink-0 text-xs"
+                        />
+                        <div className="min-w-0">
+                          <p className="font-medium text-ink-900">{line.name}</p>
+                          {short && (
+                            <p className="text-xs font-medium text-red-600">
+                              Stock disponible : {formatQuantity(line.stock, locale)}{' '}
+                              {line.unitSymbol}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="tabular font-semibold text-ink-900">
@@ -499,20 +532,20 @@ export function PointOfSale({
             <Field
               label="Client"
               htmlFor="pos-customer"
-              hint={
-                isCredit
-                  ? 'Obligatoire a credit. Tapez le nom : la fiche est creee si elle n existe pas.'
-                  : 'Laissez vide pour un client de passage.'
-              }
+              hint={isCredit ? 'Obligatoire pour une vente a credit.' : 'Facultatif.'}
             >
-              <Combobox
+              <Select
                 id="pos-customer"
-                options={customers}
-                value={customer}
-                onChange={setCustomer}
-                placeholder="Nom du client"
-                createLabel={(typed) => `Nouveau client : ${typed}`}
-              />
+                value={customerId}
+                onChange={(event) => setCustomerId(event.target.value)}
+              >
+                <option value="">Client de passage</option>
+                {customers.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.label}
+                  </option>
+                ))}
+              </Select>
             </Field>
 
             {canDiscount && (
@@ -565,7 +598,11 @@ export function PointOfSale({
                 <Field
                   label="Montant recu"
                   htmlFor="pos-tendered"
-                  hint="Laissez vide si le client paie exactement le total."
+                  hint={
+                    total > 0n
+                      ? 'Laissez vide si le client paie exactement le total.'
+                      : 'Ajoutez d abord un article : sans vente, il n y a rien a encaisser.'
+                  }
                 >
                   <MoneyInput
                     id="pos-tendered"
@@ -573,20 +610,35 @@ export function PointOfSale({
                     onChange={(event) => setTendered(event.target.value)}
                     decimals={currency.decimals}
                     symbol={currency.symbol}
+                    disabled={total <= 0n}
                   />
                 </Field>
 
-                {tendered && (() => {
+                {/*
+                  La monnaie se calcule toujours contre le montant du, jamais
+                  contre le billet tendu. Tant que le panier est vide, ce montant
+                  vaut zero : annoncer une monnaie ici reviendrait a annoncer le
+                  billet lui-meme, et le caissier rendrait 25 000 pour 25 000.
+                */}
+                {tendered !== '' && total > 0n && (() => {
                   let given = 0n;
                   try {
                     given = parseAmount(tendered, currency.decimals);
                   } catch {
-                    return null;
+                    return (
+                      <Alert tone="warning">Montant recu illisible : verifiez la saisie.</Alert>
+                    );
                   }
-                  if (given > total) {
+
+                  const change = changeDue(total, given);
+                  if (change > 0n) {
                     return (
                       <Alert tone="info">
-                        Monnaie a rendre : <strong>{formatMoney(given - total, currency, locale)}</strong>
+                        Monnaie a rendre : <strong>{formatMoney(change, currency, locale)}</strong>
+                        <span className="block text-xs">
+                          Recu {formatMoney(given, currency, locale)} pour un total de{' '}
+                          {formatMoney(total, currency, locale)}.
+                        </span>
                       </Alert>
                     );
                   }
@@ -598,7 +650,9 @@ export function PointOfSale({
                       </Alert>
                     );
                   }
-                  return null;
+                  return (
+                    <Alert tone="info">Compte juste : aucune monnaie a rendre.</Alert>
+                  );
                 })()}
 
                 {method?.requiresReference && (
@@ -620,16 +674,14 @@ export function PointOfSale({
 
             {isCredit && (
               <Alert tone="warning">
-                {creditNeedsCustomer
-                  ? 'Vente a credit : indiquez le client, sinon personne ne pourra etre relance.'
-                  : 'Vente a credit : la facture restera due et apparaitra dans les creances du client.'}
+                Vente a credit : la facture restera due et apparaitra dans les creances du client.
               </Alert>
             )}
 
             <Button
               type="button"
               onClick={submit}
-              disabled={api.pending || cart.length === 0 || creditNeedsCustomer}
+              disabled={api.pending || cart.length === 0}
               className="w-full"
             >
               {api.pending

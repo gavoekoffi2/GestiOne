@@ -315,6 +315,7 @@ function toProductData(input: ProductInput) {
     categoryId: input.categoryId ?? null,
     unitId: input.unitId ?? null,
     supplierId: input.supplierId ?? null,
+    imageUrl: input.imageUrl ?? null,
     costPrice: input.costPrice,
     salePrice: input.salePrice,
     wholesalePrice: input.wholesalePrice ?? null,

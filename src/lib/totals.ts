@@ -241,6 +241,21 @@ export function balanceDue(total: Money, paid: Money): Money {
   return remaining > 0n ? remaining : 0n;
 }
 
+/**
+ * Monnaie a rendre : uniquement ce que le client a tendu **au-dela** du montant
+ * du, jamais le billet qu'il a pose sur le comptoir.
+ *
+ * La nuance est tout sauf theorique : tant qu'aucun article n'est au panier, le
+ * montant du vaut zero, et une soustraction non gardee rendrait "monnaie a
+ * rendre = 25 000" pour un client qui vient de tendre 25 000 — le caissier
+ * viderait sa caisse. Sans vente, il n'y a rien a rendre.
+ */
+export function changeDue(total: Money, tendered: Money): Money {
+  if (total <= 0n) return 0n;
+  const change = tendered - total;
+  return change > 0n ? change : 0n;
+}
+
 export type PaymentStatus = 'UNPAID' | 'PARTIALLY_PAID' | 'PAID';
 
 export function paymentStatus(total: Money, paid: Money): PaymentStatus {

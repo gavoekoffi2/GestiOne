@@ -99,6 +99,7 @@ export default async function SalesPage() {
           kind: product.kind === 'SERVICE' ? ('SERVICE' as const) : ('GOOD' as const),
           trackStock: product.trackStock,
           stock: (stockByProduct.get(product.id) ?? 0n).toString(),
+          imageUrl: product.imageUrl ?? '',
         }))}
       />
     </div>

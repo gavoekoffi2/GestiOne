@@ -66,8 +66,8 @@ export default async function StockPage({
           <h1 className="text-2xl font-bold text-ink-900">Stock</h1>
           <p className="mt-1 text-ink-600">
             {query.locationId
-              ? 'Stock du point de vente selectionne.'
-              : 'Vue consolidee de tous vos points de vente.'}
+              ? 'Stock du point de vente sélectionné.'
+              : 'Vue consolidée de tous vos points de vente.'}
           </p>
         </div>
         <Link href="/stock/mouvements" className="text-sm font-semibold text-brand-700 hover:underline">
@@ -110,7 +110,7 @@ export default async function StockPage({
       />
 
       <ListToolbar
-        placeholder="Rechercher un article (nom, reference, code-barres)"
+        placeholder="Rechercher un article (nom, référence, code-barres)"
         filters={[
           {
             name: 'locationId',
@@ -122,7 +122,7 @@ export default async function StockPage({
           },
           {
             name: 'categoryId',
-            label: 'Toutes les categories',
+            label: 'Toutes les catégories',
             options: categories.map((category) => ({ value: category.id, label: category.name })),
           },
           {
@@ -136,8 +136,8 @@ export default async function StockPage({
       <Card>
         {result.items.length === 0 ? (
           <EmptyState
-            title="Aucun article a afficher"
-            description="Enregistrez une entree de stock pour commencer a suivre vos quantites."
+            title="Aucun article à afficher"
+            description="Enregistrez une entrée de stock pour commencer à suivre vos quantités."
           />
         ) : (
           <>
@@ -146,11 +146,11 @@ export default async function StockPage({
                 <thead>
                   <tr className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-500">
                     <th className="px-4 py-2 font-medium sm:px-5">Article</th>
-                    <th className="px-4 py-2 font-medium">Categorie</th>
-                    <th className="px-4 py-2 text-right font-medium">Quantite</th>
+                    <th className="px-4 py-2 font-medium">Catégorie</th>
+                    <th className="px-4 py-2 text-right font-medium">Quantité</th>
                     <th className="px-4 py-2 text-right font-medium">Seuil</th>
                     <th className="px-4 py-2 text-right font-medium">Valeur</th>
-                    <th className="px-4 py-2 font-medium sm:px-5">Etat</th>
+                    <th className="px-4 py-2 font-medium sm:px-5">État</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-ink-100">

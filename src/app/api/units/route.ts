@@ -21,7 +21,7 @@ export const POST = handler(async (request: NextRequest) => {
     action: 'CREATE',
     entityType: 'Unit',
     entityId: unit.id,
-    summary: `Unite "${unit.name}" (${unit.symbol}) creee`,
+    summary: `Unité "${unit.name}" (${unit.symbol}) creee`,
     ipAddress: clientIp(request),
   });
 

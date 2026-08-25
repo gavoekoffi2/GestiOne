@@ -62,7 +62,7 @@ export async function exportCustomers(context: ExportContext): Promise<string> {
 
   return toCsv(
     [
-      'Code', 'Nom', 'Entreprise', 'Telephone', 'Second telephone', 'Email',
+      'Code', 'Nom', 'Entreprise', 'Téléphone', 'Second téléphone', 'Email',
       'Adresse', 'Ville', 'Pays', 'Identifiant fiscal', "Plafond d'encours", 'Actif', 'Notes',
     ],
     partners.map((partner) => [
@@ -90,7 +90,7 @@ export async function exportSuppliers(context: ExportContext): Promise<string> {
   });
 
   return toCsv(
-    ['Code', 'Nom', 'Entreprise', 'Telephone', 'Email', 'Adresse', 'Ville', 'Pays', 'Identifiant fiscal', 'Actif'],
+    ['Code', 'Nom', 'Entreprise', 'Téléphone', 'Email', 'Adresse', 'Ville', 'Pays', 'Identifiant fiscal', 'Actif'],
     partners.map((partner) => [
       partner.code,
       partner.name,
@@ -121,9 +121,9 @@ export async function exportProducts(context: ExportContext): Promise<string> {
 
   return toCsv(
     [
-      'Reference', 'Nom', 'Type', 'Categorie', 'Unite', 'Code-barres',
-      "Prix d'achat", 'Prix de vente', 'Prix grossiste', 'A partir de',
-      'Prix special', 'Stock minimum', 'Fournisseur', 'Actif',
+      'Référence', 'Nom', 'Type', 'Catégorie', 'Unité', 'Code-barres',
+      "Prix d'achat", 'Prix de vente', 'Prix grossiste', 'À partir de',
+      'Prix spécial', 'Stock minimum', 'Fournisseur', 'Actif',
     ],
     products.map((product) => [
       product.sku,
@@ -158,8 +158,8 @@ export async function exportInvoices(context: ExportContext, period: Period): Pr
 
   return toCsv(
     [
-      'Numero', 'Date', 'Echeance', 'Client', 'Code client', 'Point de vente',
-      'Origine', 'Statut', 'Sous-total', 'Remise', 'Taxes', 'Total', 'Paye', 'Reste du',
+      'Numéro', 'Date', 'Échéance', 'Client', 'Code client', 'Point de vente',
+      'Origine', 'Statut', 'Sous-total', 'Remise', 'Taxes', 'Total', 'Payé', 'Reste dû',
     ],
     invoices.map((invoice) => [
       invoice.number,
@@ -203,8 +203,8 @@ export async function exportSaleLines(context: ExportContext, period: Period): P
 
   return toCsv(
     [
-      'Facture', 'Date', 'Client', 'Reference', 'Designation', 'Quantite', 'Unite',
-      'Prix unitaire', 'Remise %', 'Base taxable', 'Taxe', 'Total ligne', "Cout d'achat unitaire",
+      'Facture', 'Date', 'Client', 'Référence', 'Désignation', 'Quantité', 'Unité',
+      'Prix unitaire', 'Remise %', 'Base taxable', 'Taxe', 'Total ligne', "Coût d'achat unitaire",
     ],
     lines.map((line) => [
       line.invoice.number,
@@ -237,7 +237,7 @@ export async function exportPayments(context: ExportContext, period: Period): Pr
   });
 
   return toCsv(
-    ['Numero', 'Date', 'Sens', 'Tiers', 'Facture', 'Commande', 'Mode', 'Reference', 'Montant'],
+    ['Numéro', 'Date', 'Sens', 'Tiers', 'Facture', 'Commande', 'Mode', 'Référence', 'Montant'],
     payments.map((payment) => [
       payment.number,
       formatDate(payment.paidAt),
@@ -265,7 +265,7 @@ export async function exportExpenses(context: ExportContext, period: Period): Pr
   });
 
   return toCsv(
-    ['Numero', 'Date', 'Categorie', 'Description', 'Fournisseur', 'Mode', 'Point de vente', 'Reference', 'Montant'],
+    ['Numéro', 'Date', 'Catégorie', 'Description', 'Fournisseur', 'Mode', 'Point de vente', 'Référence', 'Montant'],
     expenses.map((expense) => [
       expense.number,
       formatDate(expense.spentAt),
@@ -284,7 +284,7 @@ export async function exportStock(context: ExportContext, locationId?: string): 
   const stock = await listStock(context.companyId, { page: 1, pageSize: 10_000, locationId });
 
   return toCsv(
-    ['Reference', 'Article', 'Categorie', 'Unite', 'Quantite', 'Stock minimum', "Prix d'achat", 'Valeur', 'Etat'],
+    ['Référence', 'Article', 'Catégorie', 'Unité', 'Quantité', 'Stock minimum', "Prix d'achat", 'Valeur', 'État'],
     stock.items.map((row) => [
       row.sku,
       row.name,
@@ -314,7 +314,7 @@ export async function exportStockMovements(
   });
 
   return toCsv(
-    ['Date', 'Reference article', 'Article', 'Point de vente', 'Type', 'Variation', 'Stock apres', 'Motif', 'Reference', 'Utilisateur'],
+    ['Date', 'Référence article', 'Article', 'Point de vente', 'Type', 'Variation', 'Stock après', 'Motif', 'Référence', 'Utilisateur'],
     movements.map((movement) => [
       movement.createdAt.toISOString(),
       movement.product.sku,
@@ -345,7 +345,7 @@ export async function exportReceivables(context: ExportContext): Promise<string>
   const now = Date.now();
 
   return toCsv(
-    ['Facture', 'Date', 'Echeance', 'Jours de retard', 'Code client', 'Client', 'Telephone', 'Total', 'Paye', 'Reste du'],
+    ['Facture', 'Date', 'Échéance', 'Jours de retard', 'Code client', 'Client', 'Téléphone', 'Total', 'Payé', 'Reste dû'],
     invoices.map((invoice) => {
       const overdueDays =
         invoice.dueDate && invoice.dueDate.getTime() < now
@@ -380,7 +380,7 @@ export async function exportPayables(context: ExportContext): Promise<string> {
   });
 
   return toCsv(
-    ['Commande', 'Date', 'Echeance', 'Code fournisseur', 'Fournisseur', 'Telephone', 'Total', 'Regle', 'Reste du'],
+    ['Commande', 'Date', 'Échéance', 'Code fournisseur', 'Fournisseur', 'Téléphone', 'Total', 'Réglé', 'Reste dû'],
     orders.map((order) => [
       order.number,
       formatDate(order.orderDate),
@@ -400,12 +400,12 @@ export const EXPORTS = {
   fournisseurs: { label: 'Fournisseurs', permission: 'suppliers.read', needsPeriod: false },
   produits: { label: 'Produits et services', permission: 'products.read', needsPeriod: false },
   factures: { label: 'Factures', permission: 'invoices.read', needsPeriod: true },
-  'lignes-de-vente': { label: 'Detail des ventes', permission: 'invoices.read', needsPeriod: true },
+  'lignes-de-vente': { label: 'Détail des ventes', permission: 'invoices.read', needsPeriod: true },
   paiements: { label: 'Paiements', permission: 'payments.read', needsPeriod: true },
-  depenses: { label: 'Depenses', permission: 'expenses.read', needsPeriod: true },
-  stock: { label: 'Etat du stock', permission: 'stock.read', needsPeriod: false },
+  depenses: { label: 'Dépenses', permission: 'expenses.read', needsPeriod: true },
+  stock: { label: 'État du stock', permission: 'stock.read', needsPeriod: false },
   'mouvements-de-stock': { label: 'Mouvements de stock', permission: 'stock.read', needsPeriod: true },
-  creances: { label: 'Creances clients', permission: 'invoices.read', needsPeriod: false },
+  creances: { label: 'Créances clients', permission: 'invoices.read', needsPeriod: false },
   dettes: { label: 'Dettes fournisseur', permission: 'purchases.read', needsPeriod: false },
 } as const;
 

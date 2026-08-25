@@ -22,9 +22,9 @@ const OPERATIONS: Array<{
 }> = [
   {
     key: 'entree',
-    label: 'Entree',
+    label: 'Entrée',
     endpoint: '/api/stock/entrees',
-    description: 'Reception de marchandise, retour client, production.',
+    description: 'Réception de marchandise, retour client, production.',
     permission: 'move',
   },
   {
@@ -38,14 +38,14 @@ const OPERATIONS: Array<{
     key: 'transfert',
     label: 'Transfert',
     endpoint: '/api/stock/transferts',
-    description: 'Deplacement entre deux de vos points de vente.',
+    description: 'Déplacement entre deux de vos points de vente.',
     permission: 'move',
   },
   {
     key: 'inventaire',
     label: 'Inventaire',
     endpoint: '/api/stock/inventaire',
-    description: 'Saisissez la quantite reellement comptee ; l ecart est calcule.',
+    description: 'Saisissez la quantité réellement comptée ; l écart est calculé.',
     permission: 'adjust',
   },
 ];
@@ -104,7 +104,7 @@ export function StockActions({
     const result = await api.send(current.endpoint, {
       method: 'POST',
       body,
-      successMessage: 'Mouvement enregistre.',
+      successMessage: 'Mouvement enregistré.',
     });
 
     if (result) {
@@ -183,11 +183,11 @@ export function StockActions({
             <div className="grid gap-4 sm:grid-cols-2">
               {current.key === 'inventaire' ? (
                 <Field
-                  label="Quantite comptee"
+                  label="Quantité comptée"
                   htmlFor="countedQuantity"
                   required
                   error={api.fieldErrors.countedQuantity}
-                  hint="Le stock reellement present. GestiOne calcule l ecart lui-meme."
+                  hint="Le stock réellement présent. GestiOne calcule l écart lui-même."
                 >
                   <Input
                     id="countedQuantity"
@@ -198,7 +198,7 @@ export function StockActions({
                   />
                 </Field>
               ) : (
-                <Field label="Quantite" htmlFor="quantity" required error={api.fieldErrors.quantity}>
+                <Field label="Quantité" htmlFor="quantity" required error={api.fieldErrors.quantity}>
                   <Input
                     id="quantity"
                     name="quantity"
@@ -211,10 +211,10 @@ export function StockActions({
 
               {current.key === 'entree' && (
                 <Field
-                  label="Cout unitaire"
+                  label="Coût unitaire"
                   htmlFor="unitCost"
                   error={api.fieldErrors.unitCost}
-                  hint="Facultatif : conserve le prix reellement paye pour ce lot."
+                  hint="Facultatif : conserve le prix réellement payé pour ce lot."
                 >
                   <MoneyInput
                     id="unitCost"
@@ -225,7 +225,7 @@ export function StockActions({
                 </Field>
               )}
 
-              <Field label="Reference" htmlFor="reference" error={api.fieldErrors.reference}>
+              <Field label="Référence" htmlFor="reference" error={api.fieldErrors.reference}>
                 <Input id="reference" name="reference" placeholder="Bon de livraison n°..." />
               </Field>
             </div>
@@ -243,7 +243,7 @@ export function StockActions({
                 required={current.key === 'inventaire'}
                 placeholder={
                   current.key === 'sortie'
-                    ? 'Casse a la manutention'
+                    ? 'Casse à la manutention'
                     : current.key === 'inventaire'
                       ? 'Inventaire mensuel'
                       : undefined

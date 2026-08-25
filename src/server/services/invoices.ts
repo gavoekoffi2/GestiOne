@@ -25,10 +25,10 @@ export type InvoiceStatus = 'DRAFT' | 'ISSUED' | 'PARTIALLY_PAID' | 'PAID' | 'CA
 
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   DRAFT: 'Brouillon',
-  ISSUED: 'Emise',
-  PARTIALLY_PAID: 'Partiellement payee',
-  PAID: 'Payee',
-  CANCELLED: 'Annulee',
+  ISSUED: 'Émise',
+  PARTIALLY_PAID: 'Partiellement payée',
+  PAID: 'Payée',
+  CANCELLED: 'Annulée',
 };
 
 export interface InvoiceLineInput {
@@ -124,7 +124,7 @@ async function resolveLines(
     const position = index + 1;
 
     if (line.quantity <= 0n) {
-      throw new ValidationError(`Ligne ${position} : la quantite doit etre superieure a zero.`);
+      throw new ValidationError(`Ligne ${position} : la quantité doit être supérieure à zéro.`);
     }
 
     let product: ResolvedLine['product'] = null;
@@ -141,7 +141,7 @@ async function resolveLines(
 
     const description = line.description?.trim() || product?.name;
     if (!description) {
-      throw new ValidationError(`Ligne ${position} : indiquez une designation.`);
+      throw new ValidationError(`Ligne ${position} : indiquez une désignation.`);
     }
 
     // Le prix saisi prime (remise negociee au comptoir) ; a defaut on prend le
@@ -151,7 +151,7 @@ async function resolveLines(
       throw new ValidationError(`Ligne ${position} : indiquez un prix unitaire.`);
     }
     if (unitPrice < 0n) {
-      throw new ValidationError(`Ligne ${position} : le prix unitaire ne peut pas etre negatif.`);
+      throw new ValidationError(`Ligne ${position} : le prix unitaire ne peut pas être négatif.`);
     }
 
     let taxRate = 0;
@@ -194,7 +194,7 @@ export async function createInvoice(context: ServiceContext, input: CreateInvoic
   const issue = input.issue ?? false;
   if (issue && !input.locationId && resolved.some((line) => line.product?.trackStock)) {
     throw new ValidationError(
-      'Precisez le point de vente : les articles suivis en stock doivent en sortir de quelque part.',
+      'Précisez le point de vente : les articles suivis en stock doivent en sortir de quelque part.',
     );
   }
 
@@ -277,7 +277,7 @@ export async function createInvoice(context: ServiceContext, input: CreateInvoic
       action: 'CREATE',
       entityType: 'Invoice',
       entityId: invoice.id,
-      summary: `Facture ${number} creee (${issue ? 'emise' : 'brouillon'})`,
+      summary: `Facture ${number} créée (${issue ? 'emise' : 'brouillon'})`,
       metadata: { total: totals.total.toString() },
     });
 
@@ -323,13 +323,13 @@ export async function issueInvoice(context: ServiceContext, invoiceId: string) {
   });
   if (!invoice) throw new NotFoundError('Facture introuvable.');
   if (invoice.status !== 'DRAFT') {
-    throw new ConflictError(`Cette facture est deja ${INVOICE_STATUS_LABELS[invoice.status as InvoiceStatus].toLowerCase()}.`);
+    throw new ConflictError(`Cette facture est déjà ${INVOICE_STATUS_LABELS[invoice.status as InvoiceStatus].toLowerCase()}.`);
   }
 
   const tracked = invoice.lines.filter((line) => line.product?.trackStock);
   if (tracked.length > 0 && !invoice.locationId) {
     throw new ValidationError(
-      'Precisez le point de vente de la facture avant de l emettre : les articles suivis en stock doivent en sortir.',
+      'Précisez le point de vente de la facture avant de l émettre : les articles suivis en stock doivent en sortir.',
     );
   }
 
@@ -358,7 +358,7 @@ export async function issueInvoice(context: ServiceContext, invoiceId: string) {
       action: 'UPDATE',
       entityType: 'Invoice',
       entityId: invoiceId,
-      summary: `Facture ${invoice.number} emise`,
+      summary: `Facture ${invoice.number} émise`,
     });
 
     return updated;
@@ -383,7 +383,7 @@ export async function cancelInvoice(
   });
   if (!invoice) throw new NotFoundError('Facture introuvable.');
   if (invoice.status === 'CANCELLED') {
-    throw new ConflictError('Cette facture est deja annulee.');
+    throw new ConflictError('Cette facture est déjà annulée.');
   }
 
   return prisma.$transaction(async (tx) => {
@@ -419,7 +419,7 @@ export async function cancelInvoice(
       action: 'CANCEL',
       entityType: 'Invoice',
       entityId: invoiceId,
-      summary: `Facture ${invoice.number} annulee : ${reason}`,
+      summary: `Facture ${invoice.number} annulée : ${reason}`,
       metadata: { total: invoice.total.toString(), paid: invoice.paidAmount.toString() },
     });
 
@@ -496,13 +496,18 @@ export interface InvoiceListQuery {
 
 export async function listInvoices(companyId: string, query: InvoiceListQuery) {
   const search = query.search?.trim();
+  // Le filtre "impayees" porte lui aussi sur le statut : il doit se combiner
+  // avec un statut choisi par l'utilisateur, jamais l'ecraser. Sans le AND,
+  // "Emise + impayees" renvoyait silencieusement toutes les factures impayees.
   const where: Prisma.InvoiceWhereInput = {
     companyId,
-    ...(query.status ? { status: query.status } : {}),
     ...(query.customerId ? { customerId: query.customerId } : {}),
-    ...(query.unpaidOnly || query.overdueOnly
-      ? { balanceDue: { gt: 0n }, status: { notIn: ['CANCELLED', 'DRAFT'] } }
-      : {}),
+    AND: [
+      ...(query.status ? [{ status: query.status }] : []),
+      ...(query.unpaidOnly || query.overdueOnly
+        ? [{ balanceDue: { gt: 0n }, status: { notIn: ['CANCELLED', 'DRAFT'] } }]
+        : []),
+    ],
     ...(query.overdueOnly ? { dueDate: { lt: new Date() } } : {}),
     ...(search
       ? {

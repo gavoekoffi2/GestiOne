@@ -45,7 +45,7 @@ export class PasswordError extends Error {}
 export function assertPasswordStrength(password: string): void {
   if (password.length < PASSWORD_MIN_LENGTH) {
     throw new PasswordError(
-      `Le mot de passe doit contenir au moins ${PASSWORD_MIN_LENGTH} caracteres.`,
+      `Le mot de passe doit contenir au moins ${PASSWORD_MIN_LENGTH} caractères.`,
     );
   }
   if (!/[a-zA-Z]/.test(password) || !/\d/.test(password)) {

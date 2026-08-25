@@ -17,7 +17,7 @@ export const PUT = handler(async (request: NextRequest, { params }) => {
     action: 'UPDATE',
     entityType: 'Location',
     entityId: location.id,
-    summary: `Point de vente "${location.name}" modifie`,
+    summary: `Point de vente "${location.name}" modifié`,
     ipAddress: clientIp(request),
   });
 
@@ -35,7 +35,7 @@ export const DELETE = handler(async (request: NextRequest, { params }) => {
     action: 'DELETE',
     entityType: 'Location',
     entityId: id as string,
-    summary: `Point de vente supprime ou desactive`,
+    summary: `Point de vente supprimé ou désactivé`,
     ipAddress: clientIp(request),
   });
 

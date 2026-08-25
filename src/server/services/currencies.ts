@@ -11,25 +11,42 @@ import { prisma } from '@/server/db';
 export const SEED_CURRENCIES = [
   { code: 'XOF', name: 'Franc CFA (UEMOA)', symbol: 'F CFA', decimals: 0, symbolPosition: 'after' },
   { code: 'XAF', name: 'Franc CFA (CEMAC)', symbol: 'FCFA', decimals: 0, symbolPosition: 'after' },
-  { code: 'GHS', name: 'Cedi ghaneen', symbol: 'GH₵', decimals: 2, symbolPosition: 'before' },
-  { code: 'NGN', name: 'Naira nigerian', symbol: '₦', decimals: 2, symbolPosition: 'before' },
+  { code: 'GHS', name: 'Cedi ghanéen', symbol: 'GH₵', decimals: 2, symbolPosition: 'before' },
+  { code: 'NGN', name: 'Naira nigérian', symbol: '₦', decimals: 2, symbolPosition: 'before' },
   { code: 'MAD', name: 'Dirham marocain', symbol: 'DH', decimals: 2, symbolPosition: 'after' },
   { code: 'TND', name: 'Dinar tunisien', symbol: 'DT', decimals: 3, symbolPosition: 'after' },
   { code: 'KES', name: 'Shilling kenyan', symbol: 'KSh', decimals: 2, symbolPosition: 'before' },
   { code: 'ZAR', name: 'Rand sud-africain', symbol: 'R', decimals: 2, symbolPosition: 'before' },
   { code: 'CDF', name: 'Franc congolais', symbol: 'FC', decimals: 2, symbolPosition: 'after' },
-  { code: 'GNF', name: 'Franc guineen', symbol: 'FG', decimals: 0, symbolPosition: 'after' },
+  { code: 'GNF', name: 'Franc guinéen', symbol: 'FG', decimals: 0, symbolPosition: 'after' },
   { code: 'EUR', name: 'Euro', symbol: '€', decimals: 2, symbolPosition: 'after' },
-  { code: 'USD', name: 'Dollar americain', symbol: '$', decimals: 2, symbolPosition: 'before' },
+  { code: 'USD', name: 'Dollar américain', symbol: '$', decimals: 2, symbolPosition: 'before' },
   { code: 'GBP', name: 'Livre sterling', symbol: '£', decimals: 2, symbolPosition: 'before' },
   { code: 'CAD', name: 'Dollar canadien', symbol: 'CA$', decimals: 2, symbolPosition: 'before' },
 ] as const;
 
+/**
+ * Installe les devises manquantes et remet a jour les libelles des existantes.
+ *
+ * Un `createMany(skipDuplicates)` laissait figes les noms poses par une version
+ * anterieure : une base amorcee avant la correction des accents affichait
+ * encore "Dollar americain" dans le choix de devise.
+ */
 export async function ensureCurrencies(): Promise<void> {
-  await prisma.currency.createMany({
-    data: SEED_CURRENCIES.map((currency) => ({ ...currency })),
-    skipDuplicates: true,
-  });
+  await prisma.$transaction(
+    SEED_CURRENCIES.map((currency) =>
+      prisma.currency.upsert({
+        where: { code: currency.code },
+        create: { ...currency },
+        update: {
+          name: currency.name,
+          symbol: currency.symbol,
+          decimals: currency.decimals,
+          symbolPosition: currency.symbolPosition,
+        },
+      }),
+    ),
+  );
 }
 
 export async function listCurrencies() {

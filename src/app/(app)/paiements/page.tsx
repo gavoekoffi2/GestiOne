@@ -58,7 +58,7 @@ export default async function PaymentsPage({
       <div>
         <h1 className="text-2xl font-bold text-ink-900">Paiements</h1>
         <p className="mt-1 text-ink-600">
-          Tous les encaissements et reglements enregistres, et ce que vos clients vous doivent
+          Tous les encaissements et règlements enregistrés, et ce que vos clients vous doivent
           encore.
         </p>
       </div>
@@ -67,14 +67,14 @@ export default async function PaymentsPage({
         <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-ink-200">
           <div className="flex items-center gap-2 text-ink-500">
             <Icon name="wallet" className="size-4" />
-            <p className="text-sm">Total sur la periode affichee</p>
+            <p className="text-sm">Total sur la période affichée</p>
           </div>
           <p className="tabular mt-2 text-2xl font-bold text-ink-900">{money(result.sum)}</p>
         </div>
         <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-ink-200">
           <div className="flex items-center gap-2 text-ink-500">
             <Icon name="users" className="size-4" />
-            <p className="text-sm">Creances clients</p>
+            <p className="text-sm">Créances clients</p>
           </div>
           <p
             className={`tabular mt-2 text-2xl font-bold ${
@@ -88,7 +88,7 @@ export default async function PaymentsPage({
 
       {receivables.length > 0 && (
         <Card
-          title="Creances clients"
+          title="Créances clients"
           description="Ce que chaque client doit encore, toutes factures confondues."
         >
           <div className="-mx-4 overflow-x-auto sm:-mx-5">
@@ -96,9 +96,9 @@ export default async function PaymentsPage({
               <thead>
                 <tr className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-500">
                   <th className="px-4 py-2 font-medium sm:px-5">Client</th>
-                  <th className="px-4 py-2 font-medium">Telephone</th>
+                  <th className="px-4 py-2 font-medium">Téléphone</th>
                   <th className="px-4 py-2 text-right font-medium">Factures dues</th>
-                  <th className="px-4 py-2 text-right font-medium">Montant du</th>
+                  <th className="px-4 py-2 text-right font-medium">Montant dû</th>
                   <th className="px-4 py-2 text-right font-medium sm:px-5">Plafond</th>
                 </tr>
               </thead>
@@ -142,7 +142,7 @@ export default async function PaymentsPage({
                             {money(row.customer.creditLimit)}
                             {overLimit && (
                               <span className="ml-2 inline-block">
-                                <Badge tone="danger">Depasse</Badge>
+                                <Badge tone="danger">Dépasse</Badge>
                               </span>
                             )}
                           </span>
@@ -167,7 +167,7 @@ export default async function PaymentsPage({
               type="search"
               name="search"
               defaultValue={query.search}
-              placeholder="Numero, reference, client"
+              placeholder="Numéro, référence, client"
               aria-label="Rechercher un paiement"
               className="min-h-9 rounded-lg border-0 px-3 text-sm ring-1 ring-inset ring-ink-300"
             />
@@ -187,14 +187,14 @@ export default async function PaymentsPage({
         {result.items.length === 0 ? (
           <EmptyState
             title="Aucun paiement"
-            description="Les encaissements enregistres depuis les ventes et les factures apparaitront ici."
+            description="Les encaissements enregistrés depuis les ventes et les factures apparaîtront ici."
           />
         ) : (
           <div className="-mx-4 overflow-x-auto sm:-mx-5">
             <table className="w-full min-w-[48rem] text-left text-sm">
               <thead>
                 <tr className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-500">
-                  <th className="px-4 py-2 font-medium sm:px-5">Numero</th>
+                  <th className="px-4 py-2 font-medium sm:px-5">Numéro</th>
                   <th className="px-4 py-2 font-medium">Date</th>
                   <th className="px-4 py-2 font-medium">Tiers</th>
                   <th className="px-4 py-2 font-medium">Facture</th>
@@ -208,7 +208,7 @@ export default async function PaymentsPage({
                     <td className="px-4 py-3 font-mono text-xs text-ink-600 sm:px-5">
                       {payment.number}
                       <p className="font-sans text-xs text-ink-400">
-                        {payment.user?.fullName ?? 'Systeme'}
+                        {payment.user?.fullName ?? 'Système'}
                       </p>
                     </td>
                     <td className="tabular whitespace-nowrap px-4 py-3 text-ink-600">

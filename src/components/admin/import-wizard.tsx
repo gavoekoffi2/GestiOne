@@ -80,7 +80,7 @@ export function ImportWizard({
     const data = await api.send<ImportResult>(`/api/imports/${target}`, {
       method: 'POST',
       body: { content, confirm: true },
-      successMessage: 'Import termine.',
+      successMessage: 'Import terminé.',
     });
     if (data) {
       setResult(data);
@@ -106,7 +106,7 @@ export function ImportWizard({
           href={`/api/imports/${target}`}
           className="text-sm font-semibold text-brand-700 hover:underline"
         >
-          Telecharger le modele
+          Télécharger le modèle
         </a>
       }
     >
@@ -115,13 +115,13 @@ export function ImportWizard({
 
         {result ? (
           <>
-            <Alert tone="success" title="Import termine">
-              {result.created} {label.toLowerCase()} cree(s).
-              {result.skipped > 0 && ` ${result.skipped} ligne(s) ignoree(s).`}
+            <Alert tone="success" title="Import terminé">
+              {result.created} {label.toLowerCase()} créé(s).
+              {result.skipped > 0 && ` ${result.skipped} ligne(s) ignorée(s).`}
             </Alert>
 
             {result.failed.length > 0 && (
-              <Alert tone="warning" title="Lignes non importees">
+              <Alert tone="warning" title="Lignes non importées">
                 <ul className="mt-1 space-y-0.5">
                   {result.failed.slice(0, 10).map((failure) => (
                     <li key={failure.line}>
@@ -150,8 +150,8 @@ export function ImportWizard({
                 className="mt-1 block w-full text-sm text-ink-600 file:mr-3 file:min-h-11 file:rounded-lg file:border-0 file:bg-brand-700 file:px-4 file:text-sm file:font-semibold file:text-white hover:file:bg-brand-800"
               />
               <p className="mt-1 text-xs text-ink-500">
-                Exports Excel et LibreOffice acceptes : separateur virgule ou point-virgule,
-                accents preserves.
+                Exports Excel et LibreOffice acceptés : séparateur virgule ou point-virgule,
+                accents préservés.
               </p>
             </div>
 
@@ -169,7 +169,7 @@ export function ImportWizard({
             {preview && preview.missingColumns.length > 0 && (
               <Alert tone="error" title="Colonnes manquantes">
                 Le fichier ne contient pas : {preview.missingColumns.join(', ')}. Colonnes
-                trouvees : {preview.columns.join(', ')}.
+                trouvées : {preview.columns.join(', ')}.
               </Alert>
             )}
 
@@ -178,7 +178,7 @@ export function ImportWizard({
                 <div className="flex flex-wrap gap-3 text-sm">
                   <Badge tone="success">{preview.readyCount} a importer</Badge>
                   {preview.duplicateCount > 0 && (
-                    <Badge tone="neutral">{preview.duplicateCount} deja existant(s)</Badge>
+                    <Badge tone="neutral">{preview.duplicateCount} déjà existant(s)</Badge>
                   )}
                   {preview.errorCount > 0 && (
                     <Badge tone="danger">{preview.errorCount} en erreur</Badge>
@@ -186,7 +186,7 @@ export function ImportWizard({
                 </div>
 
                 {preview.rows.length === 0 ? (
-                  <EmptyState title="Fichier vide" description="Aucune ligne de donnees trouvee." />
+                  <EmptyState title="Fichier vide" description="Aucune ligne de données trouvée." />
                 ) : (
                   <div className="max-h-96 overflow-auto rounded-lg border border-ink-200">
                     <table className="w-full text-left text-sm">
@@ -194,7 +194,7 @@ export function ImportWizard({
                         <tr className="text-xs uppercase tracking-wide text-ink-500">
                           <th className="px-3 py-2 font-medium">Ligne</th>
                           <th className="px-3 py-2 font-medium">Nom</th>
-                          <th className="px-3 py-2 font-medium">Etat</th>
+                          <th className="px-3 py-2 font-medium">État</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-ink-100">
@@ -238,8 +238,8 @@ export function ImportWizard({
 
                 {preview.duplicateCount > 0 && (
                   <p className="text-xs text-ink-500">
-                    Les lignes deja existantes sont ignorees, jamais ecrasees : un fichier
-                    reimporte par erreur ne remplacera pas vos corrections.
+                    Les lignes déjà existantes sont ignorées, jamais écrasées : un fichier
+                    réimporté par erreur ne remplacera pas vos corrections.
                   </p>
                 )}
               </>

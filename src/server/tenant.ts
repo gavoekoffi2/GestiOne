@@ -169,7 +169,7 @@ export async function requireTenant(): Promise<TenantContext> {
 export function requirePermission(context: TenantContext, permission: PermissionKey): void {
   if (!hasPermission(context.permissions, permission)) {
     throw new ForbiddenError(
-      `Action refusee : la permission "${permission}" est requise pour votre role (${context.roleName}).`,
+      `Action refusée : la permission "${permission}" est requise pour votre rôle (${context.roleName}).`,
     );
   }
 }

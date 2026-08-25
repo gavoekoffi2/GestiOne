@@ -24,7 +24,7 @@ export async function registerAccount(input: RegisterInput): Promise<RegisterRes
     select: { id: true },
   });
   if (existing) {
-    throw new ConflictError('Un compte existe deja avec cette adresse email.');
+    throw new ConflictError('Un compte existe déjà avec cette adresse email.');
   }
 
   // Le hachage scrypt prend volontairement du temps : il est fait hors
@@ -90,7 +90,7 @@ export async function authenticate(email: string, password: string): Promise<Aut
   if (!valid) throw genericFailure;
 
   if (!user.isActive) {
-    throw new UnauthorizedError('Ce compte est desactive. Contactez votre administrateur.');
+    throw new UnauthorizedError('Ce compte est désactivé. Contactez votre administrateur.');
   }
 
   return {

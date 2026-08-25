@@ -25,7 +25,7 @@ export const POST = handler(async (request: NextRequest) => {
     action: 'CREATE',
     entityType: 'Product',
     entityId: created.id,
-    summary: `Article "${created.name}" cree (${created.sku})`,
+    summary: `Article "${created.name}" créé (${created.sku})`,
     ipAddress: clientIp(request),
   });
 

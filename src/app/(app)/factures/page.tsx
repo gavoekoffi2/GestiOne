@@ -72,7 +72,7 @@ export default async function InvoicesPage({
         <Tile label="Total facture" value={formatMoney(result.sums.total, currency, context.locale)} icon="receipt" />
         <Tile label="Encaisse" value={formatMoney(result.sums.paid, currency, context.locale)} icon="wallet" />
         <Tile
-          label="Reste du"
+          label="Reste dû"
           value={formatMoney(result.sums.balance, currency, context.locale)}
           icon="minus"
           tone={result.sums.balance > 0n ? 'warning' : undefined}
@@ -87,7 +87,7 @@ export default async function InvoicesPage({
               type="search"
               name="search"
               defaultValue={query.search}
-              placeholder="Numero ou client"
+              placeholder="Numéro ou client"
               aria-label="Rechercher une facture"
               className="min-h-9 rounded-lg border-0 px-3 text-sm ring-1 ring-inset ring-ink-300"
             />
@@ -101,7 +101,7 @@ export default async function InvoicesPage({
             <label htmlFor="filter" className="sr-only">Filtre</label>
             <Select id="filter" name="filter" defaultValue={query.filter ?? ''} className="min-h-9 text-sm">
               <option value="">Toutes</option>
-              <option value="unpaid">Impayees</option>
+              <option value="unpaid">Impayées</option>
               <option value="overdue">En retard</option>
             </Select>
             <button type="submit" className="min-h-9 rounded-lg bg-ink-800 px-3 text-sm font-semibold text-white">
@@ -113,7 +113,7 @@ export default async function InvoicesPage({
         {result.items.length === 0 ? (
           <EmptyState
             title="Aucune facture"
-            description="Les ventes et les factures que vous emettez apparaitront ici."
+            description="Les ventes et les factures que vous émettez apparaîtront ici."
           />
         ) : (
           <>
@@ -121,12 +121,12 @@ export default async function InvoicesPage({
               <table className="w-full min-w-[52rem] text-left text-sm">
                 <thead>
                   <tr className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-500">
-                    <th className="px-4 py-2 font-medium sm:px-5">Numero</th>
+                    <th className="px-4 py-2 font-medium sm:px-5">Numéro</th>
                     <th className="px-4 py-2 font-medium">Date</th>
                     <th className="px-4 py-2 font-medium">Client</th>
                     <th className="px-4 py-2 text-right font-medium">Total</th>
-                    <th className="px-4 py-2 text-right font-medium">Paye</th>
-                    <th className="px-4 py-2 text-right font-medium">Reste du</th>
+                    <th className="px-4 py-2 text-right font-medium">Payé</th>
+                    <th className="px-4 py-2 text-right font-medium">Reste dû</th>
                     <th className="px-4 py-2 font-medium sm:px-5">Statut</th>
                   </tr>
                 </thead>
@@ -150,7 +150,7 @@ export default async function InvoicesPage({
                           {invoice.issueDate.toLocaleDateString('fr-FR')}
                           {invoice.dueDate && (
                             <p className={overdue ? 'text-xs text-red-600' : 'text-xs text-ink-400'}>
-                              Echeance {invoice.dueDate.toLocaleDateString('fr-FR')}
+                              Échéance {invoice.dueDate.toLocaleDateString('fr-FR')}
                             </p>
                           )}
                         </td>
@@ -187,7 +187,7 @@ export default async function InvoicesPage({
             {result.pageCount > 1 && (
               <nav className="mt-4 flex items-center justify-between text-sm" aria-label="Pagination">
                 <PageLink page={query.page - 1} query={query} disabled={query.page <= 1}>
-                  Precedent
+                  Précédent
                 </PageLink>
                 <span className="text-ink-500">
                   Page {result.page} sur {result.pageCount}

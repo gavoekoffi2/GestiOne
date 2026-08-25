@@ -16,8 +16,8 @@ export const PERIOD_LABELS: Record<PeriodKey, string> = {
   week: 'Cette semaine',
   month: 'Ce mois',
   quarter: 'Ce trimestre',
-  year: 'Cette annee',
-  custom: 'Periode personnalisee',
+  year: 'Cette année',
+  custom: 'Période personnalisée',
 };
 
 /** Periodes proposees dans le selecteur, dans l'ordre d'affichage. */

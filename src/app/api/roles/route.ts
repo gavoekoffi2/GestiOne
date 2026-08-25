@@ -19,9 +19,9 @@ export const POST = handler(async (request: NextRequest) => {
     companyId: context.companyId,
     userId: context.userId,
     action: 'PERMISSION_CHANGE',
-    entityType: 'Role',
+    entityType: 'Rôle',
     entityId: role.id,
-    summary: `Role "${role.name}" cree`,
+    summary: `Rôle "${role.name}" créé`,
     metadata: { permissions: role.permissions },
     ipAddress: clientIp(request),
   });

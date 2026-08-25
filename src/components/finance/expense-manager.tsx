@@ -72,7 +72,7 @@ export function ExpenseManager({
         reference: String(form.get('reference') ?? ''),
         notes: String(form.get('notes') ?? ''),
       },
-      successMessage: 'Depense enregistree.',
+      successMessage: 'Dépense enregistrée.',
     });
     if (result) {
       setOpen(false);
@@ -82,14 +82,14 @@ export function ExpenseManager({
 
   async function remove(row: ExpenseRow) {
     const reason = window.prompt(
-      `Supprimer la depense ${row.number} (${row.amountLabel}) ?\n\nIndiquez le motif :`,
+      `Supprimer la dépense ${row.number} (${row.amountLabel}) ?\n\nIndiquez le motif :`,
     );
     if (!reason?.trim()) return;
 
     const result = await api.send(`/api/expenses/${row.id}`, {
       method: 'DELETE',
       body: { reason },
-      successMessage: 'Depense supprimee. La caisse a ete recreditee si necessaire.',
+      successMessage: 'Dépense supprimée. La caisse a été recréditée si nécessaire.',
     });
     if (result) router.refresh();
   }
@@ -100,7 +100,7 @@ export function ExpenseManager({
       {api.success && <Alert tone="success">{api.success}</Alert>}
 
       {open ? (
-        <Card title="Nouvelle depense">
+        <Card title="Nouvelle dépense">
           <form onSubmit={submit} className="space-y-4" noValidate>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Description" htmlFor="description" required error={api.fieldErrors.description}>
@@ -115,22 +115,22 @@ export function ExpenseManager({
                   required
                 />
               </Field>
-              <Field label="Categorie" htmlFor="categoryId" error={api.fieldErrors.categoryId}>
+              <Field label="Catégorie" htmlFor="categoryId" error={api.fieldErrors.categoryId}>
                 <Select id="categoryId" name="categoryId" defaultValue="">
-                  <option value="">Sans categorie</option>
+                  <option value="">Sans catégorie</option>
                   {categories.map((option) => (
                     <option key={option.id} value={option.id}>{option.label}</option>
                   ))}
                 </Select>
               </Field>
               <Field
-                label="Mode de reglement"
+                label="Mode de règlement"
                 htmlFor="methodId"
                 error={api.fieldErrors.methodId}
-                hint="Un reglement en especes sort de la caisse du point de vente choisi."
+                hint="Un règlement en espèces sort de la caisse du point de vente choisi."
               >
                 <Select id="methodId" name="methodId" defaultValue="">
-                  <option value="">Non precise</option>
+                  <option value="">Non précisé</option>
                   {methods.map((option) => (
                     <option key={option.id} value={option.id}>{option.label}</option>
                   ))}
@@ -160,8 +160,8 @@ export function ExpenseManager({
                   ))}
                 </Select>
               </Field>
-              <Field label="Reference" htmlFor="reference" error={api.fieldErrors.reference}>
-                <Input id="reference" name="reference" placeholder="N° de recu" />
+              <Field label="Référence" htmlFor="reference" error={api.fieldErrors.reference}>
+                <Input id="reference" name="reference" placeholder="N° de reçu" />
               </Field>
               <div className="sm:col-span-2">
                 <Field label="Notes" htmlFor="notes" error={api.fieldErrors.notes}>
@@ -172,7 +172,7 @@ export function ExpenseManager({
 
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={api.pending}>
-                {api.pending ? 'Enregistrement...' : 'Enregistrer la depense'}
+                {api.pending ? 'Enregistrement...' : 'Enregistrer la dépense'}
               </Button>
               <Button type="button" variant="secondary" onClick={() => { setOpen(false); api.reset(); }}>
                 Annuler
@@ -183,17 +183,17 @@ export function ExpenseManager({
       ) : (
         canWrite && (
           <Button type="button" onClick={() => { api.reset(); setOpen(true); }}>
-            Enregistrer une depense
+            Enregistrer une dépense
           </Button>
         )
       )}
 
       <ListToolbar
-        placeholder="Rechercher (numero, description, reference)"
+        placeholder="Rechercher (numéro, description, référence)"
         filters={[
           {
             name: 'categoryId',
-            label: 'Toutes les categories',
+            label: 'Toutes les catégories',
             options: categories.map((option) => ({ value: option.id, label: option.label })),
           },
         ]}
@@ -202,8 +202,8 @@ export function ExpenseManager({
       <Card>
         {rows.length === 0 ? (
           <EmptyState
-            title="Aucune depense"
-            description="Enregistrez vos charges — loyer, transport, salaires — pour connaitre votre resultat reel."
+            title="Aucune dépense"
+            description="Enregistrez vos charges — loyer, transport, salaires — pour connaître votre résultat réel."
           />
         ) : (
           <>
@@ -211,11 +211,11 @@ export function ExpenseManager({
               <table className="w-full min-w-[48rem] text-left text-sm">
                 <thead>
                   <tr className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-500">
-                    <th className="px-4 py-2 font-medium sm:px-5">Numero</th>
+                    <th className="px-4 py-2 font-medium sm:px-5">Numéro</th>
                     <th className="px-4 py-2 font-medium">Date</th>
                     <th className="px-4 py-2 font-medium">Description</th>
-                    <th className="px-4 py-2 font-medium">Categorie</th>
-                    <th className="px-4 py-2 font-medium">Reglement</th>
+                    <th className="px-4 py-2 font-medium">Catégorie</th>
+                    <th className="px-4 py-2 font-medium">Règlement</th>
                     <th className="px-4 py-2 text-right font-medium">Montant</th>
                     <th className="px-4 py-2 font-medium sm:px-5" />
                   </tr>

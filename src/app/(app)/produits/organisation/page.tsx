@@ -4,7 +4,7 @@ import { listCategories, listUnits } from '@/server/services/catalog';
 import { can, requireTenantWith } from '@/server/tenant';
 import { OrganisationManager } from '@/components/catalog/organisation-manager';
 
-export const metadata: Metadata = { title: 'Categories et unites' };
+export const metadata: Metadata = { title: 'Catégories et unités' };
 export const dynamic = 'force-dynamic';
 
 export default async function OrganisationPage() {
@@ -20,10 +20,10 @@ export default async function OrganisationPage() {
         <Link href="/produits" className="text-sm font-medium text-brand-700 hover:underline">
           ← Retour au catalogue
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-ink-900">Categories et unites</h1>
+        <h1 className="mt-2 text-2xl font-bold text-ink-900">Catégories et unités</h1>
         <p className="mt-1 text-ink-600">
-          L&apos;organisation de votre catalogue : comment vos articles sont classes et dans quelles
-          unites ils se vendent.
+          L&apos;organisation de votre catalogue : comment vos articles sont classés et dans quelles
+          unités ils se vendent.
         </p>
       </div>
 

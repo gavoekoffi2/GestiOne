@@ -79,7 +79,7 @@ export async function nextDocumentNumber(
   `;
 
   const row = rows[0];
-  if (!row) throw new Error('Impossible de reserver un numero de document.');
+  if (!row) throw new Error('Impossible de reserver un numéro de document.');
 
   return formatDocumentNumber(row.prefix, period, row.assigned, row.padding);
 }

@@ -29,7 +29,7 @@ export async function findAvailableSlug(
   while (await tx.company.findUnique({ where: { slug: candidate }, select: { id: true } })) {
     suffix += 1;
     candidate = `${base}-${suffix}`;
-    if (suffix > 200) throw new ConflictError('Impossible de generer un identifiant unique.');
+    if (suffix > 200) throw new ConflictError('Impossible de générer un identifiant unique.');
   }
   return candidate;
 }
@@ -92,7 +92,7 @@ export async function provisionCompany(
   const location = await tx.location.create({
     data: {
       companyId: company.id,
-      name: 'Etablissement principal',
+      name: 'Établissement principal',
       code: 'PRINCIPAL',
       kind: 'SHOP',
       isDefault: true,

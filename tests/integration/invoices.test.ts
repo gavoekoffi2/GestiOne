@@ -339,7 +339,7 @@ describe('paiements et solde', () => {
         invoiceId: invoice.id,
         methodId: creditId,
       }),
-    ).rejects.toThrow(/pas encore paye/);
+    ).rejects.toThrow(/pas encore payé/);
   });
 
   it('exige une reference pour les modes qui en demandent une', async () => {
@@ -359,7 +359,7 @@ describe('paiements et solde', () => {
         invoiceId: invoice.id,
         methodId: momoId,
       }),
-    ).rejects.toThrow(/reference/);
+    ).rejects.toThrow(/référence/);
 
     await expect(
       recordPayment(s.ctx, {

@@ -60,7 +60,7 @@ export function LocationsManager({ locations }: { locations: LocationRow[] }) {
     const result = await api.send(isNew ? '/api/locations' : `/api/locations/${values.id}`, {
       method: isNew ? 'POST' : 'PUT',
       body,
-      successMessage: isNew ? 'Point de vente cree.' : 'Point de vente modifie.',
+      successMessage: isNew ? 'Point de vente créé.' : 'Point de vente modifié.',
     });
 
     if (result) {
@@ -71,13 +71,13 @@ export function LocationsManager({ locations }: { locations: LocationRow[] }) {
 
   async function onDelete(location: LocationRow) {
     const confirmed = window.confirm(
-      `Supprimer le point de vente "${location.name}" ?\n\nS'il est deja utilise, il sera desactive plutot que supprime afin de preserver l'historique.`,
+      `Supprimer le point de vente "${location.name}" ?\n\nS'il est déjà utilisé, il sera désactivé plutôt que supprimé afin de préserver l'historique.`,
     );
     if (!confirmed) return;
 
     const result = await api.send(`/api/locations/${location.id}`, {
       method: 'DELETE',
-      successMessage: 'Point de vente supprime.',
+      successMessage: 'Point de vente supprimé.',
     });
     if (result) router.refresh();
   }
@@ -99,7 +99,7 @@ export function LocationsManager({ locations }: { locations: LocationRow[] }) {
                 htmlFor="code"
                 required
                 error={api.fieldErrors.code}
-                hint="Identifiant court et unique, utilise dans les references de documents."
+                hint="Identifiant court et unique, utilisé dans les références de documents."
               >
                 <Input id="code" name="code" defaultValue={values.code} required placeholder="ADJ" />
               </Field>
@@ -112,7 +112,7 @@ export function LocationsManager({ locations }: { locations: LocationRow[] }) {
                   ))}
                 </Select>
               </Field>
-              <Field label="Telephone" htmlFor="phone" error={api.fieldErrors.phone}>
+              <Field label="Téléphone" htmlFor="phone" error={api.fieldErrors.phone}>
                 <Input id="phone" name="phone" type="tel" inputMode="tel" defaultValue={values.phone} />
               </Field>
               <Field label="Adresse" htmlFor="addressLine" error={api.fieldErrors.addressLine}>
@@ -131,7 +131,7 @@ export function LocationsManager({ locations }: { locations: LocationRow[] }) {
                   defaultChecked={values.isDefault}
                   className="size-4 rounded border-ink-300"
                 />
-                Point de vente par defaut
+                Point de vente par défaut
               </label>
               <label className="flex items-center gap-2 text-sm text-ink-700">
                 <input
@@ -189,7 +189,7 @@ export function LocationsManager({ locations }: { locations: LocationRow[] }) {
                   <td className="px-4 py-3 text-ink-600">{location.city || '—'}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
-                      {location.isDefault && <Badge tone="info">Par defaut</Badge>}
+                      {location.isDefault && <Badge tone="info">Par défaut</Badge>}
                       <Badge tone={location.isActive ? 'success' : 'neutral'}>
                         {location.isActive ? 'Actif' : 'Inactif'}
                       </Badge>

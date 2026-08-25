@@ -68,7 +68,7 @@ export function InvoiceActions({
         reference: String(form.get('reference') ?? ''),
         notes: String(form.get('notes') ?? ''),
       },
-      successMessage: 'Paiement enregistre.',
+      successMessage: 'Paiement enregistré.',
     });
     if (result) {
       setPanel('none');
@@ -79,7 +79,7 @@ export function InvoiceActions({
   async function issue() {
     const result = await api.send(`/api/invoices/${invoiceId}/emettre`, {
       method: 'POST',
-      successMessage: 'Facture emise. Le stock a ete mis a jour.',
+      successMessage: 'Facture émise. Le stock a été mis à jour.',
     });
     if (result) router.refresh();
   }
@@ -90,7 +90,7 @@ export function InvoiceActions({
     const result = await api.send(`/api/invoices/${invoiceId}/annuler`, {
       method: 'POST',
       body: { reason: String(form.get('reason') ?? '') },
-      successMessage: 'Facture annulee. Le stock a ete restitue.',
+      successMessage: 'Facture annulée. Le stock a été restitué.',
     });
     if (result) {
       setPanel('none');
@@ -100,14 +100,14 @@ export function InvoiceActions({
 
   async function removePayment(paymentId: string, label: string) {
     const reason = window.prompt(
-      `Annuler le paiement ${label} ?\n\nIndiquez le motif (cheque sans provision, erreur de saisie...) :`,
+      `Annuler le paiement ${label} ?\n\nIndiquez le motif (chèque sans provision, erreur de saisie...) :`,
     );
     if (!reason?.trim()) return;
 
     const result = await api.send(`/api/payments/${paymentId}`, {
       method: 'DELETE',
       body: { reason },
-      successMessage: 'Paiement annule. Le solde a ete recalcule.',
+      successMessage: 'Paiement annulé. Le solde a été recalcule.',
     });
     if (result) router.refresh();
   }
@@ -121,7 +121,7 @@ export function InvoiceActions({
         <div className="flex flex-wrap gap-2">
           {canIssue && isDraft && (
             <Button type="button" onClick={issue} disabled={api.pending}>
-              Emettre la facture
+              Émettre la facture
             </Button>
           )}
           {canPay && !isDraft && !isCancelled && !isSettled && (
@@ -143,7 +143,7 @@ export function InvoiceActions({
       )}
 
       {panel === 'pay' && (
-        <Card title="Enregistrer un paiement" description={`Reste du : ${balanceDueLabel}`}>
+        <Card title="Enregistrer un paiement" description={`Reste dû : ${balanceDueLabel}`}>
           <form onSubmit={pay} className="space-y-4" noValidate>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Montant" htmlFor="amount" required error={api.fieldErrors.amount}>
@@ -156,7 +156,7 @@ export function InvoiceActions({
                   required
                 />
               </Field>
-              <Field label="Mode de reglement" htmlFor="methodId" required error={api.fieldErrors.methodId}>
+              <Field label="Mode de règlement" htmlFor="methodId" required error={api.fieldErrors.methodId}>
                 <Select
                   id="methodId"
                   name="methodId"
@@ -174,11 +174,11 @@ export function InvoiceActions({
                 </Select>
               </Field>
               <Field
-                label="Reference"
+                label="Référence"
                 htmlFor="reference"
                 required={method?.requiresReference}
                 error={api.fieldErrors.reference}
-                hint="Numero de transaction Mobile Money, de cheque ou de bordereau."
+                hint="Numéro de transaction Mobile Money, de chèque ou de bordereau."
               >
                 <Input id="reference" name="reference" required={method?.requiresReference} />
               </Field>
@@ -202,11 +202,11 @@ export function InvoiceActions({
         <Card title="Annuler la facture">
           <form onSubmit={cancel} className="space-y-4" noValidate>
             <Alert tone="warning">
-              Le stock sorti sera restitue. Les paiements deja recus sont conserves : leur
-              remboursement est une decision commerciale, a enregistrer separement.
+              Le stock sorti sera restitué. Les paiements déjà reçus sont conservés : leur
+              remboursement est une décision commerciale, à enregistrer séparément.
             </Alert>
             <Field label="Motif" htmlFor="reason" required error={api.fieldErrors.reason}>
-              <Textarea id="reason" name="reason" required placeholder="Client s'est retracte" />
+              <Textarea id="reason" name="reason" required placeholder="Client s'est rétracté" />
             </Field>
             <div className="flex flex-wrap gap-2">
               <Button type="submit" variant="danger" disabled={api.pending}>

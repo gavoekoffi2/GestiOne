@@ -25,11 +25,11 @@ export interface TaxRow {
 }
 
 const KINDS = [
-  { value: 'CASH', label: 'Especes' },
+  { value: 'CASH', label: 'Espèces' },
   { value: 'MOBILE_MONEY', label: 'Mobile Money' },
   { value: 'BANK_TRANSFER', label: 'Virement' },
   { value: 'CARD', label: 'Carte' },
-  { value: 'CHEQUE', label: 'Cheque' },
+  { value: 'CHEQUE', label: 'Chèque' },
   { value: 'OTHER', label: 'Autre' },
 ];
 
@@ -64,7 +64,7 @@ export function CommerceSettings({
           requiresReference: form.get('requiresReference') === 'on',
           isActive: form.get('isActive') === 'on',
         },
-        successMessage: isNew ? 'Mode de reglement cree.' : 'Mode de reglement modifie.',
+        successMessage: isNew ? 'Mode de règlement créé.' : 'Mode de règlement modifié.',
       },
     );
     if (result) {
@@ -87,7 +87,7 @@ export function CommerceSettings({
         isDefault: form.get('isDefault') === 'on',
         isActive: form.get('isActive') === 'on',
       },
-      successMessage: isNew ? 'Taux cree.' : 'Taux modifie.',
+      successMessage: isNew ? 'Taux créé.' : 'Taux modifié.',
     });
     if (result) {
       setTax(null);
@@ -99,7 +99,7 @@ export function CommerceSettings({
     if (!window.confirm(`Supprimer "${label}" ?`)) return;
     const result = await api.send(`/api/${kind}/${id}`, {
       method: 'DELETE',
-      successMessage: 'Suppression effectuee.',
+      successMessage: 'Suppression effectuée.',
     });
     if (result) router.refresh();
   }
@@ -110,8 +110,8 @@ export function CommerceSettings({
       {api.success && <Alert tone="success">{api.success}</Alert>}
 
       <Card
-        title="Modes de reglement"
-        description="Ce que vos clients peuvent utiliser pour payer, et ce que vous utilisez pour regler vos fournisseurs."
+        title="Modes de règlement"
+        description="Ce que vos clients peuvent utiliser pour payer, et ce que vous utilisez pour régler vos fournisseurs."
         action={
           canWrite && !method ? (
             <Button
@@ -172,7 +172,7 @@ export function CommerceSettings({
                 <span>
                   Alimente la caisse
                   <span className="block text-xs text-ink-500">
-                    A cocher uniquement si l&apos;argent finit physiquement dans le tiroir.
+                    À cocher uniquement si l&apos;argent finit physiquement dans le tiroir.
                   </span>
                 </span>
               </label>
@@ -184,9 +184,9 @@ export function CommerceSettings({
                   className="mt-0.5 size-4 rounded border-ink-300"
                 />
                 <span>
-                  Exige une reference
+                  Exige une référence
                   <span className="block text-xs text-ink-500">
-                    Numero de transaction, de cheque ou de bordereau.
+                    Numéro de transaction, de chèque ou de bordereau.
                   </span>
                 </span>
               </label>
@@ -219,11 +219,11 @@ export function CommerceSettings({
                 <p className="font-medium text-ink-900">{row.name}</p>
                 <p className="text-xs text-ink-500">
                   {row.isCredit
-                    ? "Ne solde pas la facture : constate une creance"
+                    ? "Ne solde pas la facture : constate une créance"
                     : row.affectsCash
                       ? 'Alimente la caisse'
                       : 'N’alimente pas la caisse'}
-                  {row.requiresReference && ' · reference exigee'}
+                  {row.requiresReference && ' · référence exigée'}
                 </p>
               </div>
               {row.isSystem && <Badge tone="info">Fourni</Badge>}
@@ -256,7 +256,7 @@ export function CommerceSettings({
 
       <Card
         title="Taux de taxe"
-        description="TVA ou equivalent, applicable ligne par ligne sur vos devis et factures."
+        description="TVA ou équivalent, applicable ligne par ligne sur vos devis et factures."
         action={
           canWrite && !tax ? (
             <Button
@@ -301,7 +301,7 @@ export function CommerceSettings({
                   defaultChecked={tax === 'new' ? false : tax.isDefault}
                   className="size-4 rounded border-ink-300"
                 />
-                Taux par defaut
+                Taux par défaut
               </label>
               <label className="flex items-center gap-2 text-sm text-ink-700">
                 <input
@@ -326,7 +326,7 @@ export function CommerceSettings({
 
         {taxRates.length === 0 ? (
           <p className="py-4 text-center text-sm text-ink-500">
-            Aucun taux configure. Si votre activite n&apos;est pas assujettie, il n&apos;y a rien a
+            Aucun taux configuré. Si votre activité n&apos;est pas assujettie, il n&apos;y a rien à
             faire.
           </p>
         ) : (
@@ -339,7 +339,7 @@ export function CommerceSettings({
                     {(row.rate / 100).toString().replace('.', ',')} %
                   </p>
                 </div>
-                {row.isDefault && <Badge tone="info">Par defaut</Badge>}
+                {row.isDefault && <Badge tone="info">Par défaut</Badge>}
                 {!row.isActive && <Badge tone="neutral">Inactif</Badge>}
                 {canWrite && (
                   <>

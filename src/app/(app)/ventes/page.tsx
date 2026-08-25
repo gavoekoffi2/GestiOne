@@ -42,7 +42,7 @@ export default async function SalesPage() {
   if (activeLocations.length === 0) {
     return (
       <Alert tone="warning" title="Aucun point de vente actif">
-        Declarez au moins un point de vente avant d&apos;enregistrer des ventes.{' '}
+        Déclarez au moins un point de vente avant d&apos;enregistrer des ventes.{' '}
         <Link href="/parametres/points-de-vente" className="font-semibold underline">
           Configurer les points de vente
         </Link>
@@ -56,7 +56,7 @@ export default async function SalesPage() {
         <div>
           <h1 className="text-2xl font-bold text-ink-900">Vente</h1>
           <p className="mt-1 text-ink-600">
-            Composez le panier, encaissez, remettez le recu. Le stock et les creances se mettent a
+            Composez le panier, encaissez, remettez le reçu. Le stock et les créances se mettent à
             jour automatiquement.
           </p>
         </div>

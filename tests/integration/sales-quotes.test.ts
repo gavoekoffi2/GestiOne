@@ -364,7 +364,7 @@ describe('vente au comptoir', () => {
         lines: [{ productId: s.productId, quantity: 1_000n }],
         payment: { methodId: s.momoId },
       }),
-    ).rejects.toThrow(/reference/);
+    ).rejects.toThrow(/référence/);
   });
 
   it('refuse de vendre au-dela du stock disponible', async () => {

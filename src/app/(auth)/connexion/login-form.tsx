@@ -42,7 +42,7 @@ export function LoginForm() {
       router.replace('/tableau-de-bord');
       router.refresh();
     } catch {
-      setError('Le serveur est injoignable. Verifiez votre connexion Internet.');
+      setError('Le serveur est injoignable. Vérifiez votre connexion Internet.');
     } finally {
       setPending(false);
     }

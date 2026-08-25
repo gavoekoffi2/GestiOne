@@ -6,7 +6,7 @@ export const requiredText = (label: string, max = 200) =>
     .string({ required_error: `${label} est obligatoire.` })
     .trim()
     .min(1, `${label} est obligatoire.`)
-    .max(max, `${label} ne doit pas depasser ${max} caracteres.`);
+    .max(max, `${label} ne doit pas dépasser ${max} caractères.`);
 
 export const optionalText = (max = 200) =>
   z
@@ -48,7 +48,7 @@ export const phoneSchema = z
   .transform((value) => (value === '' ? undefined : value))
   .refine(
     (value) => value === undefined || /^\+?[\d\s().-]{6,32}$/.test(value),
-    'Numero de telephone invalide.',
+    'Numéro de téléphone invalide.',
   );
 
 export const countryCodeSchema = z

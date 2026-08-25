@@ -17,13 +17,13 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
   'Transport',
   'Loyer',
   'Salaires',
-  'Electricite',
+  'Électricité',
   'Eau',
-  'Internet et telephone',
+  'Internet et téléphone',
   'Marketing',
   'Fournitures',
   'Maintenance',
-  'Taxes et impots',
+  'Taxes et impôts',
   'Autres',
 ] as const;
 
@@ -55,7 +55,7 @@ export async function createExpenseCategory(companyId: string, name: string) {
     where: { companyId, name },
     select: { id: true },
   });
-  if (duplicate) throw new ConflictError('Une categorie de depense porte deja ce nom.');
+  if (duplicate) throw new ConflictError('Une catégorie de dépense porte déjà ce nom.');
 
   const last = await prisma.expenseCategory.findFirst({
     where: { companyId },
@@ -73,7 +73,7 @@ export async function deleteExpenseCategory(companyId: string, categoryId: strin
     where: { id: categoryId, companyId },
     include: { _count: { select: { expenses: true } } },
   });
-  if (!category) throw new NotFoundError('Categorie de depense introuvable.');
+  if (!category) throw new NotFoundError('Catégorie de dépense introuvable.');
 
   if (category._count.expenses > 0) {
     // Les depenses passees conservent leur categorie : on la desactive plutot
@@ -108,10 +108,10 @@ export interface ExpenseInput {
 
 export async function recordExpense(context: ExpenseContext, input: ExpenseInput) {
   if (input.amount <= 0n) {
-    throw new ValidationError('Le montant de la depense doit etre superieur a zero.');
+    throw new ValidationError('Le montant de la dépense doit être supérieur à zéro.');
   }
   if (!input.description.trim()) {
-    throw new ValidationError('Decrivez la depense.');
+    throw new ValidationError('Décrivez la dépense.');
   }
 
   if (input.categoryId) {
@@ -119,7 +119,7 @@ export async function recordExpense(context: ExpenseContext, input: ExpenseInput
       where: { id: input.categoryId, companyId: context.companyId },
       select: { id: true },
     });
-    if (!category) throw new NotFoundError('Categorie de depense introuvable.');
+    if (!category) throw new NotFoundError('Catégorie de dépense introuvable.');
   }
 
   if (input.supplierId) {
@@ -136,10 +136,10 @@ export async function recordExpense(context: ExpenseContext, input: ExpenseInput
       where: { id: input.methodId, companyId: context.companyId, isActive: true },
       select: { id: true, name: true, affectsCash: true, isCredit: true },
     });
-    if (!found) throw new NotFoundError('Mode de reglement introuvable ou desactive.');
+    if (!found) throw new NotFoundError('Mode de règlement introuvable ou désactivé.');
     if (found.isCredit) {
       throw new ValidationError(
-        "\"Credit\" n'est pas un mode de paiement d'une depense. Enregistrez plutot une commande fournisseur, qui suivra la dette.",
+        "\"Crédit\" n'est pas un mode de paiement d'une dépense. Enregistrez plutôt une commande fournisseur, qui suivra la dette.",
       );
     }
     method = found;
@@ -159,7 +159,7 @@ export async function recordExpense(context: ExpenseContext, input: ExpenseInput
     const balance = await cashBalance(context.companyId, input.locationId);
     if (balance < input.amount) {
       throw new ValidationError(
-        `La caisse ne contient pas assez d'especes pour cette depense (solde : ${balance}).`,
+        `La caisse ne contient pas assez d'espèces pour cette dépense (solde : ${balance}).`,
       );
     }
   }
@@ -208,7 +208,7 @@ export async function recordExpense(context: ExpenseContext, input: ExpenseInput
       action: 'CREATE',
       entityType: 'Expense',
       entityId: expense.id,
-      summary: `Depense ${number} : ${input.description}`,
+      summary: `Dépense ${number} : ${input.description}`,
       metadata: { amount: input.amount.toString() },
     });
 
@@ -222,7 +222,7 @@ export async function deleteExpense(context: ExpenseContext, expenseId: string, 
   const expense = await prisma.expense.findFirst({
     where: { id: expenseId, companyId: context.companyId },
   });
-  if (!expense) throw new NotFoundError('Depense introuvable.');
+  if (!expense) throw new NotFoundError('Dépense introuvable.');
 
   return prisma.$transaction(async (tx) => {
     // Le mouvement de caisse est neutralise par un mouvement inverse : le
@@ -238,7 +238,7 @@ export async function deleteExpense(context: ExpenseContext, expenseId: string, 
         locationId: movement.locationId,
         kind: 'ADJUSTMENT',
         amount: -movement.amount,
-        reason: `Annulation de la depense ${expense.number}`,
+        reason: `Annulation de la dépense ${expense.number}`,
         userId: context.userId,
       });
     }
@@ -251,7 +251,7 @@ export async function deleteExpense(context: ExpenseContext, expenseId: string, 
       action: 'DELETE',
       entityType: 'Expense',
       entityId: expenseId,
-      summary: `Depense ${expense.number} supprimee : ${reason}`,
+      summary: `Dépense ${expense.number} supprimée : ${reason}`,
       metadata: { amount: expense.amount.toString(), description: expense.description },
     });
   });
@@ -346,7 +346,7 @@ export async function expensesByCategory(companyId: string, from?: Date, to?: Da
   return rows
     .map((row) => ({
       categoryId: row.categoryId,
-      name: row.categoryId ? (byId.get(row.categoryId)?.name ?? 'Categorie supprimee') : 'Sans categorie',
+      name: row.categoryId ? (byId.get(row.categoryId)?.name ?? 'Catégorie supprimée') : 'Sans catégorie',
       count: row._count._all,
       total: row._sum.amount ?? 0n,
     }))

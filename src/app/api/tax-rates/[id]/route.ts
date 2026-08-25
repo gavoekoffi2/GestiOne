@@ -20,7 +20,7 @@ export const PUT = handler(async (request: NextRequest, { params }) => {
     action: 'UPDATE',
     entityType: 'TaxRate',
     entityId: taxRate.id,
-    summary: `Taux de taxe "${taxRate.name}" modifie`,
+    summary: `Taux de taxe "${taxRate.name}" modifié`,
     ipAddress: clientIp(request),
   });
 
@@ -38,7 +38,7 @@ export const DELETE = handler(async (request: NextRequest, { params }) => {
     action: 'DELETE',
     entityType: 'TaxRate',
     entityId: id as string,
-    summary: 'Taux de taxe supprime',
+    summary: 'Taux de taxe supprimé',
     ipAddress: clientIp(request),
   });
 

@@ -33,7 +33,7 @@ export default async function NewPurchasePage() {
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-ink-900">Nouvel achat</h1>
         <p className="mt-1 text-ink-600">
-          Enregistrez un achat deja livre, ou passez une commande a receptionner plus tard.
+          Enregistrez un achat déjà livré, ou passez une commande à réceptionner plus tard.
         </p>
       </div>
 

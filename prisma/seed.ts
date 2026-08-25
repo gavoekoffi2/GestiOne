@@ -19,11 +19,21 @@ if (!connectionString) {
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
 async function main() {
-  const result = await prisma.currency.createMany({
-    data: SEED_CURRENCIES.map((currency) => ({ ...currency })),
-    skipDuplicates: true,
-  });
-  console.log(`Devises installees : ${result.count} ajoutee(s), ${SEED_CURRENCIES.length} au total.`);
+  // Upsert plutot que createMany : reamorcer une base existante doit aussi
+  // remettre a jour les libelles et le nombre de decimales.
+  for (const currency of SEED_CURRENCIES) {
+    await prisma.currency.upsert({
+      where: { code: currency.code },
+      create: { ...currency },
+      update: {
+        name: currency.name,
+        symbol: currency.symbol,
+        decimals: currency.decimals,
+        symbolPosition: currency.symbolPosition,
+      },
+    });
+  }
+  console.log(`Devises a jour : ${SEED_CURRENCIES.length} au total.`);
 }
 
 main()

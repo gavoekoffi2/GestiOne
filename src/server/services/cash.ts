@@ -34,8 +34,8 @@ export const CASH_MOVEMENT_LABELS: Record<CashMovementKind, string> = {
   OPENING: 'Fonds de caisse',
   SALE: 'Encaissement',
   REFUND: 'Remboursement',
-  EXPENSE: 'Depense',
-  PURCHASE: 'Reglement fournisseur',
+  EXPENSE: 'Dépense',
+  PURCHASE: 'Règlement fournisseur',
   DEPOSIT: 'Apport',
   WITHDRAWAL: 'Retrait',
   ADJUSTMENT: 'Ajustement',
@@ -121,7 +121,7 @@ export async function openCashSession(
   input: { locationId: string; openingAmount: bigint },
 ) {
   if (input.openingAmount < 0n) {
-    throw new ValidationError('Le fonds de caisse ne peut pas etre negatif.');
+    throw new ValidationError('Le fonds de caisse ne peut pas être négatif.');
   }
 
   const location = await prisma.location.findFirst({
@@ -134,7 +134,7 @@ export async function openCashSession(
     const existing = await openSessionFor(tx, context.companyId, input.locationId);
     if (existing) {
       throw new ConflictError(
-        `Une caisse est deja ouverte pour ${location.name}. Fermez-la avant d'en ouvrir une nouvelle.`,
+        `Une caisse est déjà ouverte pour ${location.name}. Fermez-la avant d'en ouvrir une nouvelle.`,
       );
     }
 
@@ -184,7 +184,7 @@ export async function closeCashSession(
   input: { countedAmount: bigint; notes?: string },
 ) {
   if (input.countedAmount < 0n) {
-    throw new ValidationError('Le montant compte ne peut pas etre negatif.');
+    throw new ValidationError('Le montant compte ne peut pas être négatif.');
   }
 
   const session = await prisma.cashSession.findFirst({
@@ -193,7 +193,7 @@ export async function closeCashSession(
   });
   if (!session) throw new NotFoundError('Session de caisse introuvable.');
   if (session.status === 'CLOSED') {
-    throw new ConflictError('Cette caisse est deja fermee.');
+    throw new ConflictError('Cette caisse est déjà fermée.');
   }
 
   return prisma.$transaction(async (tx) => {
@@ -224,8 +224,8 @@ export async function closeCashSession(
       entityId: sessionId,
       summary:
         difference === 0n
-          ? `Caisse fermee a ${session.location.name}, sans ecart`
-          : `Caisse fermee a ${session.location.name} — ecart de ${difference > 0n ? '+' : ''}${difference}`,
+          ? `Caisse fermée a ${session.location.name}, sans écart`
+          : `Caisse fermée a ${session.location.name} — écart de ${difference > 0n ? '+' : ''}${difference}`,
       metadata: {
         expected: expected.toString(),
         counted: input.countedAmount.toString(),
@@ -247,7 +247,7 @@ export async function recordCashMovement(
   },
 ) {
   if (input.amount <= 0n) {
-    throw new ValidationError('Le montant doit etre superieur a zero.');
+    throw new ValidationError('Le montant doit être supérieur à zéro.');
   }
   if (!input.reason.trim()) {
     throw new ValidationError('Indiquez le motif du mouvement.');
@@ -267,7 +267,7 @@ export async function recordCashMovement(
     const balance = await cashBalance(context.companyId, input.locationId);
     if (balance + signed < 0n) {
       throw new ValidationError(
-        `La caisse ne contient pas assez d'especes pour ce retrait (solde : ${balance}).`,
+        `La caisse ne contient pas assez d'espèces pour ce retrait (solde : ${balance}).`,
       );
     }
   }

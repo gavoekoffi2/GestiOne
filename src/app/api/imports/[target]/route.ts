@@ -37,7 +37,7 @@ export const GET = handler(async (_request: NextRequest, { params }) => {
     status: 200,
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="modele-${target}.csv"`,
+      'Content-Disposition': `attachment; filename="modèle-${target}.csv"`,
     },
   });
 });
@@ -66,7 +66,7 @@ export const POST = handler(async (request: NextRequest, { params }) => {
   const result = await runImport(context.companyId, key, content, currency);
   if (result.created === 0 && result.failed.length === 0) {
     throw new ValidationError(
-      "Aucune ligne n'a pu etre importee. Verifiez l'apercu avant de confirmer.",
+      "Aucune ligne n'a pu être importée. Vérifiez l'aperçu avant de confirmer.",
     );
   }
 

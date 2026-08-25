@@ -20,7 +20,7 @@ export const POST = handler(async (request: NextRequest) => {
     action: 'CREATE',
     entityType: 'TaxRate',
     entityId: taxRate.id,
-    summary: `Taux de taxe "${taxRate.name}" cree`,
+    summary: `Taux de taxe "${taxRate.name}" créé`,
     ipAddress: clientIp(request),
   });
 

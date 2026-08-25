@@ -114,30 +114,30 @@ export default async function DashboardPage({
           hint={`${data.collected.count} paiement(s)`}
         />
         <StatTile
-          label="Depenses"
+          label="Dépenses"
           value={money(data.expenses.total)}
           icon="minus"
           higherIsBetter={false}
-          hint={`${data.expenses.count} depense(s)`}
+          hint={`${data.expenses.count} dépense(s)`}
         />
         {canSeeProfit && (
           <StatTile
-            label="Resultat estime"
+            label="Résultat estimé"
             value={money(data.netResult)}
             icon="cash"
             tone={data.netResult < 0n ? 'danger' : 'success'}
-            hint="Marge brute moins depenses"
+            hint="Marge brute moins dépenses"
           />
         )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
-          label="Creances clients"
+          label="Créances clients"
           value={money(data.outstanding.receivable)}
           icon="users"
           tone={data.outstanding.receivable > 0n ? 'warning' : undefined}
-          hint={`${data.outstanding.receivableCount} facture(s) impayee(s)`}
+          hint={`${data.outstanding.receivableCount} facture(s) impayée(s)`}
         />
         <StatTile
           label="En retard"
@@ -168,8 +168,8 @@ export default async function DashboardPage({
       </div>
 
       <Card
-        title="Evolution"
-        description="Chiffre d'affaires facture et depenses engagees sur la periode."
+        title="Évolution"
+        description="Chiffre d'affaires facture et dépenses engagées sur la période."
       >
         <RevenueChart
           currency={currency}
@@ -185,10 +185,10 @@ export default async function DashboardPage({
       <div className="grid gap-4 lg:grid-cols-2">
         <Card
           title="Produits les plus vendus"
-          description="Classes par chiffre d'affaires sur la periode."
+          description="Classés par chiffre d'affaires sur la période."
         >
           <RankingBars
-            emptyMessage="Aucune vente sur cette periode."
+            emptyMessage="Aucune vente sur cette période."
             rows={data.topProducts.map((product) => ({
               id: product.productId ?? product.name,
               label: product.name,
@@ -201,7 +201,7 @@ export default async function DashboardPage({
 
         {recentInvoices && (
           <Card
-            title="Dernieres factures"
+            title="Dernières factures"
             action={
               <Link href="/factures" className="text-sm font-semibold text-brand-700 hover:underline">
                 Tout voir
@@ -211,7 +211,7 @@ export default async function DashboardPage({
             {recentInvoices.items.length === 0 ? (
               <EmptyState
                 title="Aucune facture"
-                description="Les ventes et factures emises apparaitront ici."
+                description="Les ventes et factures émises apparaîtront ici."
               />
             ) : (
               <ul className="divide-y divide-ink-100">
@@ -235,7 +235,7 @@ export default async function DashboardPage({
                       {invoice.balanceDue > 0n ? (
                         <Badge tone="warning">{money(invoice.balanceDue)} du</Badge>
                       ) : (
-                        <Badge tone="success">Payee</Badge>
+                        <Badge tone="success">Payée</Badge>
                       )}
                     </div>
                   </li>
@@ -248,9 +248,9 @@ export default async function DashboardPage({
 
       {data.sales.invoiceCount > 0 && (
         <div className="grid gap-4 sm:grid-cols-3">
-          <Summary label="Factures emises" value={String(data.sales.invoiceCount)} />
+          <Summary label="Factures émises" value={String(data.sales.invoiceCount)} />
           <Summary label="Panier moyen" value={money(data.sales.averageTicket)} />
-          <Summary label="Achats de la periode" value={money(data.purchases.total)} />
+          <Summary label="Achats de la période" value={money(data.purchases.total)} />
         </div>
       )}
     </div>

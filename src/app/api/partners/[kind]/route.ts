@@ -64,7 +64,7 @@ export const POST = handler(async (request: NextRequest, { params }) => {
     action: 'CREATE',
     entityType: target.kind === 'CUSTOMER' ? 'Customer' : 'Supplier',
     entityId: partner.id,
-    summary: `${target.kind === 'CUSTOMER' ? 'Client' : 'Fournisseur'} "${partner.name}" cree (${partner.code})`,
+    summary: `${target.kind === 'CUSTOMER' ? 'Client' : 'Fournisseur'} "${partner.name}" créé (${partner.code})`,
     ipAddress: clientIp(request),
   });
 

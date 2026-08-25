@@ -83,7 +83,7 @@ export async function readJson<S extends ZodTypeAny>(
   try {
     payload = await request.json();
   } catch {
-    throw new ValidationError('Corps de requete JSON invalide.');
+    throw new ValidationError('Corps de requête JSON invalide.');
   }
   return schema.parse(payload) as z.infer<S>;
 }

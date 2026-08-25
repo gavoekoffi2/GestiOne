@@ -4,7 +4,7 @@ import { PERMISSION_GROUPS } from '@/server/permissions';
 import { requireTenantWith } from '@/server/tenant';
 import { RolesManager } from './roles-manager';
 
-export const metadata: Metadata = { title: 'Roles et permissions' };
+export const metadata: Metadata = { title: 'Rôles et permissions' };
 export const dynamic = 'force-dynamic';
 
 export default async function RolesPage() {
@@ -14,10 +14,10 @@ export default async function RolesPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-ink-900">Roles et permissions</h1>
+        <h1 className="text-2xl font-bold text-ink-900">Rôles et permissions</h1>
         <p className="mt-1 text-ink-600">
-          Un role est une liste de droits. Les permissions sont verifiees par le serveur a chaque
-          operation : masquer un bouton ne suffit pas, et n&apos;est pas ce qui protege vos donnees.
+          Un rôle est une liste de droits. Les permissions sont vérifiées par le serveur à chaque
+          opération : masquer un bouton ne suffit pas, et n&apos;est pas ce qui protège vos données.
         </p>
       </div>
 

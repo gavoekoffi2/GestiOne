@@ -17,7 +17,7 @@ function requiredMoney(decimals: number, label: string) {
     try {
       const parsed = parseAmount(value, decimals);
       if (parsed < 0n) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${label} ne peut pas etre negatif.` });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${label} ne peut pas être négatif.` });
         return z.NEVER;
       }
       return parsed;
@@ -40,7 +40,7 @@ function optionalMoney(decimals: number, label: string) {
       try {
         const parsed = parseAmount(value, decimals);
         if (parsed < 0n) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${label} ne peut pas etre negatif.` });
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${label} ne peut pas être négatif.` });
           return z.NEVER;
         }
         return parsed;
@@ -57,7 +57,7 @@ const quantity = z.union([z.string(), z.number()]).transform((value, ctx) => {
     if (parsed <= 0n) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'La quantite doit etre superieure a zero.',
+        message: 'La quantité doit être supérieure à zéro.',
       });
       return z.NEVER;
     }
@@ -65,7 +65,7 @@ const quantity = z.union([z.string(), z.number()]).transform((value, ctx) => {
   } catch (error) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: error instanceof QuantityError ? 'Quantite invalide.' : 'Quantite invalide.',
+      message: error instanceof QuantityError ? 'Quantité invalide.' : 'Quantité invalide.',
     });
     return z.NEVER;
   }
@@ -81,7 +81,7 @@ const percentage = z
     if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Le pourcentage doit etre compris entre 0 et 100.',
+        message: 'Le pourcentage doit être compris entre 0 et 100.',
       });
       return z.NEVER;
     }
@@ -123,7 +123,7 @@ export function purchaseSchema(decimals: number) {
             productId: optionalId,
             description: optionalText(300),
             quantity,
-            unitCost: optionalMoney(decimals, 'Le cout unitaire'),
+            unitCost: optionalMoney(decimals, 'Le coût unitaire'),
             discountRate: percentage,
             taxRateId: optionalId,
           }),
@@ -160,19 +160,19 @@ export const receiveSchema = z.object({
             if (parsed < 0n) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: 'La quantite recue ne peut pas etre negative.',
+                message: 'La quantité reçue ne peut pas être négative.',
               });
               return z.NEVER;
             }
             return parsed;
           } catch {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Quantite invalide.' });
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Quantité invalide.' });
             return z.NEVER;
           }
         }),
       }),
     )
-    .min(1, 'Indiquez au moins une quantite receptionnee.'),
+    .min(1, 'Indiquez au moins une quantité réceptionnée.'),
 });
 
 export function expenseSchema(decimals: number) {
@@ -190,7 +190,7 @@ export function expenseSchema(decimals: number) {
 }
 
 export const expenseCategorySchema = z.object({
-  name: requiredText('Le nom de la categorie', 60),
+  name: requiredText('Le nom de la catégorie', 60),
 });
 
 export function openCashSchema(decimals: number) {

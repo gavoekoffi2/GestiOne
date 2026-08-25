@@ -6,7 +6,7 @@ import { listPaymentMethods, listTaxRates } from '@/server/services/commerce-set
 import { CHANNELS } from '@/server/services/notifications';
 import { can, requireTenantWith } from '@/server/tenant';
 
-export const metadata: Metadata = { title: 'Reglements et taxes' };
+export const metadata: Metadata = { title: 'Règlements et taxes' };
 export const dynamic = 'force-dynamic';
 
 export default async function CommerceSettingsPage() {
@@ -21,11 +21,11 @@ export default async function CommerceSettingsPage() {
     <div className="space-y-5">
       <div>
         <Link href="/parametres" className="text-sm font-medium text-brand-700 hover:underline">
-          ← Retour aux parametres
+          ← Retour aux paramètres
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-ink-900">Reglements et taxes</h1>
+        <h1 className="mt-2 text-2xl font-bold text-ink-900">Règlements et taxes</h1>
         <p className="mt-1 text-ink-600">
-          Comment vous encaissez, et quelles taxes s&apos;appliquent a vos documents.
+          Comment vous encaissez, et quelles taxes s&apos;appliquent à vos documents.
         </p>
       </div>
 
@@ -52,11 +52,11 @@ export default async function CommerceSettingsPage() {
 
       <Card
         title="Alertes"
-        description="GestiOne vous signale ce qui demande une action : ruptures de stock, factures en retard, devis proches de l'expiration, dettes echues."
+        description="GestiOne vous signale ce qui demande une action : ruptures de stock, factures en retard, devis proches de l'expiration, dettes échues."
       >
         <p className="text-sm text-ink-600">
-          Les alertes sont calculees en direct et apparaissent sur votre tableau de bord. Il
-          n&apos;y a rien a marquer comme lu : une alerte disparait quand le probleme est resolu.
+          Les alertes sont calculées en direct et apparaissent sur votre tableau de bord. Il
+          n&apos;y a rien à marquer comme lu : une alerte disparaît quand le problème est résolu.
         </p>
 
         <ul className="mt-4 space-y-2">
@@ -81,8 +81,8 @@ export default async function CommerceSettingsPage() {
         */}
         <p className="mt-4 text-xs text-ink-500">
           L&apos;envoi par courriel, SMS, WhatsApp ou notification push demande un fournisseur
-          externe, propre a chaque pays. Ces canaux sont prevus par l&apos;architecture mais ne sont
-          pas encore branches : GestiOne ne pretend pas envoyer ce qu&apos;il n&apos;envoie pas.
+          externe, propre à chaque pays. Ces canaux sont prévus par l&apos;architecture mais ne sont
+          pas encore branchés : GestiOne ne prétend pas envoyer ce qu&apos;il n&apos;envoie pas.
         </p>
       </Card>
     </div>

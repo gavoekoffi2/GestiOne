@@ -42,7 +42,7 @@ export function RegisterForm({ currencies }: { currencies: Array<{ code: string;
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body?.error?.message ?? "L'inscription a echoue.");
+        setError(body?.error?.message ?? "L'inscription a échoué.");
         if (body?.error?.details && typeof body.error.details === 'object') {
           setFieldErrors(body.error.details as Record<string, string>);
         }
@@ -52,7 +52,7 @@ export function RegisterForm({ currencies }: { currencies: Array<{ code: string;
       router.replace('/tableau-de-bord');
       router.refresh();
     } catch {
-      setError('Le serveur est injoignable. Verifiez votre connexion Internet.');
+      setError('Le serveur est injoignable. Vérifiez votre connexion Internet.');
     } finally {
       setPending(false);
     }
@@ -87,7 +87,7 @@ export function RegisterForm({ currencies }: { currencies: Array<{ code: string;
           htmlFor="currencyCode"
           required
           error={fieldErrors.currencyCode}
-          hint="Utilisee sur toutes vos factures."
+          hint="Utilisée sur toutes vos factures."
         >
           <Select
             id="currencyCode"
@@ -123,7 +123,7 @@ export function RegisterForm({ currencies }: { currencies: Array<{ code: string;
           />
         </Field>
 
-        <Field label="Telephone" htmlFor="phone" error={fieldErrors.phone}>
+        <Field label="Téléphone" htmlFor="phone" error={fieldErrors.phone}>
           <Input
             id="phone"
             name="phone"
@@ -140,13 +140,13 @@ export function RegisterForm({ currencies }: { currencies: Array<{ code: string;
         htmlFor="password"
         required
         error={fieldErrors.password}
-        hint="8 caracteres minimum, dont au moins une lettre et un chiffre."
+        hint="8 caractères minimum, dont au moins une lettre et un chiffre."
       >
         <Input id="password" name="password" type="password" autoComplete="new-password" required />
       </Field>
 
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? 'Creation en cours...' : 'Creer mon entreprise'}
+        {pending ? 'Création en cours...' : 'Créer mon entreprise'}
       </Button>
     </form>
   );

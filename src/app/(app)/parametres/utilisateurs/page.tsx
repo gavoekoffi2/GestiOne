@@ -20,7 +20,7 @@ export default async function MembersPage() {
       <div>
         <h1 className="text-2xl font-bold text-ink-900">Utilisateurs</h1>
         <p className="mt-1 text-ink-600">
-          Chaque collaborateur recoit un role, qui determine exactement ce qu&apos;il peut voir et
+          Chaque collaborateur reçoit un rôle, qui détermine exactement ce qu&apos;il peut voir et
           faire.
         </p>
       </div>

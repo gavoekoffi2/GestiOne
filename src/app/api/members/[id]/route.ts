@@ -17,7 +17,7 @@ export const PUT = handler(async (request: NextRequest, { params }) => {
     action: 'PERMISSION_CHANGE',
     entityType: 'Membership',
     entityId: membership.id,
-    summary: `${membership.user.fullName} : role ${membership.role.name}, compte ${
+    summary: `${membership.user.fullName} : rôle ${membership.role.name}, compte ${
       membership.isActive ? 'actif' : 'desactive'
     }`,
     ipAddress: clientIp(request),
@@ -37,7 +37,7 @@ export const DELETE = handler(async (request: NextRequest, { params }) => {
     action: 'PERMISSION_CHANGE',
     entityType: 'Membership',
     entityId: id as string,
-    summary: "Utilisateur retire de l'equipe",
+    summary: "Utilisateur retiré de l'équipe",
     ipAddress: clientIp(request),
   });
 

@@ -21,7 +21,7 @@ export const POST = handler(async (request: NextRequest) => {
     action: 'CREATE',
     entityType: 'Location',
     entityId: location.id,
-    summary: `Point de vente "${location.name}" cree`,
+    summary: `Point de vente "${location.name}" créé`,
     ipAddress: clientIp(request),
   });
 

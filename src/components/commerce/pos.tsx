@@ -251,20 +251,20 @@ export function PointOfSale({
 
   if (receipt) {
     return (
-      <Card title={`Vente ${receipt.number} enregistree`}>
+      <Card title={`Vente ${receipt.number} enregistrée`}>
         <dl className="space-y-2 text-sm">
           <Row label="Total" value={formatMoney(receipt.total, currency, locale)} strong />
           <Row label="Encaisse" value={formatMoney(receipt.paid, currency, locale)} />
           {receipt.changeDue > 0n && (
             <Row
-              label="Monnaie a rendre"
+              label="Monnaie à rendre"
               value={formatMoney(receipt.changeDue, currency, locale)}
               strong
             />
           )}
           {receipt.balanceDue > 0n && (
             <Row
-              label="Reste du par le client"
+              label="Reste dû par le client"
               value={formatMoney(receipt.balanceDue, currency, locale)}
               strong
             />
@@ -280,7 +280,7 @@ export function PointOfSale({
             variant="secondary"
             onClick={() => router.push(`/factures/${receipt.invoiceId}`)}
           >
-            Voir le recu
+            Voir le reçu
           </Button>
         </div>
       </Card>
@@ -298,7 +298,7 @@ export function PointOfSale({
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Nom, reference, ou scannez un code-barres"
+              placeholder="Nom, référence, ou scannez un code-barres"
               aria-label="Rechercher un article"
               className="pl-9"
               autoFocus
@@ -330,7 +330,7 @@ export function PointOfSale({
             ))}
             {matches.length === 0 && (
               <p className="col-span-full py-4 text-center text-sm text-ink-500">
-                Aucun article ne correspond a &laquo; {search} &raquo;.
+                Aucun article ne correspond à &laquo; {search} &raquo;.
               </p>
             )}
           </div>
@@ -376,7 +376,7 @@ export function PointOfSale({
 
                     <div className="mt-2 grid gap-2 sm:grid-cols-4">
                       <label className="text-xs text-ink-500">
-                        Quantite
+                        Quantité
                         <Input
                           value={line.quantityText}
                           onChange={(event) => updateLine(index, { quantityText: event.target.value })}
@@ -447,8 +447,8 @@ export function PointOfSale({
         {api.error && <Alert tone="error">{api.error}</Alert>}
         {stockWarnings.length > 0 && (
           <Alert tone="warning" title="Stock insuffisant">
-            {stockWarnings.map((line) => line.name).join(', ')} : la quantite demandee depasse le
-            stock enregistre. La vente sera refusee. Ajustez la quantite ou faites une entree de
+            {stockWarnings.map((line) => line.name).join(', ')} : la quantité demandée dépasse le
+            stock enregistré. La vente sera refusée. Ajustez la quantité ou faites une entrée de
             stock.
           </Alert>
         )}
@@ -474,7 +474,7 @@ export function PointOfSale({
             <Field
               label="Client"
               htmlFor="pos-customer"
-              hint={isCredit ? 'Obligatoire pour une vente a credit.' : 'Facultatif.'}
+              hint={isCredit ? 'Obligatoire pour une vente à crédit.' : 'Facultatif.'}
             >
               <Select
                 id="pos-customer"
@@ -521,7 +521,7 @@ export function PointOfSale({
               </dl>
             </div>
 
-            <Field label="Mode de reglement" htmlFor="pos-method">
+            <Field label="Mode de règlement" htmlFor="pos-method">
               <Select
                 id="pos-method"
                 value={methodId}
@@ -538,7 +538,7 @@ export function PointOfSale({
             {!isCredit && (
               <>
                 <Field
-                  label="Montant recu"
+                  label="Montant reçu"
                   htmlFor="pos-tendered"
                   hint="Laissez vide si le client paie exactement le total."
                 >
@@ -561,15 +561,15 @@ export function PointOfSale({
                   if (given > total) {
                     return (
                       <Alert tone="info">
-                        Monnaie a rendre : <strong>{formatMoney(given - total, currency, locale)}</strong>
+                        Monnaie à rendre : <strong>{formatMoney(given - total, currency, locale)}</strong>
                       </Alert>
                     );
                   }
                   if (given < total) {
                     return (
                       <Alert tone="warning">
-                        Reste a payer : <strong>{formatMoney(total - given, currency, locale)}</strong>
-                        {' '}— la vente sera enregistree comme partiellement payee.
+                        Reste à payer : <strong>{formatMoney(total - given, currency, locale)}</strong>
+                        {' '}— la vente sera enregistrée comme partiellement payée.
                       </Alert>
                     );
                   }
@@ -578,10 +578,10 @@ export function PointOfSale({
 
                 {method?.requiresReference && (
                   <Field
-                    label="Reference"
+                    label="Référence"
                     htmlFor="pos-reference"
                     required
-                    hint="Numero de transaction, de cheque ou de bordereau."
+                    hint="Numéro de transaction, de chèque ou de bordereau."
                   >
                     <Input
                       id="pos-reference"
@@ -595,7 +595,7 @@ export function PointOfSale({
 
             {isCredit && (
               <Alert tone="warning">
-                Vente a credit : la facture restera due et apparaitra dans les creances du client.
+                Vente à crédit : la facture restera due et apparaîtra dans les créances du client.
               </Alert>
             )}
 

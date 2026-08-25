@@ -37,7 +37,7 @@ export const POST = handler(async (request: NextRequest) => {
     action: 'CREATE',
     entityType: 'Company',
     entityId: result.companyId,
-    summary: `Creation de l'entreprise "${input.companyName}"`,
+    summary: `Création de l'entreprise "${input.companyName}"`,
     ipAddress: ip,
   });
 

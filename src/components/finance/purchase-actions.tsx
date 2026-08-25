@@ -57,7 +57,7 @@ export function PurchaseActions({
   async function place() {
     const result = await api.send(`/api/purchases/${orderId}/commander`, {
       method: 'POST',
-      successMessage: 'Commande passee au fournisseur.',
+      successMessage: 'Commande passée au fournisseur.',
     });
     if (result) router.refresh();
   }
@@ -70,14 +70,14 @@ export function PurchaseActions({
       .filter((entry) => entry.quantity && entry.quantity !== '0');
 
     if (payload.length === 0) {
-      window.alert('Indiquez au moins une quantite receptionnee.');
+      window.alert('Indiquez au moins une quantité réceptionnée.');
       return;
     }
 
     const result = await api.send(`/api/purchases/${orderId}/reception`, {
       method: 'POST',
       body: { lines: payload },
-      successMessage: 'Reception enregistree. Le stock a ete mis a jour.',
+      successMessage: 'Réception enregistrée. Le stock a été mis à jour.',
     });
     if (result) {
       setPanel('none');
@@ -97,7 +97,7 @@ export function PurchaseActions({
         methodId: String(form.get('methodId') ?? ''),
         reference: String(form.get('reference') ?? ''),
       },
-      successMessage: 'Reglement enregistre.',
+      successMessage: 'Règlement enregistré.',
     });
     if (result) {
       setPanel('none');
@@ -111,7 +111,7 @@ export function PurchaseActions({
     const result = await api.send(`/api/purchases/${orderId}/annuler`, {
       method: 'POST',
       body: { reason: String(form.get('reason') ?? '') },
-      successMessage: 'Commande annulee. Le stock recu a ete ressorti.',
+      successMessage: 'Commande annulée. Le stock reçu a été ressorti.',
     });
     if (result) {
       setPanel('none');
@@ -133,7 +133,7 @@ export function PurchaseActions({
           )}
           {canReceive && !isCancelled && !isReceived && lines.some((line) => line.remaining) && (
             <Button type="button" onClick={() => { api.reset(); setPanel('receive'); }}>
-              Receptionner
+              Réceptionner
             </Button>
           )}
           {canPay && !isCancelled && !isDraft && hasBalance && (
@@ -142,7 +142,7 @@ export function PurchaseActions({
               variant="secondary"
               onClick={() => { api.reset(); setPanel('pay'); }}
             >
-              Regler le fournisseur
+              Régler le fournisseur
             </Button>
           )}
           {canWrite && !isCancelled && (
@@ -160,8 +160,8 @@ export function PurchaseActions({
 
       {panel === 'receive' && (
         <Card
-          title="Receptionner"
-          description="Saisissez les quantites reellement recues. Une reception partielle est normale."
+          title="Réceptionner"
+          description="Saisissez les quantités réellement reçues. Une réception partielle est normale."
         >
           <form onSubmit={receive} className="space-y-4" noValidate>
             <ul className="divide-y divide-ink-100">
@@ -170,11 +170,11 @@ export function PurchaseActions({
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-ink-900">{line.description}</p>
                     <p className="text-xs text-ink-500">
-                      Commande {line.orderedLabel} · deja recu {line.receivedLabel}
+                      Commande {line.orderedLabel} · déjà reçu {line.receivedLabel}
                     </p>
                   </div>
                   <label className="text-xs text-ink-500">
-                    A receptionner
+                    À réceptionner
                     <Input
                       name={`qty-${line.id}`}
                       defaultValue={line.remaining ? line.remainingRaw : '0'}
@@ -188,7 +188,7 @@ export function PurchaseActions({
             </ul>
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={api.pending}>
-                {api.pending ? 'Reception...' : 'Enregistrer la reception'}
+                {api.pending ? 'Reception...' : 'Enregistrer la réception'}
               </Button>
               <Button type="button" variant="secondary" onClick={() => { setPanel('none'); api.reset(); }}>
                 Annuler
@@ -199,7 +199,7 @@ export function PurchaseActions({
       )}
 
       {panel === 'pay' && (
-        <Card title="Regler le fournisseur" description={`Reste du : ${balanceDueLabel}`}>
+        <Card title="Régler le fournisseur" description={`Reste dû : ${balanceDueLabel}`}>
           <form onSubmit={pay} className="space-y-4" noValidate>
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Montant" htmlFor="amount" required error={api.fieldErrors.amount}>
@@ -228,7 +228,7 @@ export function PurchaseActions({
                 </Select>
               </Field>
               <Field
-                label="Reference"
+                label="Référence"
                 htmlFor="reference"
                 required={method?.requiresReference}
                 error={api.fieldErrors.reference}
@@ -238,7 +238,7 @@ export function PurchaseActions({
             </div>
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={api.pending}>
-                {api.pending ? 'Enregistrement...' : 'Enregistrer le reglement'}
+                {api.pending ? 'Enregistrement...' : 'Enregistrer le règlement'}
               </Button>
               <Button type="button" variant="secondary" onClick={() => { setPanel('none'); api.reset(); }}>
                 Annuler
@@ -252,8 +252,8 @@ export function PurchaseActions({
         <Card title="Annuler la commande">
           <form onSubmit={cancel} className="space-y-4" noValidate>
             <Alert tone="warning">
-              La marchandise deja receptionnee ressortira du stock. Si elle a ete vendue entre-temps,
-              le stock passera en negatif et l&apos;ecart apparaitra a votre prochain inventaire.
+              La marchandise déjà réceptionnée ressortira du stock. Si elle a été vendue entre-temps,
+              le stock passera en négatif et l&apos;écart apparaîtra à votre prochain inventaire.
             </Alert>
             <Field label="Motif" htmlFor="reason" required error={api.fieldErrors.reason}>
               <Textarea id="reason" name="reason" required placeholder="Marchandise non conforme" />

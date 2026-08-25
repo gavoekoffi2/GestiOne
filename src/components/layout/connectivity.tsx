@@ -46,7 +46,7 @@ export function Connectivity() {
       aria-live="polite"
       className="no-print sticky top-14 z-40 bg-amber-100 px-4 py-2 text-center text-sm text-amber-900 ring-1 ring-inset ring-amber-200"
     >
-      <strong>Hors connexion.</strong> Vous pouvez consulter les pages deja ouvertes, mais
+      <strong>Hors connexion.</strong> Vous pouvez consulter les pages déjà ouvertes, mais
       enregistrer une vente, un paiement ou un mouvement de stock demande Internet.
     </div>
   );

@@ -45,7 +45,7 @@ export function useApi() {
           const details = payload?.error?.details;
           setState({
             pending: false,
-            error: payload?.error?.message ?? "L'operation a echoue.",
+            error: payload?.error?.message ?? "L'opération a échoué.",
             fieldErrors:
               details && typeof details === 'object' && !Array.isArray(details)
                 ? (details as Record<string, string>)
@@ -65,7 +65,7 @@ export function useApi() {
       } catch {
         setState({
           pending: false,
-          error: 'Le serveur est injoignable. Verifiez votre connexion Internet.',
+          error: 'Le serveur est injoignable. Vérifiez votre connexion Internet.',
           fieldErrors: {},
           success: null,
         });

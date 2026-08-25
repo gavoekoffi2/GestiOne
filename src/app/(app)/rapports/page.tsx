@@ -98,8 +98,8 @@ export default async function ReportsPage({
         <div>
           <h1 className="text-2xl font-bold text-ink-900">Rapports</h1>
           <p className="mt-1 text-ink-600">
-            Vos chiffres sur {PERIOD_LABELS[query.period as PeriodKey].toLowerCase()}, calcules a
-            partir de vos documents reels.
+            Vos chiffres sur {PERIOD_LABELS[query.period as PeriodKey].toLowerCase()}, calculés à
+            partir de vos documents réels.
           </p>
         </div>
         <PeriodFilter />
@@ -120,20 +120,20 @@ export default async function ReportsPage({
           hint="Ventes moins prix d'achat"
         />
         <StatTile
-          label="Depenses"
+          label="Dépenses"
           value={money(expenses.total)}
           icon="minus"
           higherIsBetter={false}
         />
         <StatTile
-          label="Resultat estime"
+          label="Résultat estimé"
           value={money(sales.grossProfit - expenses.total)}
           icon="wallet"
           tone={sales.grossProfit - expenses.total < 0n ? 'danger' : 'success'}
         />
       </div>
 
-      <Card title="Chiffre d'affaires et depenses">
+      <Card title="Chiffre d'affaires et dépenses">
         <RevenueChart
           currency={currency}
           locale={context.locale}
@@ -148,7 +148,7 @@ export default async function ReportsPage({
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Produits les plus vendus">
           <RankingBars
-            emptyMessage="Aucune vente sur cette periode."
+            emptyMessage="Aucune vente sur cette période."
             rows={products.map((product) => ({
               id: product.productId ?? product.name,
               label: product.name,
@@ -161,7 +161,7 @@ export default async function ReportsPage({
 
         <Card title="Principaux clients">
           <RankingBars
-            emptyMessage="Aucun client sur cette periode."
+            emptyMessage="Aucun client sur cette période."
             rows={customers.map((customer) => ({
               id: customer.customerId ?? customer.name,
               label: customer.name,
@@ -175,9 +175,9 @@ export default async function ReportsPage({
           />
         </Card>
 
-        <Card title="Encaissements par mode de reglement">
+        <Card title="Encaissements par mode de règlement">
           <RankingBars
-            emptyMessage="Aucun encaissement sur cette periode."
+            emptyMessage="Aucun encaissement sur cette période."
             rows={methods.map((method) => ({
               id: method.methodId ?? method.name,
               label: method.name,
@@ -188,13 +188,13 @@ export default async function ReportsPage({
           />
         </Card>
 
-        <Card title="Depenses par categorie">
+        <Card title="Dépenses par catégorie">
           <RankingBars
-            emptyMessage="Aucune depense sur cette periode."
+            emptyMessage="Aucune dépense sur cette période."
             rows={categories.map((category) => ({
               id: category.categoryId ?? category.name,
               label: category.name,
-              sublabel: `${category.count} depense(s)`,
+              sublabel: `${category.count} dépense(s)`,
               value: toNumber(category.total),
               valueLabel: money(category.total),
             }))}
@@ -204,7 +204,7 @@ export default async function ReportsPage({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
-          label="Creances clients"
+          label="Créances clients"
           value={money(outstanding.receivable)}
           icon="users"
           tone={outstanding.receivable > 0n ? 'warning' : undefined}
@@ -215,7 +215,7 @@ export default async function ReportsPage({
           icon="truck"
           tone={outstanding.payable > 0n ? 'warning' : undefined}
         />
-        <StatTile label="Achats de la periode" value={money(purchases.total)} icon="box" />
+        <StatTile label="Achats de la période" value={money(purchases.total)} icon="box" />
         <StatTile
           label="Valeur du stock"
           value={money(stock.totalValue)}
@@ -226,15 +226,15 @@ export default async function ReportsPage({
 
       <Card
         title="Exports"
-        description="Telechargez vos donnees au format CSV, exploitable dans Excel ou LibreOffice."
+        description="Téléchargez vos données au format CSV, exploitable dans Excel ou LibreOffice."
       >
         {!canExport ? (
           <EmptyState
             title="Export non autorise"
-            description="Votre role ne permet pas de telecharger les donnees. Contactez votre administrateur."
+            description="Votre rôle ne permet pas de télécharger les données. Contactez votre administrateur."
           />
         ) : availableExports.length === 0 ? (
-          <EmptyState title="Aucun export disponible" description="Votre role ne donne acces a aucun module exportable." />
+          <EmptyState title="Aucun export disponible" description="Votre rôle ne donne accès à aucun module exportable." />
         ) : (
           <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {availableExports.map(([key, definition]) => (
@@ -260,11 +260,11 @@ export default async function ReportsPage({
       </Card>
 
       <p className="text-xs text-ink-500">
-        Les factures annulees et les brouillons sont exclus de tous les chiffres. Le resultat est
-        dit <em>estime</em> : la marge repose sur les prix d&apos;achat figes a l&apos;emission, et
-        les depenses retenues sont celles de la periode.{' '}
+        Les factures annulées et les brouillons sont exclus de tous les chiffres. Le résultat est
+        dit <em>estime</em> : la marge repose sur les prix d&apos;achat figés a l&apos;émission, et
+        les dépenses retenues sont celles de la période.{' '}
         <Link href="/factures" className="font-medium text-brand-700 hover:underline">
-          Verifier les factures
+          Vérifier les factures
         </Link>
       </p>
     </div>

@@ -18,7 +18,7 @@ export default function OfflinePage() {
           G
         </span>
 
-        <h1 className="mt-4 text-xl font-semibold text-ink-900">Vous etes hors connexion</h1>
+        <h1 className="mt-4 text-xl font-semibold text-ink-900">Vous êtes hors connexion</h1>
         <p className="mt-2 text-ink-600">
           GestiOne a besoin d&apos;Internet pour enregistrer une vente, un paiement ou un mouvement
           de stock.
@@ -27,15 +27,15 @@ export default function OfflinePage() {
         <div className="mt-5 rounded-lg bg-amber-50 px-4 py-3 text-left text-sm text-amber-900 ring-1 ring-inset ring-amber-200">
           <p className="font-semibold">Pourquoi la saisie est-elle impossible ?</p>
           <p className="mt-1">
-            Mettre les ventes en attente reviendrait a vous laisser croire qu&apos;elles sont
-            enregistrees alors qu&apos;elles pourraient etre refusees a la reconnexion — stock
-            epuise entre-temps, numero de facture deja pris. Vous auriez deja remis la marchandise.
+            Mettre les ventes en attente reviendrait à vous laisser croire qu&apos;elles sont
+            enregistrées alors qu&apos;elles pourraient être refusées à la reconnexion — stock
+            épuisé entre-temps, numéro de facture déjà pris. Vous auriez déjà remis la marchandise.
           </p>
         </div>
 
         <p className="mt-4 text-sm text-ink-500">
-          Des que la connexion revient, tout redevient disponible. Rien de ce que vous aviez
-          enregistre n&apos;est perdu.
+          Dès que la connexion revient, tout redevient disponible. Rien de ce que vous aviez
+          enregistré n&apos;est perdu.
         </p>
 
         <a

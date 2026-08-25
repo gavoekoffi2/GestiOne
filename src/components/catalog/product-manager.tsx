@@ -134,7 +134,7 @@ export function ProductManager({
     const result = await api.send(isNew ? '/api/products' : `/api/products/${values.id}`, {
       method: isNew ? 'POST' : 'PUT',
       body,
-      successMessage: isNew ? 'Article enregistre.' : 'Modifications enregistrees.',
+      successMessage: isNew ? 'Article enregistré.' : 'Modifications enregistrées.',
     });
 
     if (result) {
@@ -145,13 +145,13 @@ export function ProductManager({
 
   async function onDelete(row: ProductRow) {
     const confirmed = window.confirm(
-      `Retirer "${row.name}" du catalogue ?\n\nL'article est desactive, jamais efface : ses mouvements de stock et ses ventes passees restent consultables.`,
+      `Retirer "${row.name}" du catalogue ?\n\nL'article est désactivé, jamais effacé : ses mouvements de stock et ses ventes passées restent consultables.`,
     );
     if (!confirmed) return;
 
     const result = await api.send(`/api/products/${row.id}`, {
       method: 'DELETE',
-      successMessage: 'Article retire du catalogue.',
+      successMessage: 'Article retiré du catalogue.',
     });
     if (result) router.refresh();
   }
@@ -183,10 +183,10 @@ export function ProductManager({
                 <Input id="name" name="name" defaultValue={values.name} required placeholder="Sac de riz 25 kg" />
               </Field>
               <Field
-                label="Reference"
+                label="Référence"
                 htmlFor="sku"
                 error={api.fieldErrors.sku}
-                hint="Laissez vide : GestiOne la genere a partir du nom."
+                hint="Laissez vide : GestiOne la génère à partir du nom."
               >
                 <Input id="sku" name="sku" defaultValue={values.sku} />
               </Field>
@@ -198,9 +198,9 @@ export function ProductManager({
               >
                 <Input id="barcode" name="barcode" inputMode="numeric" defaultValue={values.barcode} />
               </Field>
-              <Field label="Categorie" htmlFor="categoryId" error={api.fieldErrors.categoryId}>
+              <Field label="Catégorie" htmlFor="categoryId" error={api.fieldErrors.categoryId}>
                 <Select id="categoryId" name="categoryId" defaultValue={values.categoryId}>
-                  <option value="">Sans categorie</option>
+                  <option value="">Sans catégorie</option>
                   {categories.map((option) => (
                     <option key={option.id} value={option.id}>
                       {option.label}
@@ -209,13 +209,13 @@ export function ProductManager({
                 </Select>
               </Field>
               <Field
-                label="Unite de mesure"
+                label="Unité de mesure"
                 htmlFor="unitId"
                 error={api.fieldErrors.unitId}
-                hint="Carton, sac, kilogramme, litre... Creez les votres depuis l'onglet Unites."
+                hint="Carton, sac, kilogramme, litre... Créez les vôtres depuis l'onglet Unités."
               >
                 <Select id="unitId" name="unitId" defaultValue={values.unitId}>
-                  <option value="">Non precisee</option>
+                  <option value="">Non précisée</option>
                   {units.map((option) => (
                     <option key={option.id} value={option.id}>
                       {option.label}
@@ -262,10 +262,10 @@ export function ProductManager({
                   />
                 </Field>
                 <Field
-                  label="Prix special"
+                  label="Prix spécial"
                   htmlFor="specialPrice"
                   error={api.fieldErrors.specialPrice}
-                  hint="Tarif negocie, applique manuellement a la vente."
+                  hint="Tarif négocié, appliqué manuellement à la vente."
                 >
                   <MoneyInput
                     id="specialPrice"
@@ -285,10 +285,10 @@ export function ProductManager({
                   />
                 </Field>
                 <Field
-                  label="A partir de"
+                  label="À partir de"
                   htmlFor="wholesaleFrom"
                   error={api.fieldErrors.wholesaleFrom}
-                  hint="Quantite a partir de laquelle le prix grossiste s'applique."
+                  hint="Quantité à partir de laquelle le prix grossiste s'applique."
                 >
                   <Input
                     id="wholesaleFrom"
@@ -330,7 +330,7 @@ export function ProductManager({
                 defaultChecked={values.isActive}
                 className="size-4 rounded border-ink-300"
               />
-              Article actif (disponible a la vente)
+              Article actif (disponible à la vente)
             </label>
 
             <div className="flex flex-wrap gap-2">
@@ -359,7 +359,7 @@ export function ProductManager({
       )}
 
       <ListToolbar
-        placeholder="Rechercher (nom, reference, code-barres)"
+        placeholder="Rechercher (nom, référence, code-barres)"
         filters={[
           {
             name: 'kind',
@@ -368,7 +368,7 @@ export function ProductManager({
           },
           {
             name: 'categoryId',
-            label: 'Toutes les categories',
+            label: 'Toutes les catégories',
             options: categories.map((option) => ({ value: option.id, label: option.label })),
           },
         ]}
@@ -387,8 +387,8 @@ export function ProductManager({
                 <thead>
                   <tr className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-500">
                     <th className="px-4 py-2 font-medium sm:px-5">Article</th>
-                    <th className="px-4 py-2 font-medium">Categorie</th>
-                    <th className="px-4 py-2 font-medium">Unite</th>
+                    <th className="px-4 py-2 font-medium">Catégorie</th>
+                    <th className="px-4 py-2 font-medium">Unité</th>
                     {canSeeCost && <th className="px-4 py-2 text-right font-medium">Prix d&apos;achat</th>}
                     <th className="px-4 py-2 text-right font-medium">Prix de vente</th>
                     {canSeeCost && <th className="px-4 py-2 text-right font-medium">Marge</th>}

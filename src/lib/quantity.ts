@@ -17,14 +17,14 @@ export function parseQuantity(input: string | number | bigint): Quantity {
   if (typeof input === 'bigint') return input;
   const text = typeof input === 'number' ? input.toFixed(QUANTITY_DECIMALS) : input.trim();
   const raw = text.replace(/\s| /g, '').replace(/,/g, '.');
-  if (raw === '') throw new QuantityError('Quantite vide.');
+  if (raw === '') throw new QuantityError('Quantité vide.');
 
   const negative = raw.startsWith('-');
   const unsigned = negative ? raw.slice(1) : raw;
   const [whole = '0', fraction = ''] = unsigned.split('.');
 
   if (!/^\d*$/.test(whole) || !/^\d*$/.test(fraction)) {
-    throw new QuantityError(`Quantite invalide : "${input}".`);
+    throw new QuantityError(`Quantité invalide : "${input}".`);
   }
 
   const scaled = (fraction + '000').slice(0, QUANTITY_DECIMALS);

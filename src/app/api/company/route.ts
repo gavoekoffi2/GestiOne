@@ -33,7 +33,7 @@ export const PUT = handler(async (request: NextRequest) => {
     action: 'UPDATE',
     entityType: 'Company',
     entityId: context.companyId,
-    summary: `Parametres de l'entreprise modifies`,
+    summary: `Paramètres de l'entreprise modifiés`,
     ipAddress: clientIp(request),
   });
 

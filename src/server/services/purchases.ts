@@ -28,10 +28,10 @@ export type PurchaseStatus =
 
 export const PURCHASE_STATUS_LABELS: Record<PurchaseStatus, string> = {
   DRAFT: 'Brouillon',
-  ORDERED: 'Commandee',
-  PARTIALLY_RECEIVED: 'Partiellement recue',
-  RECEIVED: 'Recue',
-  CANCELLED: 'Annulee',
+  ORDERED: 'Commandée',
+  PARTIALLY_RECEIVED: 'Partiellement reçue',
+  RECEIVED: 'Reçue',
+  CANCELLED: 'Annulée',
 };
 
 export interface PurchaseContext {
@@ -108,7 +108,7 @@ async function resolveLines(
   return lines.map((line, index) => {
     const position = index + 1;
     if (line.quantity <= 0n) {
-      throw new ValidationError(`Ligne ${position} : la quantite doit etre superieure a zero.`);
+      throw new ValidationError(`Ligne ${position} : la quantité doit être supérieure à zéro.`);
     }
 
     let product: ResolvedPurchaseLine['product'] = null;
@@ -119,16 +119,16 @@ async function resolveLines(
     }
 
     const description = line.description?.trim() || product?.name;
-    if (!description) throw new ValidationError(`Ligne ${position} : indiquez une designation.`);
+    if (!description) throw new ValidationError(`Ligne ${position} : indiquez une désignation.`);
 
     // Le cout saisi prime : c'est le prix reellement negocie pour ce lot, qui
     // peut differer du prix d'achat de reference du catalogue.
     const unitCost = line.unitCost ?? product?.costPrice;
     if (unitCost === undefined) {
-      throw new ValidationError(`Ligne ${position} : indiquez un cout unitaire.`);
+      throw new ValidationError(`Ligne ${position} : indiquez un coût unitaire.`);
     }
     if (unitCost < 0n) {
-      throw new ValidationError(`Ligne ${position} : le cout unitaire ne peut pas etre negatif.`);
+      throw new ValidationError(`Ligne ${position} : le coût unitaire ne peut pas être négatif.`);
     }
 
     let taxRate = 0;
@@ -168,7 +168,7 @@ export async function createPurchaseOrder(
 
   if (input.receiveNow && !input.locationId && resolved.some((line) => line.product?.trackStock)) {
     throw new ValidationError(
-      'Precisez le point de vente : la marchandise receptionnee doit entrer quelque part.',
+      'Précisez le point de vente : la marchandise réceptionnée doit entrer quelque part.',
     );
   }
 
@@ -245,7 +245,7 @@ export async function createPurchaseOrder(
           kind: 'IN',
           delta: line.input.quantity,
           unitCost: line.unitCost,
-          reason: `Reception ${number}`,
+          reason: `Réception ${number}`,
           reference: number,
           userId: context.userId,
         });
@@ -258,7 +258,7 @@ export async function createPurchaseOrder(
       action: 'CREATE',
       entityType: 'PurchaseOrder',
       entityId: order.id,
-      summary: `Commande fournisseur ${number} creee (${PURCHASE_STATUS_LABELS[order.status as PurchaseStatus]})`,
+      summary: `Commande fournisseur ${number} créée (${PURCHASE_STATUS_LABELS[order.status as PurchaseStatus]})`,
       metadata: { total: totals.total.toString() },
     });
 
@@ -275,7 +275,7 @@ export async function placeOrder(context: PurchaseContext, orderId: string) {
   if (!order) throw new NotFoundError('Commande introuvable.');
   if (order.status !== 'DRAFT') {
     throw new ConflictError(
-      `Cette commande est deja ${PURCHASE_STATUS_LABELS[order.status as PurchaseStatus].toLowerCase()}.`,
+      `Cette commande est déjà ${PURCHASE_STATUS_LABELS[order.status as PurchaseStatus].toLowerCase()}.`,
     );
   }
 
@@ -291,7 +291,7 @@ export async function placeOrder(context: PurchaseContext, orderId: string) {
       action: 'UPDATE',
       entityType: 'PurchaseOrder',
       entityId: orderId,
-      summary: `Commande ${order.number} passee au fournisseur`,
+      summary: `Commande ${order.number} passée au fournisseur`,
     });
 
     return updated;
@@ -320,10 +320,10 @@ export async function receiveOrder(
   });
   if (!order) throw new NotFoundError('Commande introuvable.');
   if (order.status === 'CANCELLED') {
-    throw new ConflictError('Cette commande est annulee.');
+    throw new ConflictError('Cette commande est annulée.');
   }
   if (order.status === 'RECEIVED') {
-    throw new ConflictError('Cette commande a deja ete entierement receptionnee.');
+    throw new ConflictError('Cette commande a déjà été entièrement réceptionnée.');
   }
 
   const locationId = input.locationId ?? order.locationId;
@@ -331,7 +331,7 @@ export async function receiveOrder(
 
   const receipts = input.lines.filter((entry) => entry.quantity > 0n);
   if (receipts.length === 0) {
-    throw new ValidationError('Indiquez au moins une quantite receptionnee.');
+    throw new ValidationError('Indiquez au moins une quantité réceptionnée.');
   }
 
   for (const entry of receipts) {
@@ -341,12 +341,12 @@ export async function receiveOrder(
     const remaining = line.quantity - line.receivedQuantity;
     if (entry.quantity > remaining) {
       throw new ValidationError(
-        `"${line.description}" : vous receptionnez ${formatQuantity(entry.quantity)} alors qu'il ne reste que ${formatQuantity(remaining)} a recevoir.`,
+        `"${line.description}" : vous réceptionnez ${formatQuantity(entry.quantity)} alors qu'il ne reste que ${formatQuantity(remaining)} à recevoir.`,
       );
     }
     if (line.product?.trackStock && !locationId) {
       throw new ValidationError(
-        'Precisez le point de vente : la marchandise receptionnee doit entrer quelque part.',
+        'Précisez le point de vente : la marchandise réceptionnée doit entrer quelque part.',
       );
     }
   }
@@ -368,7 +368,7 @@ export async function receiveOrder(
           kind: 'IN',
           delta: entry.quantity,
           unitCost: line.unitCost,
-          reason: `Reception ${order.number}`,
+          reason: `Réception ${order.number}`,
           reference: order.number,
           userId: context.userId,
         });
@@ -401,7 +401,7 @@ export async function receiveOrder(
       action: 'STOCK_MOVE',
       entityType: 'PurchaseOrder',
       entityId: orderId,
-      summary: `Reception sur la commande ${order.number}`,
+      summary: `Réception sur la commande ${order.number}`,
       metadata: { lines: receipts.length },
     });
 
@@ -451,7 +451,7 @@ export async function cancelPurchaseOrder(
     include: { lines: { include: { product: true } } },
   });
   if (!order) throw new NotFoundError('Commande introuvable.');
-  if (order.status === 'CANCELLED') throw new ConflictError('Cette commande est deja annulee.');
+  if (order.status === 'CANCELLED') throw new ConflictError('Cette commande est déjà annulée.');
 
   return prisma.$transaction(async (tx) => {
     // La marchandise deja receptionnee ressort du stock : annuler une commande
@@ -492,7 +492,7 @@ export async function cancelPurchaseOrder(
       action: 'CANCEL',
       entityType: 'PurchaseOrder',
       entityId: orderId,
-      summary: `Commande ${order.number} annulee : ${reason}`,
+      summary: `Commande ${order.number} annulée : ${reason}`,
     });
 
     return updated;
@@ -531,13 +531,17 @@ export interface PurchaseListQuery {
 
 export async function listPurchaseOrders(companyId: string, query: PurchaseListQuery) {
   const search = query.search?.trim();
+  // Meme precaution que pour les factures : "non reglees" se combine avec un
+  // statut choisi au lieu de le remplacer.
   const where: Prisma.PurchaseOrderWhereInput = {
     companyId,
-    ...(query.status ? { status: query.status } : {}),
     ...(query.supplierId ? { supplierId: query.supplierId } : {}),
-    ...(query.unpaidOnly
-      ? { balanceDue: { gt: 0n }, status: { notIn: ['CANCELLED', 'DRAFT'] } }
-      : {}),
+    AND: [
+      ...(query.status ? [{ status: query.status }] : []),
+      ...(query.unpaidOnly
+        ? [{ balanceDue: { gt: 0n }, status: { notIn: ['CANCELLED', 'DRAFT'] } }]
+        : []),
+    ],
     ...(search
       ? {
           OR: [

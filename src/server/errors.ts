@@ -19,7 +19,7 @@ export class AppError extends Error {
 }
 
 export class ValidationError extends AppError {
-  constructor(message = 'Donnees invalides.', details?: unknown) {
+  constructor(message = 'Données invalides.', details?: unknown) {
     super(message, 422, 'VALIDATION_ERROR', details);
   }
 }
@@ -43,13 +43,13 @@ export class NotFoundError extends AppError {
 }
 
 export class ConflictError extends AppError {
-  constructor(message = 'Conflit avec une donnee existante.', details?: unknown) {
+  constructor(message = 'Conflit avec une donnée existante.', details?: unknown) {
     super(message, 409, 'CONFLICT', details);
   }
 }
 
 export class RateLimitError extends AppError {
-  constructor(message = 'Trop de tentatives. Reessayez dans un instant.', retryAfterSeconds = 60) {
+  constructor(message = 'Trop de tentatives. Réessayez dans un instant.', retryAfterSeconds = 60) {
     super(message, 429, 'RATE_LIMITED', { retryAfterSeconds });
   }
 }

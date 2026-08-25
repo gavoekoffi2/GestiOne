@@ -31,7 +31,7 @@ async function assertRoleBelongsToCompany(companyId: string, roleId: string) {
     where: { id: roleId, companyId },
     select: { id: true, key: true, permissions: true },
   });
-  if (!role) throw new NotFoundError('Role introuvable pour cette entreprise.');
+  if (!role) throw new NotFoundError('Rôle introuvable pour cette entreprise.');
   return role;
 }
 
@@ -78,7 +78,7 @@ export async function createMember(companyId: string, input: CreateMemberInput) 
       select: { id: true },
     });
     if (alreadyMember) {
-      throw new ConflictError('Cette personne fait deja partie de votre equipe.');
+      throw new ConflictError('Cette personne fait déjà partie de votre équipe.');
     }
 
     // Le compte existe deja (la personne travaille pour une autre entreprise de
@@ -167,7 +167,7 @@ export async function removeMember(companyId: string, membershipId: string) {
 
   if (membership.isOwner) {
     throw new ValidationError(
-      "Le proprietaire de l'entreprise ne peut pas etre retire de son equipe.",
+      "Le propriétaire de l'entreprise ne peut pas être retiré de son équipe.",
     );
   }
 
@@ -207,12 +207,12 @@ export function sanitisePermissions(permissions: readonly string[]): string[] {
 export async function createRole(companyId: string, input: RoleInput) {
   const permissions = sanitisePermissions(input.permissions);
   if (permissions.length === 0) {
-    throw new ValidationError('Un role doit accorder au moins une permission.');
+    throw new ValidationError('Un rôle doit accorder au moins une permission.');
   }
 
   const key = input.name.trim().toUpperCase().replace(/\s+/g, '_').slice(0, 40);
   const duplicate = await prisma.role.findFirst({ where: { companyId, key }, select: { id: true } });
-  if (duplicate) throw new ConflictError('Un role portant ce nom existe deja.');
+  if (duplicate) throw new ConflictError('Un rôle portant ce nom existe déjà.');
 
   return prisma.role.create({
     data: {
@@ -228,18 +228,18 @@ export async function createRole(companyId: string, input: RoleInput) {
 
 export async function updateRole(companyId: string, roleId: string, input: RoleInput) {
   const role = await prisma.role.findFirst({ where: { id: roleId, companyId } });
-  if (!role) throw new NotFoundError('Role introuvable.');
+  if (!role) throw new NotFoundError('Rôle introuvable.');
 
   const permissions = sanitisePermissions(input.permissions);
   if (permissions.length === 0) {
-    throw new ValidationError('Un role doit accorder au moins une permission.');
+    throw new ValidationError('Un rôle doit accorder au moins une permission.');
   }
 
   // Le role ADMIN est le filet de securite de l'entreprise : son perimetre ne
   // peut pas etre reduit, sous peine de verrouiller definitivement l'acces.
   if (role.key === 'ADMIN' && !permissions.includes(WILDCARD)) {
     throw new ValidationError(
-      "Le role Administrateur doit conserver l'acces complet. Creez un role personnalise pour un perimetre restreint.",
+      "Le rôle Administrateur doit conserver l'accès complet. Créez un rôle personnalisé pour un périmètre restreint.",
     );
   }
 
@@ -269,17 +269,17 @@ export async function deleteRole(companyId: string, roleId: string) {
     where: { id: roleId, companyId },
     include: { _count: { select: { memberships: true } } },
   });
-  if (!role) throw new NotFoundError('Role introuvable.');
+  if (!role) throw new NotFoundError('Rôle introuvable.');
 
   if (role.isSystem) {
     throw new ValidationError(
-      "Les roles fournis avec GestiOne ne peuvent pas etre supprimes. Vous pouvez modifier leurs permissions ou creer un role personnalise.",
+      "Les rôles fournis avec GestiOne ne peuvent pas être supprimés. Vous pouvez modifier leurs permissions ou créer un rôle personnalisé.",
     );
   }
 
   if (role._count.memberships > 0) {
     throw new ValidationError(
-      `Ce role est attribue a ${role._count.memberships} utilisateur(s). Reaffectez-les avant de le supprimer.`,
+      `Ce rôle est attribué a ${role._count.memberships} utilisateur(s). Réaffectez-les avant de le supprimer.`,
     );
   }
 

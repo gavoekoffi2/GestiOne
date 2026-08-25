@@ -34,13 +34,13 @@ export default async function AuditPage({
       <div>
         <h1 className="text-2xl font-bold text-ink-900">Journal d&apos;audit</h1>
         <p className="mt-1 text-ink-600">
-          Trace de toutes les operations sensibles. Ce journal ne peut etre ni modifie ni efface,
+          Trace de toutes les opérations sensibles. Ce journal ne peut être ni modifié ni effacé,
           y compris par un administrateur.
         </p>
       </div>
 
       <Card
-        title={`${result.total} evenement(s)`}
+        title={`${result.total} événement(s)`}
         action={
           <form method="get" className="flex items-center gap-2">
             <label htmlFor="action" className="sr-only">
@@ -65,8 +65,8 @@ export default async function AuditPage({
       >
         {result.entries.length === 0 ? (
           <EmptyState
-            title="Aucun evenement"
-            description="Les operations sensibles apparaitront ici des qu'elles seront effectuees."
+            title="Aucun événement"
+            description="Les opérations sensibles apparaîtront ici dès qu'elles seront effectuées."
           />
         ) : (
           <>
@@ -78,7 +78,7 @@ export default async function AuditPage({
                     <th className="px-4 py-2 font-medium">Utilisateur</th>
                     <th className="px-4 py-2 font-medium">Action</th>
                     <th className="px-4 py-2 font-medium">Objet</th>
-                    <th className="px-4 py-2 font-medium sm:px-5">Detail</th>
+                    <th className="px-4 py-2 font-medium sm:px-5">Détail</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-ink-100">
@@ -94,7 +94,7 @@ export default async function AuditPage({
                         })}
                       </td>
                       <td className="px-4 py-3 text-ink-700">
-                        {entry.user?.fullName ?? 'Systeme'}
+                        {entry.user?.fullName ?? 'Système'}
                       </td>
                       <td className="px-4 py-3">
                         <Badge tone={toneFor(entry.action)}>
@@ -112,7 +112,7 @@ export default async function AuditPage({
             {result.pageCount > 1 && (
               <nav className="mt-4 flex items-center justify-between text-sm" aria-label="Pagination">
                 <PageLink page={page - 1} action={action} disabled={page <= 1}>
-                  Precedent
+                  Précédent
                 </PageLink>
                 <span className="text-ink-500">
                   Page {result.page} sur {result.pageCount}

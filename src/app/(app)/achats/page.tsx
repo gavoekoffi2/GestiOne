@@ -66,7 +66,7 @@ export default async function PurchasesPage({
         <div>
           <h1 className="text-2xl font-bold text-ink-900">Achats</h1>
           <p className="mt-1 text-ink-600">
-            Vos commandes fournisseur, vos receptions et ce que vous leur devez.
+            Vos commandes fournisseur, vos réceptions et ce que vous leur devez.
           </p>
         </div>
         {can(context, 'purchases.write') && (
@@ -75,8 +75,8 @@ export default async function PurchasesPage({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Tile label="Total achete" value={money(result.sums.total)} icon="truck" />
-        <Tile label="Regle" value={money(result.sums.paid)} icon="wallet" />
+        <Tile label="Total acheté" value={money(result.sums.total)} icon="truck" />
+        <Tile label="Réglé" value={money(result.sums.paid)} icon="wallet" />
         <Tile
           label="Dettes fournisseur"
           value={money(totalPayable)}
@@ -92,16 +92,16 @@ export default async function PurchasesPage({
               <thead>
                 <tr className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-500">
                   <th className="px-4 py-2 font-medium sm:px-5">Fournisseur</th>
-                  <th className="px-4 py-2 font-medium">Telephone</th>
+                  <th className="px-4 py-2 font-medium">Téléphone</th>
                   <th className="px-4 py-2 text-right font-medium">Commandes</th>
-                  <th className="px-4 py-2 text-right font-medium sm:px-5">Montant du</th>
+                  <th className="px-4 py-2 text-right font-medium sm:px-5">Montant dû</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
                 {payables.map((row) => (
                   <tr key={row.supplierId ?? 'inconnu'}>
                     <td className="px-4 py-3 sm:px-5">
-                      <p className="font-medium text-ink-900">{row.supplier?.name ?? 'Non precise'}</p>
+                      <p className="font-medium text-ink-900">{row.supplier?.name ?? 'Non précisé'}</p>
                       {row.supplier?.code && (
                         <p className="font-mono text-xs text-ink-400">{row.supplier.code}</p>
                       )}
@@ -138,7 +138,7 @@ export default async function PurchasesPage({
               type="search"
               name="search"
               defaultValue={query.search}
-              placeholder="Numero, reference, fournisseur"
+              placeholder="Numéro, référence, fournisseur"
               aria-label="Rechercher une commande"
               className="min-h-9 rounded-lg border-0 px-3 text-sm ring-1 ring-inset ring-ink-300"
             />
@@ -172,11 +172,11 @@ export default async function PurchasesPage({
             <table className="w-full min-w-[48rem] text-left text-sm">
               <thead>
                 <tr className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-500">
-                  <th className="px-4 py-2 font-medium sm:px-5">Numero</th>
+                  <th className="px-4 py-2 font-medium sm:px-5">Numéro</th>
                   <th className="px-4 py-2 font-medium">Date</th>
                   <th className="px-4 py-2 font-medium">Fournisseur</th>
                   <th className="px-4 py-2 text-right font-medium">Total</th>
-                  <th className="px-4 py-2 text-right font-medium">Reste du</th>
+                  <th className="px-4 py-2 text-right font-medium">Reste dû</th>
                   <th className="px-4 py-2 font-medium sm:px-5">Statut</th>
                 </tr>
               </thead>

@@ -44,7 +44,7 @@ export default async function CashPage({
   if (!locationId) {
     return (
       <Alert tone="warning" title="Aucun point de vente actif">
-        Declarez un point de vente avant d&apos;utiliser la caisse.
+        Déclarez un point de vente avant d&apos;utiliser la caisse.
       </Alert>
     );
   }
@@ -63,7 +63,7 @@ export default async function CashPage({
       <div>
         <h1 className="text-2xl font-bold text-ink-900">Caisse</h1>
         <p className="mt-1 text-ink-600">
-          Les especes de votre point de vente : ce qui entre, ce qui sort, et ce qui doit s&apos;y
+          Les espèces de votre point de vente : ce qui entre, ce qui sort, et ce qui doit s&apos;y
           trouver.
         </p>
       </div>
@@ -91,13 +91,13 @@ export default async function CashPage({
         <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-ink-200">
           <div className="flex items-center gap-2 text-ink-500">
             <Icon name="list" className="size-4" />
-            <p className="text-sm">Etat</p>
+            <p className="text-sm">État</p>
           </div>
           <p className="mt-2">
             {overview.session ? (
               <Badge tone="success">Caisse ouverte</Badge>
             ) : (
-              <Badge tone="neutral">Caisse fermee</Badge>
+              <Badge tone="neutral">Caisse fermée</Badge>
             )}
           </p>
         </div>
@@ -109,11 +109,11 @@ export default async function CashPage({
         fermeture soit interprete comme un manquant.
       */}
       {overview.outsideSession !== 0n && (
-        <Alert tone="info" title="Especes hors session">
-          {money(overview.outsideSession)} ont ete encaisses ou depenses alors qu&apos;aucune caisse
-          n&apos;etait ouverte. Ce montant fait bien partie du solde, mais il n&apos;entrera dans
-          aucun rapprochement de fermeture. Ouvrez la caisse en debut de journee pour que tout soit
-          rapproche.
+        <Alert tone="info" title="Espèces hors session">
+          {money(overview.outsideSession)} ont été encaissés ou dépensés alors qu&apos;aucune caisse
+          n&apos;était ouverte. Ce montant fait bien partie du solde, mais il n&apos;entrera dans
+          aucun rapprochement de fermeture. Ouvrez la caisse en début de journée pour que tout soit
+          rapproché.
         </Alert>
       )}
 
@@ -144,7 +144,7 @@ export default async function CashPage({
         {movements.items.length === 0 ? (
           <EmptyState
             title="Aucun mouvement"
-            description="Les encaissements en especes, les depenses et les apports apparaitront ici."
+            description="Les encaissements en espèces, les dépenses et les apports apparaîtront ici."
           />
         ) : (
           <div className="-mx-4 overflow-x-auto sm:-mx-5">
@@ -168,7 +168,7 @@ export default async function CashPage({
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
-                      <p className="text-xs text-ink-400">{movement.user?.fullName ?? 'Systeme'}</p>
+                      <p className="text-xs text-ink-400">{movement.user?.fullName ?? 'Système'}</p>
                     </td>
                     <td className="px-4 py-3">
                       <Badge tone={movement.amount >= 0n ? 'success' : 'danger'}>
@@ -196,16 +196,16 @@ export default async function CashPage({
       </Card>
 
       {sessions.items.length > 0 && (
-        <Card title="Historique des sessions" description="Ecarts constates a chaque fermeture.">
+        <Card title="Historique des sessions" description="Écarts constatés à chaque fermeture.">
           <div className="-mx-4 overflow-x-auto sm:-mx-5">
             <table className="w-full min-w-[44rem] text-left text-sm">
               <thead>
                 <tr className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-500">
                   <th className="px-4 py-2 font-medium sm:px-5">Ouverture</th>
                   <th className="px-4 py-2 font-medium">Fermeture</th>
-                  <th className="px-4 py-2 text-right font-medium">Theorique</th>
+                  <th className="px-4 py-2 text-right font-medium">Théorique</th>
                   <th className="px-4 py-2 text-right font-medium">Compte</th>
-                  <th className="px-4 py-2 text-right font-medium sm:px-5">Ecart</th>
+                  <th className="px-4 py-2 text-right font-medium sm:px-5">Écart</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
@@ -243,7 +243,7 @@ export default async function CashPage({
                       {entry.difference === null ? (
                         <Badge tone="info">En cours</Badge>
                       ) : entry.difference === 0n ? (
-                        <Badge tone="success">Aucun ecart</Badge>
+                        <Badge tone="success">Aucun écart</Badge>
                       ) : (
                         <span
                           className={`tabular font-medium ${

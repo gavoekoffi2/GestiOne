@@ -4,7 +4,7 @@ import { countryCodeSchema, currencyCodeSchema, emailSchema, phoneSchema, requir
 
 const passwordSchema = z
   .string()
-  .min(PASSWORD_MIN_LENGTH, `Le mot de passe doit contenir au moins ${PASSWORD_MIN_LENGTH} caracteres.`)
+  .min(PASSWORD_MIN_LENGTH, `Le mot de passe doit contenir au moins ${PASSWORD_MIN_LENGTH} caractères.`)
   .max(200)
   .refine((value) => /[a-zA-Z]/.test(value), 'Le mot de passe doit contenir au moins une lettre.')
   .refine((value) => /\d/.test(value), 'Le mot de passe doit contenir au moins un chiffre.');

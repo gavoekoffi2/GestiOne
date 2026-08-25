@@ -15,7 +15,7 @@ export default async function LocationsPage() {
       <div>
         <h1 className="text-2xl font-bold text-ink-900">Points de vente</h1>
         <p className="mt-1 text-ink-600">
-          Boutiques, agences et depots. Chacun disposera de son propre stock et de sa propre caisse.
+          Boutiques, agences et dépôts. Chacun disposera de son propre stock et de sa propre caisse.
         </p>
       </div>
 

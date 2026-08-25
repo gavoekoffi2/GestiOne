@@ -47,7 +47,7 @@ export default async function ProductsPage({
         <div>
           <h1 className="text-2xl font-bold text-ink-900">Produits et services</h1>
           <p className="mt-1 text-ink-600">
-            Votre catalogue : ce que vous vendez, a quel prix, et dans quelle unite.
+            Votre catalogue : ce que vous vendez, à quel prix, et dans quelle unité.
           </p>
           <p className="mt-1 text-sm text-ink-500">
             {counts.goods} produit(s) · {counts.services} service(s)
@@ -58,7 +58,7 @@ export default async function ProductsPage({
           href="/produits/organisation"
           className="text-sm font-semibold text-brand-700 hover:underline"
         >
-          Categories et unites
+          Catégories et unités
         </Link>
       </div>
 

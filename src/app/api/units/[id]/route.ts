@@ -16,7 +16,7 @@ export const PUT = handler(async (request: NextRequest, { params }) => {
     action: 'UPDATE',
     entityType: 'Unit',
     entityId: unit.id,
-    summary: `Unite "${unit.name}" modifiee`,
+    summary: `Unité "${unit.name}" modifiée`,
     ipAddress: clientIp(request),
   });
 
@@ -34,7 +34,7 @@ export const DELETE = handler(async (request: NextRequest, { params }) => {
     action: 'DELETE',
     entityType: 'Unit',
     entityId: id as string,
-    summary: 'Unite supprimee',
+    summary: 'Unité supprimée',
     ipAddress: clientIp(request),
   });
 

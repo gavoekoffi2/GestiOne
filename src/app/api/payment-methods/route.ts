@@ -27,7 +27,7 @@ export const POST = handler(async (request: NextRequest) => {
     action: 'CREATE',
     entityType: 'PaymentMethod',
     entityId: method.id,
-    summary: `Mode de reglement "${method.name}" cree`,
+    summary: `Mode de règlement "${method.name}" créé`,
     ipAddress: clientIp(request),
   });
 

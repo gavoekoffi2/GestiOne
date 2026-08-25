@@ -72,7 +72,7 @@ export function CashManager({
         countedAmount: String(form.get('countedAmount') ?? '0'),
         notes: String(form.get('notes') ?? ''),
       },
-      successMessage: 'Caisse fermee.',
+      successMessage: 'Caisse fermée.',
     });
     if (result) {
       setPanel('none');
@@ -91,7 +91,7 @@ export function CashManager({
         amount: String(form.get('amount') ?? ''),
         reason: String(form.get('reason') ?? ''),
       },
-      successMessage: 'Mouvement enregistre.',
+      successMessage: 'Mouvement enregistré.',
     });
     if (result) {
       setPanel('none');
@@ -160,7 +160,7 @@ export function CashManager({
               htmlFor="openingAmount"
               required
               error={api.fieldErrors.openingAmount}
-              hint="Especes deja presentes dans le tiroir a l'ouverture."
+              hint="Espèces déjà présentes dans le tiroir à l'ouverture."
             >
               <MoneyInput
                 id="openingAmount"
@@ -185,12 +185,12 @@ export function CashManager({
       )}
 
       {panel === 'close' && session && (
-        <Card title="Fermer la caisse" description={`Solde theorique : ${expectedLabel}`}>
+        <Card title="Fermer la caisse" description={`Solde théorique : ${expectedLabel}`}>
           <form onSubmit={closeSession} className="space-y-4" noValidate>
             <Alert tone="info">
-              Comptez les especes reellement presentes dans le tiroir et saisissez le montant.
-              GestiOne calcule l&apos;ecart et le conserve tel quel : un manquant doit rester
-              visible, pas etre efface.
+              Comptez les espèces réellement présentes dans le tiroir et saisissez le montant.
+              GestiOne calcule l&apos;écart et le conserve tel quel : un manquant doit rester
+              visible, pas être effacé.
             </Alert>
             <Field
               label="Montant compte"
@@ -229,7 +229,7 @@ export function CashManager({
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Type" htmlFor="kind" required error={api.fieldErrors.kind}>
                 <Select id="kind" name="kind" defaultValue="DEPOSIT">
-                  <option value="DEPOSIT">Apport (entree)</option>
+                  <option value="DEPOSIT">Apport (entrée)</option>
                   <option value="WITHDRAWAL">Retrait (sortie)</option>
                   <option value="ADJUSTMENT">Ajustement</option>
                 </Select>
@@ -244,7 +244,7 @@ export function CashManager({
                 />
               </Field>
               <Field label="Motif" htmlFor="reason" required error={api.fieldErrors.reason}>
-                <Input id="reason" name="reason" required placeholder="Depot en banque" />
+                <Input id="reason" name="reason" required placeholder="Dépôt en banque" />
               </Field>
             </div>
             <div className="flex flex-wrap gap-2">

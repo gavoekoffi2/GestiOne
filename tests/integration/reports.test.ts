@@ -464,7 +464,7 @@ describe('classements', () => {
     });
 
     const breakdown = await revenueByPaymentMethod(s.companyId, wholeYear());
-    expect(breakdown[0]?.name).toBe('Especes');
+    expect(breakdown[0]?.name).toBe('Espèces');
     expect(breakdown[0]?.total).toBe(100_000n);
     expect(breakdown[1]?.name).toBe('Mobile Money');
     expect(breakdown[1]?.total).toBe(50_000n);

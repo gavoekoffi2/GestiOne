@@ -19,7 +19,7 @@ export default async function NewQuotePage() {
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-ink-900">Nouveau devis</h1>
         <p className="mt-1 text-ink-600">
-          Un devis est une proposition : il ne touche ni au stock, ni aux creances. Il ne vous
+          Un devis est une proposition : il ne touche ni au stock, ni aux créances. Il ne vous
           engage qu&apos;a sa conversion en facture.
         </p>
       </div>
@@ -27,7 +27,6 @@ export default async function NewQuotePage() {
       <DocumentBuilder
         kind="quote"
         endpoint="/api/quotes"
-        redirectTo={(id) => `/devis/${id}`}
         canDiscount={can(context, 'sales.discount')}
         locale={context.locale}
         {...data}

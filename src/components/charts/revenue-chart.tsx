@@ -36,7 +36,7 @@ interface PlotPoint {
 
 const SERIES = [
   { key: 'revenue' as const, label: "Chiffre d'affaires", color: '#0d9488' },
-  { key: 'expenses' as const, label: 'Depenses', color: '#eb6834' },
+  { key: 'expenses' as const, label: 'Dépenses', color: '#eb6834' },
 ];
 
 /**
@@ -109,7 +109,7 @@ export function RevenueChart({
   if (points.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-ink-500">
-        Aucune donnee sur cette periode.
+        Aucune donnée sur cette période.
       </p>
     );
   }
@@ -138,7 +138,7 @@ export function RevenueChart({
           viewBox={`0 0 ${geometry.width} ${geometry.height}`}
           className="h-56 w-full"
           role="img"
-          aria-label={`Evolution du chiffre d'affaires et des depenses sur ${points.length} periodes`}
+          aria-label={`Évolution du chiffre d'affaires et des dépenses sur ${points.length} périodes`}
           onMouseLeave={() => setHover(null)}
         >
           <defs>
@@ -220,7 +220,7 @@ export function RevenueChart({
                 onFocus={() => setHover(index)}
                 tabIndex={0}
                 role="button"
-                aria-label={`${point.label} : chiffre d'affaires ${formatValue(point.revenueRaw)}, depenses ${formatValue(point.expensesRaw)}`}
+                aria-label={`${point.label} : chiffre d'affaires ${formatValue(point.revenueRaw)}, dépenses ${formatValue(point.expensesRaw)}`}
               />
             );
           })}
@@ -273,9 +273,9 @@ export function RevenueChart({
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="text-ink-500">
-                <th className="py-1 font-medium">Periode</th>
+                <th className="py-1 font-medium">Période</th>
                 <th className="py-1 text-right font-medium">Chiffre d&apos;affaires</th>
-                <th className="py-1 text-right font-medium">Depenses</th>
+                <th className="py-1 text-right font-medium">Dépenses</th>
               </tr>
             </thead>
             <tbody>

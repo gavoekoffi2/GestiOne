@@ -14,7 +14,7 @@ import { ConflictError, NotFoundError, ValidationError } from '@/server/errors';
 export const DEFAULT_PAYMENT_METHODS = [
   {
     code: 'CASH',
-    name: 'Especes',
+    name: 'Espèces',
     kind: 'CASH',
     isCredit: false,
     affectsCash: true,
@@ -50,7 +50,7 @@ export const DEFAULT_PAYMENT_METHODS = [
   },
   {
     code: 'CHEQUE',
-    name: 'Cheque',
+    name: 'Chèque',
     kind: 'CHEQUE',
     isCredit: false,
     affectsCash: false,
@@ -59,7 +59,7 @@ export const DEFAULT_PAYMENT_METHODS = [
   },
   {
     code: 'CREDIT',
-    name: 'Credit (a payer plus tard)',
+    name: 'Crédit (à payer plus tard)',
     kind: 'CREDIT',
     isCredit: true,
     affectsCash: false,
@@ -99,7 +99,7 @@ export async function createPaymentMethod(companyId: string, input: PaymentMetho
     where: { companyId, code },
     select: { id: true },
   });
-  if (duplicate) throw new ConflictError('Un mode de reglement porte deja ce nom.');
+  if (duplicate) throw new ConflictError('Un mode de règlement porte déjà ce nom.');
 
   const last = await prisma.paymentMethod.findFirst({
     where: { companyId },
@@ -131,7 +131,7 @@ export async function updatePaymentMethod(
   input: PaymentMethodInput,
 ) {
   const method = await prisma.paymentMethod.findFirst({ where: { id: methodId, companyId } });
-  if (!method) throw new NotFoundError('Mode de reglement introuvable.');
+  if (!method) throw new NotFoundError('Mode de règlement introuvable.');
 
   return prisma.paymentMethod.update({
     where: { id: methodId },
@@ -149,10 +149,10 @@ export async function updatePaymentMethod(
 
 export async function deletePaymentMethod(companyId: string, methodId: string) {
   const method = await prisma.paymentMethod.findFirst({ where: { id: methodId, companyId } });
-  if (!method) throw new NotFoundError('Mode de reglement introuvable.');
+  if (!method) throw new NotFoundError('Mode de règlement introuvable.');
   if (method.isSystem) {
     throw new ValidationError(
-      'Les modes de reglement fournis ne peuvent pas etre supprimes. Vous pouvez les desactiver.',
+      'Les modes de règlement fournis ne peuvent pas être supprimés. Vous pouvez les désactiver.',
     );
   }
 
@@ -191,7 +191,7 @@ export async function createTaxRate(companyId: string, input: TaxRateInput) {
     where: { companyId, name: input.name },
     select: { id: true },
   });
-  if (duplicate) throw new ConflictError('Un taux de taxe porte deja ce nom.');
+  if (duplicate) throw new ConflictError('Un taux de taxe porte déjà ce nom.');
 
   return prisma.$transaction(async (tx) => {
     if (input.isDefault) {
@@ -209,7 +209,7 @@ export async function updateTaxRate(companyId: string, taxRateId: string, input:
     where: { companyId, name: input.name, id: { not: taxRateId } },
     select: { id: true },
   });
-  if (duplicate) throw new ConflictError('Un taux de taxe porte deja ce nom.');
+  if (duplicate) throw new ConflictError('Un taux de taxe porte déjà ce nom.');
 
   return prisma.$transaction(async (tx) => {
     if (input.isDefault) {

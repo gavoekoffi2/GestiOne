@@ -11,7 +11,7 @@ import { listLocations } from '@/server/services/locations';
 import { listPartners } from '@/server/services/partners';
 import { can, requireTenantWith } from '@/server/tenant';
 
-export const metadata: Metadata = { title: 'Depenses' };
+export const metadata: Metadata = { title: 'Dépenses' };
 export const dynamic = 'force-dynamic';
 
 const querySchema = z.object({
@@ -60,9 +60,9 @@ export default async function ExpensesPage({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-ink-900">Depenses</h1>
+        <h1 className="text-2xl font-bold text-ink-900">Dépenses</h1>
         <p className="mt-1 text-ink-600">
-          Vos charges de fonctionnement. Une depense reglee en especes sort automatiquement de la
+          Vos charges de fonctionnement. Une dépense réglée en espèces sort automatiquement de la
           caisse.
         </p>
       </div>
@@ -71,21 +71,21 @@ export default async function ExpensesPage({
         <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-ink-200">
           <div className="flex items-center gap-2 text-ink-500">
             <Icon name="minus" className="size-4" />
-            <p className="text-sm">Depenses du mois</p>
+            <p className="text-sm">Dépenses du mois</p>
           </div>
           <p className="tabular mt-2 text-2xl font-bold text-ink-900">{money(monthTotal)}</p>
         </div>
         <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-ink-200">
           <div className="flex items-center gap-2 text-ink-500">
             <Icon name="list" className="size-4" />
-            <p className="text-sm">Total affiche</p>
+            <p className="text-sm">Total affiché</p>
           </div>
           <p className="tabular mt-2 text-2xl font-bold text-ink-900">{money(result.sum)}</p>
         </div>
       </div>
 
       {breakdown.length > 0 && (
-        <Card title="Repartition du mois" description="Ou part votre argent, par categorie.">
+        <Card title="Répartition du mois" description="Où part votre argent, par catégorie.">
           <ul className="space-y-2">
             {breakdown.map((row) => {
               const share = monthTotal > 0n ? Number((row.total * 100n) / monthTotal) : 0;
@@ -98,7 +98,7 @@ export default async function ExpensesPage({
                   <div
                     className="mt-1 h-1.5 rounded-full bg-ink-100"
                     role="img"
-                    aria-label={`${row.name} : ${share} % des depenses du mois`}
+                    aria-label={`${row.name} : ${share} % des dépenses du mois`}
                   >
                     <div
                       className="h-full rounded-full bg-brand-600"
@@ -134,7 +134,7 @@ export default async function ExpensesPage({
           methodName: expense.method?.name ?? '',
           reference: expense.reference ?? '',
           amountLabel: money(expense.amount),
-          userName: expense.user?.fullName ?? 'Systeme',
+          userName: expense.user?.fullName ?? 'Système',
         }))}
       />
     </div>

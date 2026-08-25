@@ -87,10 +87,10 @@ export default async function PurchaseDetailPage({
           <table className="w-full min-w-[42rem] text-left text-sm">
             <thead>
               <tr className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-500">
-                <th className="px-4 py-2 font-medium sm:px-5">Designation</th>
+                <th className="px-4 py-2 font-medium sm:px-5">Désignation</th>
                 <th className="px-4 py-2 text-right font-medium">Commande</th>
-                <th className="px-4 py-2 text-right font-medium">Recu</th>
-                <th className="px-4 py-2 text-right font-medium">Cout unitaire</th>
+                <th className="px-4 py-2 text-right font-medium">Reçu</th>
+                <th className="px-4 py-2 text-right font-medium">Coût unitaire</th>
                 <th className="px-4 py-2 text-right font-medium sm:px-5">Total</th>
               </tr>
             </thead>
@@ -135,21 +135,21 @@ export default async function PurchaseDetailPage({
             <div className="border-t border-ink-300 pt-1">
               <Row label="Total" value={money(order.total)} strong />
             </div>
-            {order.paidAmount > 0n && <Row label="Deja regle" value={money(order.paidAmount)} />}
+            {order.paidAmount > 0n && <Row label="Déjà réglé" value={money(order.paidAmount)} />}
             {order.balanceDue > 0n && (
-              <Row label="Reste a regler" value={money(order.balanceDue)} strong />
+              <Row label="Reste à régler" value={money(order.balanceDue)} strong />
             )}
           </dl>
         </div>
       </Card>
 
       {order.payments.length > 0 && (
-        <Card title="Reglements">
+        <Card title="Règlements">
           <ul className="divide-y divide-ink-100 text-sm">
             {order.payments.map((payment) => (
               <li key={payment.id} className="flex flex-wrap justify-between gap-2 py-2">
                 <span className="text-ink-600">
-                  {payment.paidAt.toLocaleDateString('fr-FR')} · {payment.method?.name ?? 'Non precise'}
+                  {payment.paidAt.toLocaleDateString('fr-FR')} · {payment.method?.name ?? 'Non précisé'}
                   {payment.reference && ` · ${payment.reference}`}
                 </span>
                 <span className="tabular font-medium text-ink-800">{money(payment.amount)}</span>
@@ -161,7 +161,7 @@ export default async function PurchaseDetailPage({
 
       {order.status === 'CANCELLED' && (
         <p className="rounded-lg bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">
-          Commande annulee{order.cancelReason ? ` — ${order.cancelReason}` : ''}
+          Commande annulée{order.cancelReason ? ` — ${order.cancelReason}` : ''}
         </p>
       )}
     </div>

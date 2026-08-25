@@ -21,7 +21,7 @@ export const POST = handler(async (request: NextRequest) => {
     action: 'CREATE',
     entityType: 'Category',
     entityId: category.id,
-    summary: `Categorie "${category.name}" creee`,
+    summary: `Catégorie "${category.name}" créée`,
     ipAddress: clientIp(request),
   });
 

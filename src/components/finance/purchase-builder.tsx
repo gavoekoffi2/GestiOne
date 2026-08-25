@@ -141,7 +141,7 @@ export function PurchaseBuilder({
               value={supplierId}
               onChange={(event) => setSupplierId(event.target.value)}
             >
-              <option value="">Non precise</option>
+              <option value="">Non précisé</option>
               {suppliers.map((supplier) => (
                 <option key={supplier.id} value={supplier.id}>{supplier.label}</option>
               ))}
@@ -151,7 +151,7 @@ export function PurchaseBuilder({
             label="Point de vente"
             htmlFor="locationId"
             error={api.fieldErrors.locationId}
-            hint="La marchandise receptionnee y entrera en stock."
+            hint="La marchandise réceptionnée y entrera en stock."
           >
             <Select
               id="locationId"
@@ -163,7 +163,7 @@ export function PurchaseBuilder({
               ))}
             </Select>
           </Field>
-          <Field label="Reference" htmlFor="reference" error={api.fieldErrors.reference}>
+          <Field label="Référence" htmlFor="reference" error={api.fieldErrors.reference}>
             <Input
               id="reference"
               value={reference}
@@ -204,14 +204,14 @@ export function PurchaseBuilder({
                       ))}
                     </Select>
                   </Field>
-                  <Field label="Designation" htmlFor={`p-line-desc-${index}`}>
+                  <Field label="Désignation" htmlFor={`p-line-desc-${index}`}>
                     <Input
                       id={`p-line-desc-${index}`}
                       value={line.description}
                       onChange={(event) => update(index, { description: event.target.value })}
                     />
                   </Field>
-                  <Field label="Quantite" htmlFor={`p-line-qty-${index}`}>
+                  <Field label="Quantité" htmlFor={`p-line-qty-${index}`}>
                     <Input
                       id={`p-line-qty-${index}`}
                       value={line.quantityText}
@@ -221,9 +221,9 @@ export function PurchaseBuilder({
                     />
                   </Field>
                   <Field
-                    label="Cout unitaire"
+                    label="Coût unitaire"
                     htmlFor={`p-line-cost-${index}`}
-                    hint="Le prix reellement negocie pour ce lot."
+                    hint="Le prix réellement négocié pour ce lot."
                   >
                     <MoneyInput
                       id={`p-line-cost-${index}`}
@@ -264,13 +264,13 @@ export function PurchaseBuilder({
               {
                 value: 'receive' as const,
                 label: 'Achat direct',
-                hint: 'La marchandise est deja arrivee : elle entre en stock immediatement.',
+                hint: 'La marchandise est déjà arrivée : elle entre en stock immédiatement.',
                 disabled: !canReceive,
               },
               {
                 value: 'order' as const,
                 label: 'Passer commande',
-                hint: 'La dette est enregistree ; vous receptionnerez a la livraison.',
+                hint: 'La dette est enregistrée ; vous réceptionnerez à la livraison.',
                 disabled: false,
               },
               {

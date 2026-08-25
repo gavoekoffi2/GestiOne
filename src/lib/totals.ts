@@ -132,12 +132,12 @@ export function computeTotals(
   const nets: Money[] = [];
 
   for (const line of lines) {
-    if (line.quantity < 0n) throw new TotalsError('Une quantite ne peut pas etre negative.');
-    if (line.unitPrice < 0n) throw new TotalsError('Un prix unitaire ne peut pas etre negatif.');
+    if (line.quantity < 0n) throw new TotalsError('Une quantité ne peut pas être négative.');
+    if (line.unitPrice < 0n) throw new TotalsError('Un prix unitaire ne peut pas être négatif.');
 
     const rate = line.discountRate ?? 0;
     if (rate < 0 || rate > 10_000) {
-      throw new TotalsError('Une remise de ligne doit etre comprise entre 0 et 100 %.');
+      throw new TotalsError('Une remise de ligne doit être comprise entre 0 et 100 %.');
     }
 
     const lineGross = multiplyByQuantity(line.unitPrice, line.quantity);
@@ -154,13 +154,13 @@ export function computeTotals(
   let discountTotal = 0n;
   if (discount.rate !== undefined) {
     if (discount.rate < 0 || discount.rate > 10_000) {
-      throw new TotalsError('Une remise globale doit etre comprise entre 0 et 100 %.');
+      throw new TotalsError('Une remise globale doit être comprise entre 0 et 100 %.');
     }
     discountTotal = applyRate(subtotal, discount.rate);
   } else if (discount.amount !== undefined) {
-    if (discount.amount < 0n) throw new TotalsError('Une remise ne peut pas etre negative.');
+    if (discount.amount < 0n) throw new TotalsError('Une remise ne peut pas être négative.');
     if (discount.amount > subtotal) {
-      throw new TotalsError('La remise ne peut pas depasser le montant du document.');
+      throw new TotalsError('La remise ne peut pas dépasser le montant du document.');
     }
     discountTotal = discount.amount;
   }
@@ -176,7 +176,7 @@ export function computeTotals(
     const line = lines[index] as LineInput;
     const taxRate = line.taxRate ?? 0;
     if (taxRate < 0 || taxRate > 100_000) {
-      throw new TotalsError('Un taux de taxe invalide a ete fourni.');
+      throw new TotalsError('Un taux de taxe invalide a été fourni.');
     }
 
     const taxable = (nets[index] as Money) - (allocations[index] as Money);
@@ -251,7 +251,7 @@ export function paymentStatus(total: Money, paid: Money): PaymentStatus {
 
 /** Divise un total en parts entieres egales, le reste allant aux premieres parts. */
 export function splitEvenly(amount: Money, parts: number): Money[] {
-  if (parts <= 0) throw new TotalsError('Le nombre de parts doit etre positif.');
+  if (parts <= 0) throw new TotalsError('Le nombre de parts doit être positif.');
   return distributeProportionally(amount, new Array<Money>(parts).fill(1n));
 }
 

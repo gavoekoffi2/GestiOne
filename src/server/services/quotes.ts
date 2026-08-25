@@ -19,9 +19,9 @@ export type QuoteStatus = 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED'
 export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
   DRAFT: 'Brouillon',
   SENT: 'Envoye',
-  ACCEPTED: 'Accepte',
+  ACCEPTED: 'Accepté',
   REJECTED: 'Refuse',
-  EXPIRED: 'Expire',
+  EXPIRED: 'Expiré',
   CONVERTED: 'Converti en facture',
 };
 
@@ -114,7 +114,7 @@ async function resolveQuoteLines(
   return lines.map((line, index) => {
     const position = index + 1;
     if (line.quantity <= 0n) {
-      throw new ValidationError(`Ligne ${position} : la quantite doit etre superieure a zero.`);
+      throw new ValidationError(`Ligne ${position} : la quantité doit être supérieure à zéro.`);
     }
 
     let product: { id: string; name: string; salePrice: bigint } | null = null;
@@ -125,14 +125,14 @@ async function resolveQuoteLines(
     }
 
     const description = line.description?.trim() || product?.name;
-    if (!description) throw new ValidationError(`Ligne ${position} : indiquez une designation.`);
+    if (!description) throw new ValidationError(`Ligne ${position} : indiquez une désignation.`);
 
     const unitPrice = line.unitPrice ?? product?.salePrice;
     if (unitPrice === undefined) {
       throw new ValidationError(`Ligne ${position} : indiquez un prix unitaire.`);
     }
     if (unitPrice < 0n) {
-      throw new ValidationError(`Ligne ${position} : le prix unitaire ne peut pas etre negatif.`);
+      throw new ValidationError(`Ligne ${position} : le prix unitaire ne peut pas être négatif.`);
     }
 
     let taxRate = 0;
@@ -218,7 +218,7 @@ export async function createQuote(context: QuoteContext, input: QuoteInput) {
       action: 'CREATE',
       entityType: 'Quote',
       entityId: quote.id,
-      summary: `Devis ${number} cree`,
+      summary: `Devis ${number} créé`,
       metadata: { total: totals.total.toString() },
     });
 
@@ -257,7 +257,7 @@ export async function changeQuoteStatus(
   const current = quote.status as QuoteStatus;
   if (target === 'CONVERTED') {
     throw new ValidationError(
-      'La conversion se fait en creant la facture, pas en changeant le statut.',
+      'La conversion se fait en créant la facture, pas en changeant le statut.',
     );
   }
   if (!ALLOWED_TRANSITIONS[current].includes(target)) {
@@ -301,11 +301,11 @@ export async function convertQuoteToInvoice(
   if (!quote) throw new NotFoundError('Devis introuvable.');
 
   if (quote.status === 'CONVERTED' || quote.invoiceId) {
-    throw new ConflictError(`Le devis ${quote.number} a deja ete converti en facture.`);
+    throw new ConflictError(`Le devis ${quote.number} a déjà été converti en facture.`);
   }
   if (quote.status === 'REJECTED' || quote.status === 'EXPIRED') {
     throw new ConflictError(
-      `Le devis ${quote.number} est ${QUOTE_STATUS_LABELS[quote.status as QuoteStatus].toLowerCase()} : reactivez-le avant de le convertir.`,
+      `Le devis ${quote.number} est ${QUOTE_STATUS_LABELS[quote.status as QuoteStatus].toLowerCase()} : réactivez-le avant de le convertir.`,
     );
   }
 

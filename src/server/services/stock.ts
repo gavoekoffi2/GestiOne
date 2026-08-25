@@ -29,9 +29,9 @@ export type MovementKind =
   | 'INVENTORY';
 
 export const MOVEMENT_LABELS: Record<MovementKind, string> = {
-  IN: 'Entree',
+  IN: 'Entrée',
   OUT: 'Sortie',
-  TRANSFER_IN: 'Transfert (reception)',
+  TRANSFER_IN: 'Transfert (réception)',
   TRANSFER_OUT: 'Transfert (expedition)',
   ADJUSTMENT: 'Ajustement',
   INVENTORY: 'Inventaire',
@@ -149,7 +149,7 @@ export interface EntryInput {
 
 /** Entree de stock : reception, retour client, production. */
 export async function recordEntry(context: MovementContext, input: EntryInput) {
-  if (input.quantity <= 0n) throw new ValidationError('La quantite doit etre superieure a zero.');
+  if (input.quantity <= 0n) throw new ValidationError('La quantité doit être supérieure à zéro.');
 
   const product = await loadTrackedProduct(context.companyId, input.productId);
   const location = await assertLocation(context.companyId, input.locationId);
@@ -173,7 +173,7 @@ export async function recordEntry(context: MovementContext, input: EntryInput) {
       action: 'STOCK_MOVE',
       entityType: 'StockMovement',
       entityId: movement.id,
-      summary: `Entree de ${formatQuantity(input.quantity)} ${product.unit?.symbol ?? ''} — ${product.name} (${location.name})`.trim(),
+      summary: `Entrée de ${formatQuantity(input.quantity)} ${product.unit?.symbol ?? ''} — ${product.name} (${location.name})`.trim(),
     });
 
     return movement;
@@ -184,7 +184,7 @@ export interface ExitInput extends EntryInput {}
 
 /** Sortie de stock : casse, perte, consommation interne, don. */
 export async function recordExit(context: MovementContext, input: ExitInput) {
-  if (input.quantity <= 0n) throw new ValidationError('La quantite doit etre superieure a zero.');
+  if (input.quantity <= 0n) throw new ValidationError('La quantité doit être supérieure à zéro.');
 
   const product = await loadTrackedProduct(context.companyId, input.productId);
   const location = await assertLocation(context.companyId, input.locationId);
@@ -231,9 +231,9 @@ export interface TransferInput {
  * entrer dans l'autre.
  */
 export async function recordTransfer(context: MovementContext, input: TransferInput) {
-  if (input.quantity <= 0n) throw new ValidationError('La quantite doit etre superieure a zero.');
+  if (input.quantity <= 0n) throw new ValidationError('La quantité doit être supérieure à zéro.');
   if (input.fromLocationId === input.toLocationId) {
-    throw new ValidationError('Le point de vente de depart et celui d arrivee doivent differer.');
+    throw new ValidationError('Le point de vente de départ et celui d arrivée doivent différer.');
   }
 
   const product = await loadTrackedProduct(context.companyId, input.productId);
@@ -298,7 +298,7 @@ export interface AdjustmentInput {
  */
 export async function recordInventory(context: MovementContext, input: AdjustmentInput) {
   if (input.countedQuantity < 0n) {
-    throw new ValidationError('La quantite comptee ne peut pas etre negative.');
+    throw new ValidationError('La quantité comptée ne peut pas être négative.');
   }
   if (!input.reason.trim()) {
     throw new ValidationError("Indiquez le motif de l'inventaire.");
@@ -317,7 +317,7 @@ export async function recordInventory(context: MovementContext, input: Adjustmen
 
     if (delta === 0n) {
       throw new ValidationError(
-        `Le stock compte correspond deja au stock enregistre (${formatQuantity(current)}). Aucun mouvement n'est necessaire.`,
+        `Le stock compté correspond déjà au stock enregistré (${formatQuantity(current)}). Aucun mouvement n'est nécessaire.`,
       );
     }
 

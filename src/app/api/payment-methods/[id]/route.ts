@@ -20,7 +20,7 @@ export const PUT = handler(async (request: NextRequest, { params }) => {
     action: 'UPDATE',
     entityType: 'PaymentMethod',
     entityId: method.id,
-    summary: `Mode de reglement "${method.name}" modifie`,
+    summary: `Mode de règlement "${method.name}" modifié`,
     ipAddress: clientIp(request),
   });
 
@@ -38,7 +38,7 @@ export const DELETE = handler(async (request: NextRequest, { params }) => {
     action: 'DELETE',
     entityType: 'PaymentMethod',
     entityId: id as string,
-    summary: result ? 'Mode de reglement desactive (deja utilise)' : 'Mode de reglement supprime',
+    summary: result ? 'Mode de règlement désactivé (déjà utilisé)' : 'Mode de règlement supprimé',
     ipAddress: clientIp(request),
   });
 

@@ -40,25 +40,25 @@ export interface ImportPreview {
 
 const CUSTOMER_COLUMNS: ColumnDefinition[] = [
   { key: 'name', label: 'Nom', aliases: ['Client', 'Nom du client'], required: true },
-  { key: 'companyName', label: 'Entreprise', aliases: ['Societe', 'Raison sociale'] },
-  { key: 'phone', label: 'Telephone', aliases: ['Tel', 'Numero', 'Contact'] },
-  { key: 'secondPhone', label: 'Second telephone', aliases: ['Tel 2'] },
+  { key: 'companyName', label: 'Entreprise', aliases: ['Société', 'Raison sociale'] },
+  { key: 'phone', label: 'Téléphone', aliases: ['Tel', 'Numéro', 'Contact'] },
+  { key: 'secondPhone', label: 'Second téléphone', aliases: ['Tel 2'] },
   { key: 'email', label: 'Email', aliases: ['Courriel', 'Adresse email'] },
   { key: 'addressLine', label: 'Adresse' },
   { key: 'city', label: 'Ville' },
   { key: 'countryCode', label: 'Pays', aliases: ['Code pays'] },
   { key: 'taxNumber', label: 'Identifiant fiscal', aliases: ['NIF', 'RCCM'] },
-  { key: 'creditLimit', label: "Plafond d'encours", aliases: ['Plafond', 'Credit'] },
+  { key: 'creditLimit', label: "Plafond d'encours", aliases: ['Plafond', 'Crédit'] },
   { key: 'notes', label: 'Notes', aliases: ['Remarques'] },
 ];
 
 const PRODUCT_COLUMNS: ColumnDefinition[] = [
-  { key: 'name', label: 'Nom', aliases: ['Article', 'Designation', 'Produit'], required: true },
-  { key: 'sku', label: 'Reference', aliases: ['SKU', 'Code'] },
+  { key: 'name', label: 'Nom', aliases: ['Article', 'Désignation', 'Produit'], required: true },
+  { key: 'sku', label: 'Référence', aliases: ['SKU', 'Code'] },
   { key: 'barcode', label: 'Code-barres', aliases: ['EAN', 'Code barre'] },
-  { key: 'category', label: 'Categorie', aliases: ['Famille'] },
-  { key: 'unit', label: 'Unite', aliases: ['Unite de mesure'] },
-  { key: 'costPrice', label: "Prix d'achat", aliases: ['Cout', 'Achat', 'Prix achat'], required: true },
+  { key: 'category', label: 'Catégorie', aliases: ['Famille'] },
+  { key: 'unit', label: 'Unité', aliases: ['Unité de mesure'] },
+  { key: 'costPrice', label: "Prix d'achat", aliases: ['Coût', 'Achat', 'Prix achat'], required: true },
   { key: 'salePrice', label: 'Prix de vente', aliases: ['Prix', 'Vente', 'Prix vente'], required: true },
   { key: 'wholesalePrice', label: 'Prix grossiste', aliases: ['Prix gros'] },
   { key: 'minStock', label: 'Stock minimum', aliases: ['Seuil', 'Stock mini'] },
@@ -153,7 +153,7 @@ export async function previewImport(
 
     const key = name.trim().toLowerCase();
     if (existing.has(key)) {
-      rows.push({ line, status: 'duplicate', message: 'Existe deja — sera ignore.', values });
+      rows.push({ line, status: 'duplicate', message: 'Existe déjà — sera ignore.', values });
       return;
     }
     if (seen.has(key)) {
@@ -191,7 +191,7 @@ function validateRow(
     if (!raw) return null;
     try {
       const parsed = parseAmount(raw, currency.decimals);
-      if (parsed < 0n) return `${label} ne peut pas etre negatif.`;
+      if (parsed < 0n) return `${label} ne peut pas être négatif.`;
       return null;
     } catch (error) {
       return error instanceof MoneyError ? `${label} : montant invalide ("${raw}").` : `${label} invalide.`;
@@ -212,7 +212,7 @@ function validateRow(
   if (values.minStock) {
     try {
       const quantity = parseQuantity(values.minStock);
-      if (quantity < 0n) return 'Le stock minimum ne peut pas etre negatif.';
+      if (quantity < 0n) return 'Le stock minimum ne peut pas être négatif.';
     } catch (error) {
       return error instanceof QuantityError
         ? `Stock minimum invalide ("${values.minStock}").`

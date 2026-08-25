@@ -17,7 +17,7 @@ export const PERMISSION_GROUPS = [
     label: 'Clients',
     permissions: [
       { key: 'customers.read', label: 'Consulter les clients' },
-      { key: 'customers.write', label: 'Creer et modifier les clients' },
+      { key: 'customers.write', label: 'Créer et modifier les clients' },
       { key: 'customers.delete', label: 'Supprimer les clients' },
     ],
   },
@@ -26,7 +26,7 @@ export const PERMISSION_GROUPS = [
     label: 'Fournisseurs',
     permissions: [
       { key: 'suppliers.read', label: 'Consulter les fournisseurs' },
-      { key: 'suppliers.write', label: 'Creer et modifier les fournisseurs' },
+      { key: 'suppliers.write', label: 'Créer et modifier les fournisseurs' },
       { key: 'suppliers.delete', label: 'Supprimer les fournisseurs' },
     ],
   },
@@ -35,7 +35,7 @@ export const PERMISSION_GROUPS = [
     label: 'Produits et services',
     permissions: [
       { key: 'products.read', label: 'Consulter le catalogue' },
-      { key: 'products.write', label: 'Creer et modifier les articles' },
+      { key: 'products.write', label: 'Créer et modifier les articles' },
       { key: 'products.delete', label: 'Supprimer les articles' },
       { key: 'products.cost.read', label: "Voir les prix d'achat" },
     ],
@@ -45,7 +45,7 @@ export const PERMISSION_GROUPS = [
     label: 'Stock',
     permissions: [
       { key: 'stock.read', label: 'Consulter le stock' },
-      { key: 'stock.move', label: 'Enregistrer entrees, sorties et transferts' },
+      { key: 'stock.move', label: 'Enregistrer entrées, sorties et transferts' },
       { key: 'stock.adjust', label: 'Ajuster le stock et faire un inventaire' },
     ],
   },
@@ -64,7 +64,7 @@ export const PERMISSION_GROUPS = [
     label: 'Devis',
     permissions: [
       { key: 'quotes.read', label: 'Consulter les devis' },
-      { key: 'quotes.write', label: 'Creer et modifier les devis' },
+      { key: 'quotes.write', label: 'Créer et modifier les devis' },
       { key: 'quotes.convert', label: 'Convertir un devis en facture' },
     ],
   },
@@ -73,7 +73,7 @@ export const PERMISSION_GROUPS = [
     label: 'Factures',
     permissions: [
       { key: 'invoices.read', label: 'Consulter les factures' },
-      { key: 'invoices.write', label: 'Creer et modifier les factures' },
+      { key: 'invoices.write', label: 'Créer et modifier les factures' },
       { key: 'invoices.cancel', label: 'Annuler une facture' },
     ],
   },
@@ -91,17 +91,17 @@ export const PERMISSION_GROUPS = [
     label: 'Achats',
     permissions: [
       { key: 'purchases.read', label: 'Consulter les achats' },
-      { key: 'purchases.write', label: 'Creer et modifier les commandes fournisseur' },
-      { key: 'purchases.receive', label: 'Receptionner une commande' },
+      { key: 'purchases.write', label: 'Créer et modifier les commandes fournisseur' },
+      { key: 'purchases.receive', label: 'Réceptionner une commande' },
     ],
   },
   {
     key: 'expenses',
-    label: 'Depenses',
+    label: 'Dépenses',
     permissions: [
-      { key: 'expenses.read', label: 'Consulter les depenses' },
-      { key: 'expenses.write', label: 'Enregistrer une depense' },
-      { key: 'expenses.delete', label: 'Supprimer une depense' },
+      { key: 'expenses.read', label: 'Consulter les dépenses' },
+      { key: 'expenses.write', label: 'Enregistrer une dépense' },
+      { key: 'expenses.delete', label: 'Supprimer une dépense' },
     ],
   },
   {
@@ -124,12 +124,12 @@ export const PERMISSION_GROUPS = [
     key: 'settings',
     label: 'Administration',
     permissions: [
-      { key: 'settings.company', label: "Modifier les parametres de l'entreprise" },
-      { key: 'settings.locations', label: 'Gerer les points de vente' },
-      { key: 'settings.users', label: 'Gerer les utilisateurs' },
-      { key: 'settings.roles', label: 'Gerer les roles et permissions' },
+      { key: 'settings.company', label: "Modifier les paramètres de l'entreprise" },
+      { key: 'settings.locations', label: 'Gérer les points de vente' },
+      { key: 'settings.users', label: 'Gérer les utilisateurs' },
+      { key: 'settings.roles', label: 'Gérer les rôles et permissions' },
       { key: 'settings.audit', label: "Consulter le journal d'audit" },
-      { key: 'settings.import', label: 'Importer et exporter des donnees' },
+      { key: 'settings.import', label: 'Importer et exporter des données' },
     ],
   },
 ] as const;
@@ -174,13 +174,13 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
   {
     key: 'ADMIN',
     name: 'Administrateur',
-    description: "Acces complet a toutes les fonctionnalites de l'entreprise.",
+    description: "Accès complet à toutes les fonctionnalités de l'entreprise.",
     permissions: [WILDCARD],
   },
   {
     key: 'MANAGER',
     name: 'Manager',
-    description: 'Gestion operationnelle complete et acces aux rapports.',
+    description: 'Gestion opérationnelle complète et accès aux rapports.',
     permissions: ALL_PERMISSIONS.filter(
       (permission) =>
         !['settings.users', 'settings.roles', 'settings.company'].includes(permission),
@@ -212,7 +212,7 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
   {
     key: 'STOCK',
     name: 'Gestionnaire de stock',
-    description: 'Catalogue produits, stock et receptions fournisseur.',
+    description: 'Catalogue produits, stock et réceptions fournisseur.',
     permissions: [
       'dashboard.view',
       'products.read',

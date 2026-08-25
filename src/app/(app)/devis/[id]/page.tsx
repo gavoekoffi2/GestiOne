@@ -80,7 +80,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
                         : 'neutral'
               }
             >
-              {expired ? 'Expire' : QUOTE_STATUS_LABELS[quote.status as QuoteStatus] ?? quote.status}
+              {expired ? 'Expiré' : QUOTE_STATUS_LABELS[quote.status as QuoteStatus] ?? quote.status}
             </Badge>
             {quote.invoice && (
               <Link
@@ -162,7 +162,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
             </colgroup>
             <thead>
               <tr className="border-b border-ink-300 text-xs uppercase tracking-wide text-ink-500">
-                <th className="py-3 pr-6 font-medium">Designation</th>
+                <th className="py-3 pr-6 font-medium">Désignation</th>
                 <th className="px-6 py-3 text-right font-medium">Qte</th>
                 <th className="px-6 py-3 text-right font-medium">P.U.</th>
                 <th className="py-3 pl-6 text-right font-medium">Total</th>

@@ -51,7 +51,7 @@ export async function recordAudit(input: AuditInput): Promise<void> {
       },
     });
   } catch (error) {
-    console.error('[audit] impossible d\'enregistrer l\'evenement', input.action, error);
+    console.error('[audit] impossible d\'enregistrer l\'événement', input.action, error);
   }
 }
 

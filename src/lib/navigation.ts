@@ -56,19 +56,19 @@ export const NAVIGATION: NavSection[] = [
     label: 'Finance',
     items: [
       { href: '/caisse', label: 'Caisse', permission: 'cash.read', icon: 'cash', phase: 5 },
-      { href: '/depenses', label: 'Depenses', permission: 'expenses.read', icon: 'minus', phase: 5 },
+      { href: '/depenses', label: 'Dépenses', permission: 'expenses.read', icon: 'minus', phase: 5 },
     ],
   },
   {
     label: 'Administration',
     items: [
-      { href: '/parametres', label: "Parametres de l'entreprise", permission: 'settings.company', icon: 'settings' },
-      { href: '/parametres/commerce', label: 'Reglements et taxes', permission: 'settings.company', icon: 'wallet' },
+      { href: '/parametres', label: "Paramètres de l'entreprise", permission: 'settings.company', icon: 'settings' },
+      { href: '/parametres/commerce', label: 'Règlements et taxes', permission: 'settings.company', icon: 'wallet' },
       { href: '/parametres/points-de-vente', label: 'Points de vente', permission: 'settings.locations', icon: 'pin' },
       { href: '/parametres/utilisateurs', label: 'Utilisateurs', permission: 'settings.users', icon: 'user-plus' },
-      { href: '/parametres/roles', label: 'Roles et permissions', permission: 'settings.roles', icon: 'shield' },
+      { href: '/parametres/roles', label: 'Rôles et permissions', permission: 'settings.roles', icon: 'shield' },
       { href: '/parametres/audit', label: "Journal d'audit", permission: 'settings.audit', icon: 'list' },
-      { href: '/parametres/import', label: 'Import de donnees', permission: 'settings.import', icon: 'switch' },
+      { href: '/parametres/import', label: 'Import de données', permission: 'settings.import', icon: 'switch' },
     ],
   },
 ];

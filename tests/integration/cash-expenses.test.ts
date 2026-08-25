@@ -371,7 +371,7 @@ describe('depenses', () => {
         amount: 1_000n,
         description: 'Achat',
       }),
-    ).rejects.toThrow(/Credit/);
+    ).rejects.toThrow(/Crédit/);
   });
 
   it('exige un montant positif et une description', async () => {

@@ -69,7 +69,7 @@ export const POST = handler(async (request: NextRequest) => {
     await recordAudit({
       action: 'LOGIN_FAILED',
       entityType: 'User',
-      summary: `Echec de connexion pour ${input.email}`,
+      summary: `Échec de connexion pour ${input.email}`,
       ipAddress: ip,
     });
     throw error;

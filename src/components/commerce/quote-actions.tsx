@@ -85,7 +85,7 @@ export function QuoteActions({
                 className="mt-0.5 size-4 rounded border-ink-300"
               />
               <span>
-                Emettre la facture immediatement
+                Émettre la facture immédiatement
                 <span className="block text-xs text-ink-500">
                   Elle devient exigible et le stock sort. Sinon elle reste en brouillon.
                 </span>

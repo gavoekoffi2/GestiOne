@@ -15,9 +15,9 @@ export const PUT = handler(async (request: NextRequest, { params }) => {
     companyId: context.companyId,
     userId: context.userId,
     action: 'PERMISSION_CHANGE',
-    entityType: 'Role',
+    entityType: 'Rôle',
     entityId: role.id,
-    summary: `Permissions du role "${role.name}" modifiees`,
+    summary: `Permissions du rôle "${role.name}" modifiées`,
     metadata: { permissions: role.permissions },
     ipAddress: clientIp(request),
   });
@@ -34,9 +34,9 @@ export const DELETE = handler(async (request: NextRequest, { params }) => {
     companyId: context.companyId,
     userId: context.userId,
     action: 'PERMISSION_CHANGE',
-    entityType: 'Role',
+    entityType: 'Rôle',
     entityId: id as string,
-    summary: 'Role supprime',
+    summary: 'Rôle supprimé',
     ipAddress: clientIp(request),
   });
 

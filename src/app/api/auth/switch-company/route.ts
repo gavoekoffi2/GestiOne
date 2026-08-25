@@ -22,7 +22,7 @@ export const POST = handler(async (request: NextRequest) => {
     where: { id: membershipId, userId: session.userId, isActive: true },
     select: { id: true, companyId: true },
   });
-  if (!membership) throw new ForbiddenError("Vous n'avez pas acces a cette entreprise.");
+  if (!membership) throw new ForbiddenError("Vous n'avez pas accès à cette entreprise.");
 
   await switchSessionMembership(token, membership.id);
   return jsonOk({ companyId: membership.companyId });

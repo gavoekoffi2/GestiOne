@@ -25,7 +25,7 @@ export const PUT = handler(async (request: NextRequest, { params }) => {
     action: 'UPDATE',
     entityType: 'Product',
     entityId: updated.id,
-    summary: `Article "${updated.name}" modifie (${updated.sku})`,
+    summary: `Article "${updated.name}" modifié (${updated.sku})`,
     ipAddress: clientIp(request),
   });
 
@@ -43,7 +43,7 @@ export const DELETE = handler(async (request: NextRequest, { params }) => {
     action: 'DELETE',
     entityType: 'Product',
     entityId: id as string,
-    summary: `Article "${archived.name}" desactive`,
+    summary: `Article "${archived.name}" désactivé`,
     ipAddress: clientIp(request),
   });
 

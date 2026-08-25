@@ -55,7 +55,7 @@ export default async function QuotesPage({
         <div>
           <h1 className="text-2xl font-bold text-ink-900">Devis</h1>
           <p className="mt-1 text-ink-600">
-            Vos propositions commerciales. Un devis accepte se convertit en facture en un clic.
+            Vos propositions commerciales. Un devis accepté se convertit en facture en un clic.
           </p>
         </div>
         {can(context, 'quotes.write') && (
@@ -71,7 +71,7 @@ export default async function QuotesPage({
               type="search"
               name="search"
               defaultValue={query.search}
-              placeholder="Numero ou client"
+              placeholder="Numéro ou client"
               aria-label="Rechercher un devis"
               className="min-h-9 rounded-lg border-0 px-3 text-sm ring-1 ring-inset ring-ink-300"
             />
@@ -91,11 +91,11 @@ export default async function QuotesPage({
         {result.items.length === 0 ? (
           <EmptyState
             title="Aucun devis"
-            description="Creez un devis pour proposer un prix a un client avant de facturer."
+            description="Créez un devis pour proposer un prix à un client avant de facturer."
             action={
               can(context, 'quotes.write') ? (
                 <ButtonLink href="/devis/nouveau" variant="secondary">
-                  Creer un devis
+                  Créer un devis
                 </ButtonLink>
               ) : undefined
             }
@@ -105,7 +105,7 @@ export default async function QuotesPage({
             <table className="w-full min-w-[44rem] text-left text-sm">
               <thead>
                 <tr className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-500">
-                  <th className="px-4 py-2 font-medium sm:px-5">Numero</th>
+                  <th className="px-4 py-2 font-medium sm:px-5">Numéro</th>
                   <th className="px-4 py-2 font-medium">Date</th>
                   <th className="px-4 py-2 font-medium">Client</th>
                   <th className="px-4 py-2 text-right font-medium">Total</th>
@@ -143,7 +143,7 @@ export default async function QuotesPage({
                       <td className="px-4 py-3 sm:px-5">
                         <Badge tone={tone(quote.status, expired)}>
                           {expired
-                            ? 'Expire'
+                            ? 'Expiré'
                             : QUOTE_STATUS_LABELS[quote.status as QuoteStatus] ?? quote.status}
                         </Badge>
                       </td>

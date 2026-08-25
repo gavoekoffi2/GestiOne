@@ -18,13 +18,13 @@ export default async function SuppliersPage({
     searchParams,
     labels: {
       title: 'Fournisseurs',
-      subtitle: 'Vos fournisseurs, leurs coordonnees et vos conditions d’achat.',
+      subtitle: 'Vos fournisseurs, leurs coordonnées et vos conditions d’achat.',
       singular: 'Fournisseur',
       createCta: 'Ajouter un fournisseur',
       emptyTitle: 'Aucun fournisseur pour le moment',
       emptyBody:
-        'Ajoutez vos fournisseurs pour les rattacher a vos articles et suivre ce que vous leur devez.',
-      creditHint: 'Montant maximum que vous pouvez devoir a ce fournisseur. 0 = pas de limite definie.',
+        'Ajoutez vos fournisseurs pour les rattacher à vos articles et suivre ce que vous leur devez.',
+      creditHint: 'Montant maximum que vous pouvez devoir à ce fournisseur. 0 = pas de limite définie.',
     },
   });
 }

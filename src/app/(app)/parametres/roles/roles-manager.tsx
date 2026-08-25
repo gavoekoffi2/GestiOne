@@ -90,7 +90,7 @@ export function RolesManager({
     const result = await api.send(isNew ? '/api/roles' : `/api/roles/${editing.id}`, {
       method: isNew ? 'POST' : 'PUT',
       body,
-      successMessage: isNew ? 'Role cree.' : 'Role mis a jour.',
+      successMessage: isNew ? 'Rôle créé.' : 'Rôle mis à jour.',
     });
 
     if (result) {
@@ -100,12 +100,12 @@ export function RolesManager({
   }
 
   async function onDelete(role: RoleRow) {
-    const confirmed = window.confirm(`Supprimer le role "${role.name}" ?`);
+    const confirmed = window.confirm(`Supprimer le rôle "${role.name}" ?`);
     if (!confirmed) return;
 
     const result = await api.send(`/api/roles/${role.id}`, {
       method: 'DELETE',
-      successMessage: 'Role supprime.',
+      successMessage: 'Rôle supprimé.',
     });
     if (result) router.refresh();
   }
@@ -118,10 +118,10 @@ export function RolesManager({
       {api.success && <Alert tone="success">{api.success}</Alert>}
 
       {editing ? (
-        <Card title={editing === 'new' ? 'Nouveau role' : `Modifier le role ${editing.name}`}>
+        <Card title={editing === 'new' ? 'Nouveau rôle' : `Modifier le rôle ${editing.name}`}>
           <form onSubmit={onSubmit} className="space-y-5" noValidate>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Nom du role" htmlFor="name" required error={api.fieldErrors.name}>
+              <Field label="Nom du rôle" htmlFor="name" required error={api.fieldErrors.name}>
                 <Input
                   id="name"
                   name="name"
@@ -141,10 +141,10 @@ export function RolesManager({
             </div>
 
             {isAdminRole ? (
-              <Alert tone="info" title="Acces complet">
-                Le role Administrateur couvre en permanence toutes les permissions, y compris celles
-                qui seront ajoutees par les futures versions de GestiOne. Son perimetre ne peut pas
-                etre reduit : creez un role personnalise pour un acces restreint.
+              <Alert tone="info" title="Accès complet">
+                Le rôle Administrateur couvre en permanence toutes les permissions, y compris celles
+                qui seront ajoutées par les futures versions de GestiOne. Son périmètre ne peut pas
+                être réduit : créez un rôle personnalisé pour un accès restreint.
               </Alert>
             ) : (
               <div className="space-y-4">
@@ -163,7 +163,7 @@ export function RolesManager({
                           onClick={() => toggleGroup(group)}
                           className="text-xs font-medium text-brand-700 hover:underline"
                         >
-                          {allSelected ? 'Tout decocher' : 'Tout cocher'}
+                          {allSelected ? 'Tout décocher' : 'Tout cocher'}
                         </button>
                       </legend>
                       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -186,7 +186,7 @@ export function RolesManager({
                   );
                 })}
                 <p className="text-sm text-ink-500">
-                  {selected.size} permission(s) selectionnee(s).
+                  {selected.size} permission(s) sélectionnée(s).
                 </p>
               </div>
             )}
@@ -203,7 +203,7 @@ export function RolesManager({
         </Card>
       ) : (
         <Button type="button" onClick={() => startEdit('new')}>
-          Creer un role personnalise
+          Créer un rôle personnalisé
         </Button>
       )}
 
@@ -214,16 +214,16 @@ export function RolesManager({
             title={role.name}
             description={role.description || undefined}
             action={
-              role.isSystem ? <Badge tone="info">Fourni</Badge> : <Badge>Personnalise</Badge>
+              role.isSystem ? <Badge tone="info">Fourni</Badge> : <Badge>Personnalisé</Badge>
             }
           >
             <p className="text-sm text-ink-600">
               {role.permissions.includes('*')
-                ? 'Acces complet a toutes les fonctionnalites.'
+                ? 'Accès complet à toutes les fonctionnalités.'
                 : `${role.permissions.length} permission(s).`}
             </p>
             <p className="mt-1 text-sm text-ink-500">
-              {role.memberCount} utilisateur(s) avec ce role.
+              {role.memberCount} utilisateur(s) avec ce rôle.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button

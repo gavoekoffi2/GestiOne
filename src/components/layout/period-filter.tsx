@@ -28,7 +28,7 @@ export function PeriodFilter({ locations }: { locations?: Array<{ id: string; la
       <div
         className="inline-flex flex-wrap rounded-lg bg-white p-1 ring-1 ring-ink-200"
         role="group"
-        aria-label="Periode"
+        aria-label="Période"
       >
         {PERIOD_ORDER.map((key) => (
           <button

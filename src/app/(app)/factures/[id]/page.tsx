@@ -50,8 +50,8 @@ export default async function InvoiceDetailPage({
     ),
     '',
     `Total : ${money(invoice.total)}`,
-    invoice.paidAmount > 0n ? `Paye : ${money(invoice.paidAmount)}` : null,
-    invoice.balanceDue > 0n ? `Reste a payer : ${money(invoice.balanceDue)}` : null,
+    invoice.paidAmount > 0n ? `Payé : ${money(invoice.paidAmount)}` : null,
+    invoice.balanceDue > 0n ? `Reste à payer : ${money(invoice.balanceDue)}` : null,
     company.phone ? `` : null,
     company.phone ? `${company.name} — ${company.phone}` : null,
   ]
@@ -147,7 +147,7 @@ export default async function InvoiceDetailPage({
               </div>
               {invoice.dueDate && (
                 <div className="flex justify-end gap-2">
-                  <dt>Echeance :</dt>
+                  <dt>Échéance :</dt>
                   <dd className="tabular">{invoice.dueDate.toLocaleDateString('fr-FR')}</dd>
                 </div>
               )}
@@ -179,7 +179,7 @@ export default async function InvoiceDetailPage({
           <table className="w-full min-w-[36rem] text-left text-sm">
             <thead>
               <tr className="border-b border-ink-300 text-xs uppercase tracking-wide text-ink-500">
-                <th className="px-2 py-2 font-medium">Designation</th>
+                <th className="px-2 py-2 font-medium">Désignation</th>
                 <th className="px-2 py-2 text-right font-medium">Qte</th>
                 <th className="px-2 py-2 text-right font-medium">P.U.</th>
                 {invoice.lines.some((line) => line.discountRate > 0) && (
@@ -240,21 +240,21 @@ export default async function InvoiceDetailPage({
             <div className="border-t border-ink-300 pt-1">
               <Row label="Total" value={money(invoice.total)} strong />
             </div>
-            {invoice.paidAmount > 0n && <Row label="Deja paye" value={money(invoice.paidAmount)} />}
+            {invoice.paidAmount > 0n && <Row label="Déjà payé" value={money(invoice.paidAmount)} />}
             {invoice.balanceDue > 0n && (
-              <Row label="Reste a payer" value={money(invoice.balanceDue)} strong />
+              <Row label="Reste à payer" value={money(invoice.balanceDue)} strong />
             )}
           </dl>
         </div>
 
         {invoice.payments.length > 0 && (
           <section className="border-t border-ink-200 pt-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">Reglements</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">Règlements</p>
             <ul className="mt-2 space-y-1 text-sm text-ink-600">
               {invoice.payments.map((payment) => (
                 <li key={payment.id} className="flex flex-wrap justify-between gap-2">
                   <span>
-                    {payment.paidAt.toLocaleDateString('fr-FR')} · {payment.method?.name ?? 'Non precise'}
+                    {payment.paidAt.toLocaleDateString('fr-FR')} · {payment.method?.name ?? 'Non précisé'}
                     {payment.reference && ` · ${payment.reference}`}
                   </span>
                   <span className="tabular font-medium text-ink-800">{money(payment.amount)}</span>
@@ -278,7 +278,7 @@ export default async function InvoiceDetailPage({
 
         {invoice.status === 'CANCELLED' && (
           <p className="mt-4 rounded-lg bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">
-            Facture annulee{invoice.cancelReason ? ` — ${invoice.cancelReason}` : ''}
+            Facture annulée{invoice.cancelReason ? ` — ${invoice.cancelReason}` : ''}
           </p>
         )}
       </article>

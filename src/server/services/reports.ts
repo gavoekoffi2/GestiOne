@@ -416,7 +416,7 @@ export async function revenueByPaymentMethod(companyId: string, period: Period) 
   return rows
     .map((row) => ({
       methodId: row.methodId,
-      name: row.methodId ? (byId.get(row.methodId)?.name ?? 'Mode supprime') : 'Non precise',
+      name: row.methodId ? (byId.get(row.methodId)?.name ?? 'Mode supprimé') : 'Non précisé',
       count: row._count._all,
       total: row._sum.amount ?? 0n,
     }))

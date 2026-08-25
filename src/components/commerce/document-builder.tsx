@@ -74,7 +74,6 @@ export function DocumentBuilder({
   currency,
   locale,
   canDiscount,
-  redirectTo,
 }: {
   kind: 'quote' | 'invoice';
   endpoint: string;
@@ -86,7 +85,6 @@ export function DocumentBuilder({
   currency: CurrencyFormat;
   locale: string;
   canDiscount: boolean;
-  redirectTo: (id: string) => string;
 }) {
   const router = useRouter();
   const api = useApi();
@@ -151,7 +149,7 @@ export function DocumentBuilder({
     if (kind === 'invoice') payload.issue = issueNow;
 
     const result = await api.send<{ id: string }>(endpoint, { method: 'POST', body: payload });
-    if (result) router.push(redirectTo(result.id));
+    if (result) router.push(`${kind === 'invoice' ? '/factures' : '/devis'}/${result.id}`);
   }
 
   return (
@@ -164,14 +162,14 @@ export function DocumentBuilder({
             label="Client"
             htmlFor="doc-customer"
             error={api.fieldErrors.customerId}
-            hint={kind === 'invoice' ? 'Obligatoire pour suivre une creance.' : undefined}
+            hint={kind === 'invoice' ? 'Obligatoire pour suivre une créance.' : undefined}
           >
             <Select
               id="doc-customer"
               value={customerId}
               onChange={(event) => setCustomerId(event.target.value)}
             >
-              <option value="">Aucun client precise</option>
+              <option value="">Aucun client précisé</option>
               {customers.map((customer) => (
                 <option key={customer.id} value={customer.id}>
                   {customer.label}
@@ -187,7 +185,7 @@ export function DocumentBuilder({
               error={api.fieldErrors.locationId}
               hint={
                 kind === 'invoice'
-                  ? "Le stock des articles suivis sortira de ce point de vente a l'emission."
+                  ? "Le stock des articles suivis sortira de ce point de vente à l'émission."
                   : undefined
               }
             >
@@ -240,7 +238,7 @@ export function DocumentBuilder({
                         ))}
                       </Select>
                     </Field>
-                    <Field label="Designation" htmlFor={`line-desc-${index}`}>
+                    <Field label="Désignation" htmlFor={`line-desc-${index}`}>
                       <Input
                         id={`line-desc-${index}`}
                         value={line.description}
@@ -251,7 +249,7 @@ export function DocumentBuilder({
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-4">
-                    <Field label="Quantite" htmlFor={`line-qty-${index}`}>
+                    <Field label="Quantité" htmlFor={`line-qty-${index}`}>
                       <Input
                         id={`line-qty-${index}`}
                         value={line.quantityText}
@@ -346,7 +344,7 @@ export function DocumentBuilder({
                   className="mt-0.5 size-4 rounded border-ink-300"
                 />
                 <span>
-                  Emettre immediatement
+                  Émettre immédiatement
                   <span className="block text-xs text-ink-500">
                     La facture devient exigible et le stock des articles suivis sort. Sinon elle
                     reste en brouillon, modifiable.
@@ -375,9 +373,9 @@ export function DocumentBuilder({
             {api.pending
               ? 'Enregistrement...'
               : kind === 'quote'
-                ? 'Creer le devis'
+                ? 'Créer le devis'
                 : issueNow
-                  ? 'Creer et emettre la facture'
+                  ? 'Créer et émettre la facture'
                   : 'Enregistrer le brouillon'}
           </Button>
           <Button type="button" variant="secondary" onClick={() => router.back()}>

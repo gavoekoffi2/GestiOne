@@ -54,13 +54,13 @@ async function assertMethod(companyId: string, methodId: string) {
       affectsCash: true,
     },
   });
-  if (!method) throw new NotFoundError('Mode de reglement introuvable.');
+  if (!method) throw new NotFoundError('Mode de règlement introuvable.');
   if (!method.isActive) {
-    throw new ValidationError(`Le mode de reglement "${method.name}" est desactive.`);
+    throw new ValidationError(`Le mode de règlement "${method.name}" est désactivé.`);
   }
   if (method.isCredit) {
     throw new ValidationError(
-      "\"Credit\" signifie que le client n'a pas encore paye : ce n'est pas un reglement. Laissez la facture impayee, puis enregistrez le paiement lorsqu'il arrivera.",
+      "\"Crédit\" signifie que le client n'a pas encore payé : ce n'est pas un règlement. Laissez la facture impayée, puis enregistrez le paiement lorsqu'il arrivera.",
     );
   }
   return method;
@@ -68,13 +68,13 @@ async function assertMethod(companyId: string, methodId: string) {
 
 export async function recordPayment(context: PaymentContext, input: RecordPaymentInput) {
   if (input.amount <= 0n) {
-    throw new ValidationError('Le montant du paiement doit etre superieur a zero.');
+    throw new ValidationError('Le montant du paiement doit être supérieur à zéro.');
   }
 
   const method = input.methodId ? await assertMethod(context.companyId, input.methodId) : null;
   if (method?.requiresReference && !input.reference?.trim()) {
     throw new ValidationError(
-      `Le mode "${method.name}" exige une reference (numero de transaction, de cheque ou de bordereau).`,
+      `Le mode "${method.name}" exige une référence (numéro de transaction, de chèque ou de bordereau).`,
     );
   }
 
@@ -89,17 +89,17 @@ export async function recordPayment(context: PaymentContext, input: RecordPaymen
     if (!found) throw new NotFoundError('Facture introuvable.');
     if (found.status === 'CANCELLED') {
       throw new ConflictError(
-        `La facture ${found.number} est annulee : elle ne peut plus recevoir de paiement.`,
+        `La facture ${found.number} est annulée : elle ne peut plus recevoir de paiement.`,
       );
     }
     if (found.status === 'DRAFT') {
       throw new ConflictError(
-        `La facture ${found.number} est encore un brouillon. Emettez-la avant d'enregistrer un paiement.`,
+        `La facture ${found.number} est encore un brouillon. Émettez-la avant d'enregistrer un paiement.`,
       );
     }
     if (!input.allowOverpayment && input.amount > found.balanceDue) {
       throw new ValidationError(
-        `Le montant depasse le solde restant de la facture ${found.number}. Corrigez le montant, ou confirmez l'encaissement d'une avance.`,
+        `Le montant dépasse le solde restant de la facture ${found.number}. Corrigez le montant, ou confirmez l'encaissement d'une avance.`,
       );
     }
     invoice = found;
@@ -116,17 +116,17 @@ export async function recordPayment(context: PaymentContext, input: RecordPaymen
     if (!found) throw new NotFoundError('Commande fournisseur introuvable.');
     if (found.status === 'CANCELLED') {
       throw new ConflictError(
-        `La commande ${found.number} est annulee : elle ne peut plus etre reglee.`,
+        `La commande ${found.number} est annulée : elle ne peut plus être réglée.`,
       );
     }
     if (found.status === 'DRAFT') {
       throw new ConflictError(
-        `La commande ${found.number} est encore un brouillon. Passez-la commande avant de la regler.`,
+        `La commande ${found.number} est encore un brouillon. Passez-la commande avant de la régler.`,
       );
     }
     if (!input.allowOverpayment && input.amount > found.balanceDue) {
       throw new ValidationError(
-        `Le montant depasse le solde restant de la commande ${found.number}.`,
+        `Le montant dépasse le solde restant de la commande ${found.number}.`,
       );
     }
     order = found;
@@ -196,7 +196,7 @@ export async function recordPayment(context: PaymentContext, input: RecordPaymen
         reason:
           input.direction === 'IN'
             ? `Encaissement ${number}${invoice ? ` — facture ${invoice.number}` : ''}`
-            : `Reglement fournisseur ${number}`,
+            : `Règlement fournisseur ${number}`,
         reference: input.reference ?? null,
         paymentId: payment.id,
         userId: context.userId,
@@ -212,7 +212,7 @@ export async function recordPayment(context: PaymentContext, input: RecordPaymen
       summary:
         input.direction === 'IN'
           ? `Encaissement ${number}${invoice ? ` sur facture ${invoice.number}` : ''}`
-          : `Reglement fournisseur ${number}`,
+          : `Règlement fournisseur ${number}`,
       metadata: { amount: input.amount.toString(), method: method?.name ?? null },
     });
 
@@ -272,7 +272,7 @@ export async function deletePayment(context: PaymentContext, paymentId: string, 
       action: 'CANCEL',
       entityType: 'Payment',
       entityId: paymentId,
-      summary: `Paiement ${payment.number} annule : ${reason}`,
+      summary: `Paiement ${payment.number} annulé : ${reason}`,
       metadata: {
         amount: payment.amount.toString(),
         invoice: payment.invoice?.number ?? null,

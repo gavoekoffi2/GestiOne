@@ -47,7 +47,7 @@ export function MembersManager({
         roleId: String(form.get('roleId') ?? ''),
         defaultLocationId: String(form.get('defaultLocationId') ?? ''),
       },
-      successMessage: "Collaborateur ajoute. Communiquez-lui son mot de passe provisoire.",
+      successMessage: "Collaborateur ajouté. Communiquez-lui son mot de passe provisoire.",
     });
     if (result) {
       setMode('none');
@@ -65,7 +65,7 @@ export function MembersManager({
         defaultLocationId: String(form.get('defaultLocationId') ?? ''),
         isActive: form.get('isActive') === 'on',
       },
-      successMessage: 'Utilisateur mis a jour.',
+      successMessage: 'Utilisateur mis à jour.',
     });
     if (result) {
       setMode('none');
@@ -75,13 +75,13 @@ export function MembersManager({
 
   async function onRemove(member: MemberRow) {
     const confirmed = window.confirm(
-      `Retirer ${member.fullName} de l'equipe ?\n\nSes sessions seront immediatement fermees. L'historique de ses operations est conserve.`,
+      `Retirer ${member.fullName} de l'équipe ?\n\nSes sessions seront immédiatement fermées. L'historique de ses opérations est conserve.`,
     );
     if (!confirmed) return;
 
     const result = await api.send(`/api/members/${member.id}`, {
       method: 'DELETE',
-      successMessage: "Utilisateur retire de l'equipe.",
+      successMessage: "Utilisateur retiré de l'équipe.",
     });
     if (result) router.refresh();
   }
@@ -107,7 +107,7 @@ export function MembersManager({
               >
                 <Input id="email" name="email" type="email" inputMode="email" required />
               </Field>
-              <Field label="Telephone" htmlFor="phone" error={api.fieldErrors.phone}>
+              <Field label="Téléphone" htmlFor="phone" error={api.fieldErrors.phone}>
                 <Input id="phone" name="phone" type="tel" inputMode="tel" />
               </Field>
               <Field
@@ -115,14 +115,14 @@ export function MembersManager({
                 htmlFor="password"
                 required
                 error={api.fieldErrors.password}
-                hint="8 caracteres minimum, dont une lettre et un chiffre."
+                hint="8 caractères minimum, dont une lettre et un chiffre."
               >
                 <Input id="password" name="password" type="text" autoComplete="off" required />
               </Field>
-              <Field label="Role" htmlFor="roleId" required error={api.fieldErrors.roleId}>
+              <Field label="Rôle" htmlFor="roleId" required error={api.fieldErrors.roleId}>
                 <Select id="roleId" name="roleId" required defaultValue="">
                   <option value="" disabled>
-                    Choisir un role
+                    Choisir un rôle
                   </option>
                   {roles.map((role) => (
                     <option key={role.id} value={role.id}>
@@ -169,7 +169,7 @@ export function MembersManager({
         <Card title={`Modifier ${mode.member.fullName}`}>
           <form onSubmit={(event) => onUpdate(event, mode.member)} className="space-y-4" noValidate>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Role" htmlFor="edit-roleId" required error={api.fieldErrors.roleId}>
+              <Field label="Rôle" htmlFor="edit-roleId" required error={api.fieldErrors.roleId}>
                 <Select id="edit-roleId" name="roleId" defaultValue={mode.member.roleId} required>
                   {roles.map((role) => (
                     <option key={role.id} value={role.id}>
@@ -201,7 +201,7 @@ export function MembersManager({
                 defaultChecked={mode.member.isActive}
                 className="size-4 rounded border-ink-300"
               />
-              Compte actif (decocher suspend immediatement l&apos;acces)
+              Compte actif (décocher suspend immédiatement l&apos;accès)
             </label>
 
             <div className="flex flex-wrap gap-2">
@@ -222,9 +222,9 @@ export function MembersManager({
             <thead>
               <tr className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-500">
                 <th className="px-4 py-2 font-medium sm:px-5">Collaborateur</th>
-                <th className="px-4 py-2 font-medium">Role</th>
+                <th className="px-4 py-2 font-medium">Rôle</th>
                 <th className="px-4 py-2 font-medium">Point de vente</th>
-                <th className="px-4 py-2 font-medium">Derniere connexion</th>
+                <th className="px-4 py-2 font-medium">Dernière connexion</th>
                 <th className="px-4 py-2 font-medium">Statut</th>
                 <th className="px-4 py-2 font-medium sm:px-5" />
               </tr>
@@ -249,7 +249,7 @@ export function MembersManager({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
-                      {member.isOwner && <Badge tone="info">Proprietaire</Badge>}
+                      {member.isOwner && <Badge tone="info">Propriétaire</Badge>}
                       <Badge tone={member.isActive ? 'success' : 'danger'}>
                         {member.isActive ? 'Actif' : 'Suspendu'}
                       </Badge>

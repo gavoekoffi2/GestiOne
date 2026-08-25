@@ -116,7 +116,7 @@ export function GlobalSearch() {
             <p className="px-4 py-3 text-sm text-ink-500">Recherche…</p>
           ) : hits.length === 0 ? (
             <p className="px-4 py-3 text-sm text-ink-500">
-              Aucun resultat pour &laquo; {query.trim()} &raquo;.
+              Aucun résultat pour &laquo; {query.trim()} &raquo;.
             </p>
           ) : (
             <ul className="divide-y divide-ink-100">

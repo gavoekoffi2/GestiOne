@@ -20,14 +20,13 @@ export default async function NewInvoicePage() {
         <h1 className="mt-2 text-2xl font-bold text-ink-900">Nouvelle facture</h1>
         <p className="mt-1 text-ink-600">
           Composez la facture ligne par ligne. Tant qu&apos;elle reste en brouillon, aucun stock ne
-          sort et aucune creance n&apos;est creee.
+          sort et aucune créance n&apos;est créée.
         </p>
       </div>
 
       <DocumentBuilder
         kind="invoice"
         endpoint="/api/invoices"
-        redirectTo={(id) => `/factures/${id}`}
         canDiscount={can(context, 'sales.discount')}
         locale={context.locale}
         {...data}

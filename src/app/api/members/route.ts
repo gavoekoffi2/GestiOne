@@ -21,7 +21,7 @@ export const POST = handler(async (request: NextRequest) => {
     action: 'PERMISSION_CHANGE',
     entityType: 'Membership',
     entityId: membership.id,
-    summary: `${membership.user.fullName} ajoute a l'equipe avec le role ${membership.role.name}`,
+    summary: `${membership.user.fullName} ajouté à l'équipe avec le rôle ${membership.role.name}`,
     ipAddress: clientIp(request),
   });
 

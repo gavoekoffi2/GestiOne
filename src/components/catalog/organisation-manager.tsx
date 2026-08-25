@@ -60,7 +60,7 @@ export function OrganisationManager({
           name: String(form.get('name') ?? ''),
           parentId: String(form.get('parentId') ?? ''),
         },
-        successMessage: isNew ? 'Categorie creee.' : 'Categorie modifiee.',
+        successMessage: isNew ? 'Catégorie créée.' : 'Catégorie modifiée.',
       },
     );
     if (result) {
@@ -81,7 +81,7 @@ export function OrganisationManager({
         name: String(form.get('name') ?? ''),
         symbol: String(form.get('symbol') ?? ''),
       },
-      successMessage: isNew ? 'Unite creee.' : 'Unite modifiee.',
+      successMessage: isNew ? 'Unité créée.' : 'Unité modifiée.',
     });
     if (result) {
       setUnit(null);
@@ -93,7 +93,7 @@ export function OrganisationManager({
     if (!window.confirm(`Supprimer "${label}" ?`)) return;
     const result = await api.send(`/api/${kind}/${id}`, {
       method: 'DELETE',
-      successMessage: 'Suppression effectuee.',
+      successMessage: 'Suppression effectuée.',
     });
     if (result) router.refresh();
   }
@@ -104,7 +104,7 @@ export function OrganisationManager({
       {api.success && <Alert tone="success">{api.success}</Alert>}
 
       <Card
-        title="Categories"
+        title="Catégories"
         description="Classez vos articles pour les retrouver plus vite et analyser vos ventes par famille."
         action={
           canWrite &&
@@ -136,10 +136,10 @@ export function OrganisationManager({
                 />
               </Field>
               <Field
-                label="Categorie parente"
+                label="Catégorie parente"
                 htmlFor="category-parent"
                 error={api.fieldErrors.parentId}
-                hint="Laissez vide pour une categorie de premier niveau."
+                hint="Laissez vide pour une catégorie de premier niveau."
               >
                 <Select
                   id="category-parent"
@@ -170,8 +170,8 @@ export function OrganisationManager({
 
         {categories.length === 0 ? (
           <EmptyState
-            title="Aucune categorie"
-            description="Les categories sont facultatives, mais elles rendent le catalogue et les rapports beaucoup plus lisibles."
+            title="Aucune catégorie"
+            description="Les catégories sont facultatives, mais elles rendent le catalogue et les rapports beaucoup plus lisibles."
           />
         ) : (
           <ul className="divide-y divide-ink-100">
@@ -212,8 +212,8 @@ export function OrganisationManager({
       </Card>
 
       <Card
-        title="Unites de mesure"
-        description="GestiOne fournit les unites courantes. Ajoutez les votres : regime, casier, botte, bidon de 20 L..."
+        title="Unités de mesure"
+        description="GestiOne fournit les unités courantes. Ajoutez les vôtres : régime, casier, botte, bidon de 20 L..."
         action={
           canWrite &&
           !unit && (
@@ -240,7 +240,7 @@ export function OrganisationManager({
                   name="name"
                   defaultValue={unit === 'new' ? '' : unit.name}
                   required
-                  placeholder="Regime de bananes"
+                  placeholder="Régime de bananes"
                 />
               </Field>
               <Field label="Symbole" htmlFor="unit-symbol" required error={api.fieldErrors.symbol}>

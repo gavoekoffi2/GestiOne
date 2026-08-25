@@ -26,7 +26,7 @@ function moneyField(decimals: number, label: string) {
         return z.NEVER;
       }
     })
-    .refine((value) => value >= 0n, `${label} ne peut pas etre negatif.`);
+    .refine((value) => value >= 0n, `${label} ne peut pas être négatif.`);
 }
 
 function optionalMoneyField(decimals: number, label: string) {
@@ -38,7 +38,7 @@ function optionalMoneyField(decimals: number, label: string) {
       try {
         const parsed = parseAmount(value, decimals);
         if (parsed < 0n) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${label} ne peut pas etre negatif.` });
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${label} ne peut pas être négatif.` });
           return z.NEVER;
         }
         return parsed;
@@ -58,14 +58,14 @@ function quantityField(label: string) {
       try {
         const parsed = parseQuantity(value);
         if (parsed < 0n) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${label} ne peut pas etre negatif.` });
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${label} ne peut pas être négatif.` });
           return z.NEVER;
         }
         return parsed;
       } catch (error) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: error instanceof QuantityError ? `${label} : quantite invalide.` : `${label} invalide.`,
+          message: error instanceof QuantityError ? `${label} : quantité invalide.` : `${label} invalide.`,
         });
         return z.NEVER;
       }
@@ -99,7 +99,7 @@ export function partnerSchema(decimals: number) {
 }
 
 export const categorySchema = z.object({
-  name: requiredText('Le nom de la categorie', 80),
+  name: requiredText('Le nom de la catégorie', 80),
   parentId: z
     .string()
     .trim()
@@ -108,12 +108,12 @@ export const categorySchema = z.object({
 });
 
 export const unitSchema = z.object({
-  name: requiredText("Le nom de l'unite", 40),
+  name: requiredText("Le nom de l'unité", 40),
   symbol: z
     .string()
     .trim()
     .min(1, 'Le symbole est obligatoire.')
-    .max(12, 'Le symbole ne doit pas depasser 12 caracteres.'),
+    .max(12, 'Le symbole ne doit pas dépasser 12 caractères.'),
 });
 
 export const PRODUCT_KINDS = [
@@ -137,8 +137,8 @@ export function productSchema(decimals: number) {
       costPrice: moneyField(decimals, "Le prix d'achat"),
       salePrice: moneyField(decimals, 'Le prix de vente'),
       wholesalePrice: optionalMoneyField(decimals, 'Le prix grossiste'),
-      wholesaleFrom: quantityField('La quantite minimale pour le prix grossiste'),
-      specialPrice: optionalMoneyField(decimals, 'Le prix special'),
+      wholesaleFrom: quantityField('La quantité minimale pour le prix grossiste'),
+      specialPrice: optionalMoneyField(decimals, 'Le prix spécial'),
       minStock: quantityField('Le stock minimum'),
       isActive: z.coerce.boolean().default(true),
     })
@@ -150,14 +150,14 @@ export function productSchema(decimals: number) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['wholesalePrice'],
-          message: 'Le prix grossiste est superieur au prix de vente au detail.',
+          message: 'Le prix grossiste est supérieur au prix de vente au détail.',
         });
       }
       if (value.wholesalePrice !== undefined && value.wholesaleFrom <= 0n) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['wholesaleFrom'],
-          message: 'Indiquez a partir de quelle quantite le prix grossiste s applique.',
+          message: 'Indiquez à partir de quelle quantité le prix grossiste s applique.',
         });
       }
     });

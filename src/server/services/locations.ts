@@ -29,7 +29,7 @@ export async function createLocation(companyId: string, input: LocationInput) {
     select: { id: true },
   });
   if (duplicate) {
-    throw new ConflictError(`Le code "${input.code}" est deja utilise par un autre point de vente.`);
+    throw new ConflictError(`Le code "${input.code}" est déjà utilisé par un autre point de vente.`);
   }
 
   return prisma.$transaction(async (tx) => {
@@ -50,7 +50,7 @@ export async function updateLocation(companyId: string, locationId: string, inpu
     select: { id: true },
   });
   if (duplicate) {
-    throw new ConflictError(`Le code "${input.code}" est deja utilise par un autre point de vente.`);
+    throw new ConflictError(`Le code "${input.code}" est déjà utilisé par un autre point de vente.`);
   }
 
   return prisma.$transaction(async (tx) => {
@@ -70,7 +70,7 @@ export async function deleteLocation(companyId: string, locationId: string) {
   const remaining = await prisma.location.count({ where: { companyId, isActive: true } });
   if (remaining <= 1) {
     throw new ValidationError(
-      'Une entreprise doit conserver au moins un point de vente actif. Creez-en un autre avant de supprimer celui-ci.',
+      'Une entreprise doit conserver au moins un point de vente actif. Créez-en un autre avant de supprimer celui-ci.',
     );
   }
 

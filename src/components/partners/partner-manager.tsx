@@ -125,7 +125,7 @@ export function PartnerManager(props: PartnerManagerProps) {
       {
         method: isNew ? 'POST' : 'PUT',
         body,
-        successMessage: isNew ? `${labels.singular} enregistre.` : 'Modifications enregistrees.',
+        successMessage: isNew ? `${labels.singular} enregistré.` : 'Modifications enregistrées.',
       },
     );
 
@@ -137,13 +137,13 @@ export function PartnerManager(props: PartnerManagerProps) {
 
   async function onDelete(row: PartnerRow) {
     const confirmed = window.confirm(
-      `Supprimer ${row.name} (${row.code}) ?\n\nS'il est deja lie a des documents, il sera desactive plutot que supprime afin de preserver l'historique.`,
+      `Supprimer ${row.name} (${row.code}) ?\n\nS'il est déjà lié à des documents, il sera désactivé plutôt que supprimé afin de préserver l'historique.`,
     );
     if (!confirmed) return;
 
     const result = await api.send(`/api/partners/${segment}/${row.id}`, {
       method: 'DELETE',
-      successMessage: 'Suppression effectuee.',
+      successMessage: 'Suppression effectuée.',
     });
     if (result) router.refresh();
   }
@@ -164,7 +164,7 @@ export function PartnerManager(props: PartnerManagerProps) {
                 <Input id="companyName" name="companyName" defaultValue={values.companyName} />
               </Field>
               <Field
-                label="Telephone"
+                label="Téléphone"
                 htmlFor="phone"
                 error={api.fieldErrors.phone}
                 hint="Avec l'indicatif international, pour permettre l'appel et le partage WhatsApp."
@@ -178,7 +178,7 @@ export function PartnerManager(props: PartnerManagerProps) {
                   placeholder="+225 07 00 00 00 00"
                 />
               </Field>
-              <Field label="Second telephone" htmlFor="secondPhone" error={api.fieldErrors.secondPhone}>
+              <Field label="Second téléphone" htmlFor="secondPhone" error={api.fieldErrors.secondPhone}>
                 <Input
                   id="secondPhone"
                   name="secondPhone"
@@ -201,7 +201,7 @@ export function PartnerManager(props: PartnerManagerProps) {
               </Field>
               <Field label="Pays" htmlFor="countryCode" error={api.fieldErrors.countryCode}>
                 <Select id="countryCode" name="countryCode" defaultValue={values.countryCode}>
-                  <option value="">Non precise</option>
+                  <option value="">Non précisé</option>
                   {COUNTRIES.map((country) => (
                     <option key={country.code} value={country.code}>
                       {country.name}
@@ -271,7 +271,7 @@ export function PartnerManager(props: PartnerManagerProps) {
         )
       )}
 
-      <ListToolbar placeholder={`Rechercher (nom, code, telephone, email)`} />
+      <ListToolbar placeholder={`Rechercher (nom, code, téléphone, email)`} />
 
       <Card>
         {rows.length === 0 ? (

@@ -59,7 +59,7 @@ export interface SaleResult {
 
 export async function recordSale(context: SaleContext, input: SaleInput): Promise<SaleResult> {
   if (input.lines.length === 0) {
-    throw new ValidationError('Ajoutez au moins un article a la vente.');
+    throw new ValidationError('Ajoutez au moins un article à la vente.');
   }
 
   const location = await prisma.location.findFirst({
@@ -74,7 +74,7 @@ export async function recordSale(context: SaleContext, input: SaleInput): Promis
   const isCredit = !input.payment;
   if (isCredit && !input.customerId) {
     throw new ValidationError(
-      "Une vente a credit doit etre rattachee a un client : sans cela, personne ne pourra etre relance.",
+      "Une vente à crédit doit être rattachée à un client : sans cela, personne ne pourra être relance.",
     );
   }
 
@@ -84,14 +84,14 @@ export async function recordSale(context: SaleContext, input: SaleInput): Promis
       where: { id: input.payment.methodId, companyId: context.companyId, isActive: true },
       select: { id: true, name: true, isCredit: true, affectsCash: true },
     });
-    if (!found) throw new NotFoundError('Mode de reglement introuvable ou desactive.');
+    if (!found) throw new NotFoundError('Mode de règlement introuvable ou désactivé.');
 
     // Choisir "Credit" comme mode de reglement revient a ne pas payer : on
     // enregistre la vente sans paiement plutot que de creer un encaissement
     // fictif qui ferait croire la facture soldee.
     if (found.isCredit && !input.customerId) {
       throw new ValidationError(
-        "Une vente a credit doit etre rattachee a un client : sans cela, personne ne pourra etre relance.",
+        "Une vente à crédit doit être rattachée à un client : sans cela, personne ne pourra être relance.",
       );
     }
     method = found;
@@ -120,7 +120,7 @@ export async function recordSale(context: SaleContext, input: SaleInput): Promis
   if (method && !method.isCredit) {
     const tendered = input.payment?.amount ?? invoice.total;
     if (tendered <= 0n) {
-      throw new ValidationError('Le montant recu doit etre superieur a zero.');
+      throw new ValidationError('Le montant reçu doit être supérieur à zéro.');
     }
 
     // Le client peut tendre un billet superieur au total : on encaisse le du et
@@ -175,14 +175,14 @@ async function assertCreditAllowed(companyId: string, customerId: string): Promi
 
   if (customer.creditLimit <= 0n) {
     throw new ValidationError(
-      `Aucun plafond d'encours n'est accorde a ${customer.name}. Definissez-en un sur sa fiche pour autoriser la vente a credit.`,
+      `Aucun plafond d'encours n'est accordé a ${customer.name}. Définissez-en un sur sa fiche pour autoriser la vente à crédit.`,
     );
   }
 
   const balance = await partnerBalance(companyId, customerId);
   if (balance.netOutstanding >= customer.creditLimit) {
     throw new ValidationError(
-      `${customer.name} a atteint son plafond d'encours. Encaissez un reglement ou relevez le plafond avant d'accorder un nouveau credit.`,
+      `${customer.name} a atteint son plafond d'encours. Encaissez un règlement ou relevez le plafond avant d'accorder un nouveau crédit.`,
     );
   }
 }

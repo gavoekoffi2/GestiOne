@@ -124,10 +124,10 @@ export function Pagination({
         disabled={page <= 1}
         className="min-h-9 rounded-lg px-3 font-semibold text-brand-700 disabled:text-ink-300"
       >
-        Precedent
+        Précédent
       </button>
       <span className="text-ink-500">
-        Page {page} sur {pageCount} — {total} resultat(s)
+        Page {page} sur {pageCount} — {total} résultat(s)
       </span>
       <button
         type="button"

@@ -14,7 +14,7 @@ import type { CategoryInput, ProductInput, UnitInput } from '@/lib/validation/ca
  * (regime, casier, botte, bidon de 20 L...).
  */
 export const DEFAULT_UNITS = [
-  { name: 'Unite', symbol: 'u' },
+  { name: 'Unité', symbol: 'u' },
   { name: 'Piece', symbol: 'pce' },
   { name: 'Carton', symbol: 'crt' },
   { name: 'Sac', symbol: 'sac' },
@@ -23,8 +23,8 @@ export const DEFAULT_UNITS = [
   { name: 'Gramme', symbol: 'g' },
   { name: 'Tonne', symbol: 't' },
   { name: 'Litre', symbol: 'L' },
-  { name: 'Metre', symbol: 'm' },
-  { name: 'Metre carre', symbol: 'm2' },
+  { name: 'Mètre', symbol: 'm' },
+  { name: 'Mètre carré', symbol: 'm2' },
   { name: 'Heure', symbol: 'h' },
   { name: 'Jour', symbol: 'j' },
 ] as const;
@@ -59,7 +59,7 @@ async function assertCategory(companyId: string, categoryId: string) {
     where: { id: categoryId, companyId },
     select: { id: true, parentId: true },
   });
-  if (!category) throw new NotFoundError('Categorie introuvable.');
+  if (!category) throw new NotFoundError('Catégorie introuvable.');
   return category;
 }
 
@@ -70,7 +70,7 @@ export async function createCategory(companyId: string, input: CategoryInput) {
     where: { companyId, name: input.name, parentId: input.parentId ?? null },
     select: { id: true },
   });
-  if (duplicate) throw new ConflictError('Une categorie porte deja ce nom au meme niveau.');
+  if (duplicate) throw new ConflictError('Une catégorie porte déjà ce nom au même niveau.');
 
   return prisma.category.create({
     data: { companyId, name: input.name, parentId: input.parentId ?? null },
@@ -82,7 +82,7 @@ export async function updateCategory(companyId: string, categoryId: string, inpu
 
   if (input.parentId) {
     if (input.parentId === categoryId) {
-      throw new ValidationError('Une categorie ne peut pas etre sa propre categorie parente.');
+      throw new ValidationError('Une catégorie ne peut pas être sa propre catégorie parente.');
     }
     await assertCategory(companyId, input.parentId);
 
@@ -91,7 +91,7 @@ export async function updateCategory(companyId: string, categoryId: string, inpu
     for (let depth = 0; cursor && depth < 50; depth += 1) {
       if (cursor === categoryId) {
         throw new ValidationError(
-          'Ce deplacement creerait une boucle dans l arborescence des categories.',
+          'Ce déplacement créerait une boucle dans l arborescence des catégories.',
         );
       }
       const parent: { parentId: string | null } | null = await prisma.category.findUnique({
@@ -111,7 +111,7 @@ export async function updateCategory(companyId: string, categoryId: string, inpu
     },
     select: { id: true },
   });
-  if (duplicate) throw new ConflictError('Une categorie porte deja ce nom au meme niveau.');
+  if (duplicate) throw new ConflictError('Une catégorie porte déjà ce nom au même niveau.');
 
   return prisma.category.update({
     where: { id: categoryId },
@@ -129,12 +129,12 @@ export async function deleteCategory(companyId: string, categoryId: string) {
 
   if (children > 0) {
     throw new ValidationError(
-      `Cette categorie contient ${children} sous-categorie(s). Supprimez-les ou deplacez-les d'abord.`,
+      `Cette catégorie contient ${children} sous-catégorie(s). Supprimez-les ou déplacez-les d'abord.`,
     );
   }
   if (products > 0) {
     throw new ValidationError(
-      `Cette categorie contient ${products} article(s). Reclassez-les avant de la supprimer.`,
+      `Cette catégorie contient ${products} article(s). Reclassez-les avant de la supprimer.`,
     );
   }
 
@@ -158,7 +158,7 @@ export async function createUnit(companyId: string, input: UnitInput) {
     where: { companyId, symbol: input.symbol },
     select: { id: true },
   });
-  if (duplicate) throw new ConflictError(`Le symbole "${input.symbol}" est deja utilise.`);
+  if (duplicate) throw new ConflictError(`Le symbole "${input.symbol}" est déjà utilisé.`);
 
   return prisma.unit.create({
     data: { companyId, name: input.name, symbol: input.symbol, isSystem: false },
@@ -167,25 +167,25 @@ export async function createUnit(companyId: string, input: UnitInput) {
 
 export async function updateUnit(companyId: string, unitId: string, input: UnitInput) {
   const unit = await prisma.unit.findFirst({ where: { id: unitId, companyId } });
-  if (!unit) throw new NotFoundError('Unite introuvable.');
+  if (!unit) throw new NotFoundError('Unité introuvable.');
 
   const duplicate = await prisma.unit.findFirst({
     where: { companyId, symbol: input.symbol, id: { not: unitId } },
     select: { id: true },
   });
-  if (duplicate) throw new ConflictError(`Le symbole "${input.symbol}" est deja utilise.`);
+  if (duplicate) throw new ConflictError(`Le symbole "${input.symbol}" est déjà utilisé.`);
 
   return prisma.unit.update({ where: { id: unitId }, data: input });
 }
 
 export async function deleteUnit(companyId: string, unitId: string) {
   const unit = await prisma.unit.findFirst({ where: { id: unitId, companyId } });
-  if (!unit) throw new NotFoundError('Unite introuvable.');
+  if (!unit) throw new NotFoundError('Unité introuvable.');
 
   const used = await prisma.product.count({ where: { companyId, unitId } });
   if (used > 0) {
     throw new ValidationError(
-      `Cette unite est utilisee par ${used} article(s). Changez leur unite avant de la supprimer.`,
+      `Cette unité est utilisée par ${used} article(s). Changez leur unité avant de la supprimer.`,
     );
   }
 
@@ -275,7 +275,7 @@ async function nextSku(
     if (!taken) return candidate;
     candidate = `${base}-${suffix}`;
   }
-  throw new ConflictError('Impossible de generer une reference unique.');
+  throw new ConflictError('Impossible de générer une référence unique.');
 }
 
 async function assertRelations(companyId: string, input: ProductInput) {
@@ -284,14 +284,14 @@ async function assertRelations(companyId: string, input: ProductInput) {
       where: { id: input.categoryId, companyId },
       select: { id: true },
     });
-    if (!category) throw new NotFoundError('Categorie introuvable.');
+    if (!category) throw new NotFoundError('Catégorie introuvable.');
   }
   if (input.unitId) {
     const unit = await prisma.unit.findFirst({
       where: { id: input.unitId, companyId },
       select: { id: true },
     });
-    if (!unit) throw new NotFoundError('Unite introuvable.');
+    if (!unit) throw new NotFoundError('Unité introuvable.');
   }
   if (input.supplierId) {
     const supplier = await prisma.partner.findFirst({
@@ -334,7 +334,7 @@ export async function createProduct(companyId: string, input: ProductInput) {
       select: { id: true, name: true },
     });
     if (duplicate) {
-      throw new ConflictError(`Ce code-barres est deja utilise par l'article "${duplicate.name}".`);
+      throw new ConflictError(`Ce code-barres est déjà utilisé par l'article "${duplicate.name}".`);
     }
   }
 
@@ -348,7 +348,7 @@ export async function createProduct(companyId: string, input: ProductInput) {
         where: { companyId, sku },
         select: { id: true },
       });
-      if (taken) throw new ConflictError(`La reference "${sku}" est deja utilisee.`);
+      if (taken) throw new ConflictError(`La référence "${sku}" est déjà utilisée.`);
     }
 
     return tx.product.create({ data: { ...toProductData(input), companyId, sku } });
@@ -365,7 +365,7 @@ export async function updateProduct(companyId: string, productId: string, input:
       select: { id: true, name: true },
     });
     if (duplicate) {
-      throw new ConflictError(`Ce code-barres est deja utilise par l'article "${duplicate.name}".`);
+      throw new ConflictError(`Ce code-barres est déjà utilisé par l'article "${duplicate.name}".`);
     }
   }
 
@@ -375,7 +375,7 @@ export async function updateProduct(companyId: string, productId: string, input:
       where: { companyId, sku, id: { not: productId } },
       select: { id: true },
     });
-    if (taken) throw new ConflictError(`La reference "${sku}" est deja utilisee.`);
+    if (taken) throw new ConflictError(`La référence "${sku}" est déjà utilisée.`);
     return prisma.product.update({
       where: { id: productId },
       data: { ...toProductData(input), sku },

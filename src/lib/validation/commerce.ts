@@ -25,7 +25,7 @@ function requiredMoney(decimals: number, label: string) {
     try {
       const parsed = parseAmount(value, decimals);
       if (parsed < 0n) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${label} ne peut pas etre negatif.` });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${label} ne peut pas être négatif.` });
         return z.NEVER;
       }
       return parsed;
@@ -50,7 +50,7 @@ function optionalMoney(decimals: number, label: string) {
         if (parsed < 0n) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: `${label} ne peut pas etre negatif.`,
+            message: `${label} ne peut pas être négatif.`,
           });
           return z.NEVER;
         }
@@ -72,7 +72,7 @@ const quantity = z.union([z.string(), z.number()]).transform((value, ctx) => {
     if (parsed <= 0n) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'La quantite doit etre superieure a zero.',
+        message: 'La quantité doit être supérieure à zéro.',
       });
       return z.NEVER;
     }
@@ -80,7 +80,7 @@ const quantity = z.union([z.string(), z.number()]).transform((value, ctx) => {
   } catch (error) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: error instanceof QuantityError ? 'Quantite invalide.' : 'Quantite invalide.',
+      message: error instanceof QuantityError ? 'Quantité invalide.' : 'Quantité invalide.',
     });
     return z.NEVER;
   }
@@ -101,7 +101,7 @@ const percentage = z
     if (parsed < 0 || parsed > 100) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Le pourcentage doit etre compris entre 0 et 100.',
+        message: 'Le pourcentage doit être compris entre 0 et 100.',
       });
       return z.NEVER;
     }
@@ -202,8 +202,8 @@ export function saleSchema(decimals: number) {
       notes: optionalText(500),
       payment: z
         .object({
-          methodId: z.string().trim().min(1, 'Choisissez un mode de reglement.'),
-          amount: optionalMoney(decimals, 'Le montant recu'),
+          methodId: z.string().trim().min(1, 'Choisissez un mode de règlement.'),
+          amount: optionalMoney(decimals, 'Le montant reçu'),
           reference: optionalText(120),
         })
         .optional(),
@@ -246,7 +246,7 @@ export const cancelSchema = z.object({
 });
 
 export const paymentMethodSchema = z.object({
-  name: requiredText('Le nom du mode de reglement', 60),
+  name: requiredText('Le nom du mode de règlement', 60),
   kind: z
     .enum(['CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD', 'CHEQUE', 'OTHER'])
     .default('OTHER'),
@@ -265,7 +265,7 @@ export const taxRateSchema = z.object({
       if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Le taux doit etre compris entre 0 et 100.',
+          message: 'Le taux doit être compris entre 0 et 100.',
         });
         return z.NEVER;
       }

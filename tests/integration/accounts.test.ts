@@ -116,7 +116,7 @@ describe('authenticate', () => {
       data: { isActive: false },
     });
     await expect(authenticate('kofi@boutique.test', 'MotDePasse1')).rejects.toThrow(
-      /desactive/,
+      /désactivé/,
     );
   });
 });

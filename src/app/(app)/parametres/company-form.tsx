@@ -48,7 +48,7 @@ export function CompanySettingsForm({
     const result = await api.send('/api/company', {
       method: 'PUT',
       body: payload,
-      successMessage: 'Parametres enregistres.',
+      successMessage: 'Paramètres enregistrés.',
     });
     if (result) router.refresh();
   }
@@ -58,7 +58,7 @@ export function CompanySettingsForm({
       {api.error && <Alert tone="error">{api.error}</Alert>}
       {api.success && <Alert tone="success">{api.success}</Alert>}
 
-      <Card title="Identite" description="Le nom affiche en tete de vos documents.">
+      <Card title="Identité" description="Le nom affiché en tête de vos documents.">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Nom commercial" htmlFor="name" required error={api.fieldErrors.name}>
             <Input id="name" name="name" defaultValue={company.name} required />
@@ -70,7 +70,7 @@ export function CompanySettingsForm({
             label="Identifiant fiscal"
             htmlFor="taxNumber"
             error={api.fieldErrors.taxNumber}
-            hint="NIF, RCCM, numero de TVA — selon votre pays."
+            hint="NIF, RCCM, numéro de TVA — selon votre pays."
           >
             <Input id="taxNumber" name="taxNumber" defaultValue={company.taxNumber} />
           </Field>
@@ -80,7 +80,7 @@ export function CompanySettingsForm({
         </div>
       </Card>
 
-      <Card title="Coordonnees">
+      <Card title="Coordonnées">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Adresse" htmlFor="addressLine" error={api.fieldErrors.addressLine}>
             <Input id="addressLine" name="addressLine" defaultValue={company.addressLine} />
@@ -97,7 +97,7 @@ export function CompanySettingsForm({
               ))}
             </Select>
           </Field>
-          <Field label="Telephone" htmlFor="phone" error={api.fieldErrors.phone}>
+          <Field label="Téléphone" htmlFor="phone" error={api.fieldErrors.phone}>
             <Input id="phone" name="phone" type="tel" inputMode="tel" defaultValue={company.phone} />
           </Field>
           <Field label="Email" htmlFor="email" error={api.fieldErrors.email}>
@@ -108,7 +108,7 @@ export function CompanySettingsForm({
 
       <Card
         title="Devise et conditions de paiement"
-        description="La devise determine la precision des montants dans toute l'application."
+        description="La devise détermine la précision des montants dans toute l'application."
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
@@ -120,7 +120,7 @@ export function CompanySettingsForm({
               selectedCurrency
                 ? selectedCurrency.decimals === 0
                   ? 'Cette devise ne se divise pas : les montants sont des nombres entiers.'
-                  : `Les montants sont saisis avec ${selectedCurrency.decimals} decimales.`
+                  : `Les montants sont saisis avec ${selectedCurrency.decimals} décimales.`
                 : undefined
             }
           >
@@ -139,11 +139,11 @@ export function CompanySettingsForm({
           </Field>
 
           <Field
-            label="Delai de paiement par defaut"
+            label="Délai de paiement par défaut"
             htmlFor="defaultDueDays"
             required
             error={api.fieldErrors.defaultDueDays}
-            hint="Nombre de jours entre l'emission d'une facture et son echeance."
+            hint="Nombre de jours entre l'émission d'une facture et son échéance."
           >
             <Input
               id="defaultDueDays"
@@ -163,7 +163,7 @@ export function CompanySettingsForm({
                 id="paymentTerms"
                 name="paymentTerms"
                 defaultValue={company.paymentTerms}
-                placeholder="Paiement a 30 jours. Tout retard entraine des penalites."
+                placeholder="Paiement à 30 jours. Tout retard entraîne des pénalités."
               />
             </Field>
           </div>
@@ -172,25 +172,25 @@ export function CompanySettingsForm({
 
       <Card
         title="Documents"
-        description="Prefixes de numerotation et apparence de vos factures, devis et recus."
+        description="Préfixes de numérotation et apparence de vos factures, devis et reçus."
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Field label="Prefixe facture" htmlFor="invoicePrefix" required error={api.fieldErrors.invoicePrefix}>
+          <Field label="Préfixe facture" htmlFor="invoicePrefix" required error={api.fieldErrors.invoicePrefix}>
             <Input id="invoicePrefix" name="invoicePrefix" defaultValue={company.invoicePrefix} required />
           </Field>
-          <Field label="Prefixe devis" htmlFor="quotePrefix" required error={api.fieldErrors.quotePrefix}>
+          <Field label="Préfixe devis" htmlFor="quotePrefix" required error={api.fieldErrors.quotePrefix}>
             <Input id="quotePrefix" name="quotePrefix" defaultValue={company.quotePrefix} required />
           </Field>
-          <Field label="Prefixe vente" htmlFor="salePrefix" required error={api.fieldErrors.salePrefix}>
+          <Field label="Préfixe vente" htmlFor="salePrefix" required error={api.fieldErrors.salePrefix}>
             <Input id="salePrefix" name="salePrefix" defaultValue={company.salePrefix} required />
           </Field>
-          <Field label="Prefixe achat" htmlFor="purchasePrefix" required error={api.fieldErrors.purchasePrefix}>
+          <Field label="Préfixe achat" htmlFor="purchasePrefix" required error={api.fieldErrors.purchasePrefix}>
             <Input id="purchasePrefix" name="purchasePrefix" defaultValue={company.purchasePrefix} required />
           </Field>
         </div>
 
         <p className="mt-2 text-xs text-ink-500">
-          Vos factures seront numerotees sous la forme{' '}
+          Vos factures seront numérotées sous la forme{' '}
           <span className="font-mono font-semibold text-ink-700">
             {company.invoicePrefix}-{new Date().getFullYear()}-00001
           </span>
@@ -203,7 +203,7 @@ export function CompanySettingsForm({
             htmlFor="primaryColor"
             required
             error={api.fieldErrors.primaryColor}
-            hint="Utilisee sur l'en-tete de vos documents imprimes."
+            hint="Utilisée sur l'en-tête de vos documents imprimés."
           >
             <Input
               id="primaryColor"

@@ -19,7 +19,7 @@ export const POST = handler(async (request: NextRequest) => {
       action: 'LOGOUT',
       entityType: 'User',
       entityId: session.userId,
-      summary: `Deconnexion de ${session.email}`,
+      summary: `Déconnexion de ${session.email}`,
       ipAddress: clientIp(request),
     });
   }

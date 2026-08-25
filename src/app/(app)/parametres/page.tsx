@@ -4,7 +4,7 @@ import { listCurrencies } from '@/server/services/currencies';
 import { requireTenantWith } from '@/server/tenant';
 import { CompanySettingsForm } from './company-form';
 
-export const metadata: Metadata = { title: "Parametres de l'entreprise" };
+export const metadata: Metadata = { title: "Paramètres de l'entreprise" };
 export const dynamic = 'force-dynamic';
 
 export default async function CompanySettingsPage() {
@@ -17,9 +17,9 @@ export default async function CompanySettingsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-ink-900">Parametres de l&apos;entreprise</h1>
+        <h1 className="text-2xl font-bold text-ink-900">Paramètres de l&apos;entreprise</h1>
         <p className="mt-1 text-ink-600">
-          Ces informations apparaissent sur vos devis, factures et recus.
+          Ces informations apparaissent sur vos devis, factures et reçus.
         </p>
       </div>
 

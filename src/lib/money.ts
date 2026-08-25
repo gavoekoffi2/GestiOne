@@ -159,7 +159,7 @@ export function formatMoney(amount: Money, currency: CurrencyFormat, locale = 'f
  */
 export function applyRate(amount: Money, rateBasisPoints: number): Money {
   if (!Number.isInteger(rateBasisPoints)) {
-    throw new MoneyError('Le taux doit etre un entier en centiemes de point.');
+    throw new MoneyError('Le taux doit être un entier en centièmes de point.');
   }
   const numerator = amount * BigInt(rateBasisPoints);
   return divideRounded(numerator, 10_000n);
@@ -167,7 +167,7 @@ export function applyRate(amount: Money, rateBasisPoints: number): Money {
 
 /** Division entiere avec arrondi au plus proche (0,5 s'ecarte de zero). */
 export function divideRounded(numerator: bigint, denominator: bigint): bigint {
-  if (denominator === 0n) throw new MoneyError('Division par zero.');
+  if (denominator === 0n) throw new MoneyError('Division par zéro.');
   const negative = numerator < 0n !== denominator < 0n;
   const absNumerator = numerator < 0n ? -numerator : numerator;
   const absDenominator = denominator < 0n ? -denominator : denominator;

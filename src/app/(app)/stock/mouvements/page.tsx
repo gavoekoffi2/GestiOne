@@ -57,14 +57,14 @@ export default async function MovementsPage({
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-ink-900">Mouvements de stock</h1>
         <p className="mt-1 text-ink-600">
-          Chaque entree, sortie, transfert et inventaire, dans l&apos;ordre ou ils ont eu lieu.
+          Chaque entrée, sortie, transfert et inventaire, dans l&apos;ordre ou ils ont eu lieu.
         </p>
       </div>
 
       <Alert tone="info">
-        Ce journal ne peut pas etre modifie. Corriger une erreur consiste a enregistrer un
+        Ce journal ne peut pas être modifié. Corriger une erreur consiste à enregistrer un
         mouvement inverse, qui reste lui aussi visible : c&apos;est ce qui rend votre historique de
-        stock opposable en cas de litige ou de controle.
+        stock opposable en cas de litige ou de contrôle.
       </Alert>
 
       <Card
@@ -110,7 +110,7 @@ export default async function MovementsPage({
         {result.items.length === 0 ? (
           <EmptyState
             title="Aucun mouvement"
-            description="Les entrees, sorties, transferts et inventaires apparaitront ici."
+            description="Les entrées, sorties, transferts et inventaires apparaîtront ici."
           />
         ) : (
           <>
@@ -123,7 +123,7 @@ export default async function MovementsPage({
                     <th className="px-4 py-2 font-medium">Point de vente</th>
                     <th className="px-4 py-2 font-medium">Type</th>
                     <th className="px-4 py-2 text-right font-medium">Variation</th>
-                    <th className="px-4 py-2 text-right font-medium">Stock apres</th>
+                    <th className="px-4 py-2 text-right font-medium">Stock après</th>
                     <th className="px-4 py-2 font-medium sm:px-5">Motif</th>
                   </tr>
                 </thead>
@@ -138,7 +138,7 @@ export default async function MovementsPage({
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
-                        <p className="text-xs text-ink-400">{movement.user?.fullName ?? 'Systeme'}</p>
+                        <p className="text-xs text-ink-400">{movement.user?.fullName ?? 'Système'}</p>
                       </td>
                       <td className="px-4 py-3">
                         <p className="font-medium text-ink-900">{movement.product.name}</p>
@@ -181,7 +181,7 @@ export default async function MovementsPage({
             {result.pageCount > 1 && (
               <nav className="mt-4 flex items-center justify-between text-sm" aria-label="Pagination">
                 <PageLink page={query.page - 1} query={query} disabled={query.page <= 1}>
-                  Precedent
+                  Précédent
                 </PageLink>
                 <span className="text-ink-500">
                   Page {result.page} sur {result.pageCount}

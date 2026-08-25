@@ -29,7 +29,7 @@ export const PUT = handler(async (request: NextRequest, { params }) => {
     action: 'UPDATE',
     entityType: target.kind === 'CUSTOMER' ? 'Customer' : 'Supplier',
     entityId: partner.id,
-    summary: `"${partner.name}" modifie (${partner.code})`,
+    summary: `"${partner.name}" modifié (${partner.code})`,
     ipAddress: clientIp(request),
   });
 
@@ -49,7 +49,7 @@ export const DELETE = handler(async (request: NextRequest, { params }) => {
     action: 'DELETE',
     entityType: target.kind === 'CUSTOMER' ? 'Customer' : 'Supplier',
     entityId: id as string,
-    summary: result ? 'Tiers desactive (references existantes)' : 'Tiers supprime',
+    summary: result ? 'Tiers désactivé (références existantes)' : 'Tiers supprimé',
     ipAddress: clientIp(request),
   });
 

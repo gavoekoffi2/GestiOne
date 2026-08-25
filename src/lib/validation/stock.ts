@@ -12,7 +12,7 @@ const positiveQuantity = z
       if (parsed <= 0n) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'La quantite doit etre superieure a zero.',
+          message: 'La quantité doit être supérieure à zéro.',
         });
         return z.NEVER;
       }
@@ -20,7 +20,7 @@ const positiveQuantity = z
     } catch (error) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: error instanceof QuantityError ? 'Quantite invalide.' : 'Quantite invalide.',
+        message: error instanceof QuantityError ? 'Quantité invalide.' : 'Quantité invalide.',
       });
       return z.NEVER;
     }
@@ -32,13 +32,13 @@ const countedQuantity = z.union([z.string(), z.number()]).transform((value, ctx)
     if (parsed < 0n) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'La quantite comptee ne peut pas etre negative.',
+        message: 'La quantité comptée ne peut pas être négative.',
       });
       return z.NEVER;
     }
     return parsed;
   } catch {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Quantite invalide.' });
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Quantité invalide.' });
     return z.NEVER;
   }
 });
@@ -54,7 +54,7 @@ function optionalCost(decimals: number) {
         if (parsed < 0n) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "Le cout d'achat ne peut pas etre negatif.",
+            message: "Le coût d'achat ne peut pas être négatif.",
           });
           return z.NEVER;
         }
@@ -94,15 +94,15 @@ export const stockExitSchema = z.object({
 export const stockTransferSchema = z
   .object({
     productId,
-    fromLocationId: z.string().trim().min(1, 'Choisissez le point de vente de depart.'),
-    toLocationId: z.string().trim().min(1, "Choisissez le point de vente d'arrivee."),
+    fromLocationId: z.string().trim().min(1, 'Choisissez le point de vente de départ.'),
+    toLocationId: z.string().trim().min(1, "Choisissez le point de vente d'arrivée."),
     quantity: positiveQuantity,
     reason: optionalText(200),
     reference: optionalText(80),
   })
   .refine((value) => value.fromLocationId !== value.toLocationId, {
     path: ['toLocationId'],
-    message: 'Le point de vente d arrivee doit differer de celui de depart.',
+    message: 'Le point de vente d arrivée doit différer de celui de départ.',
   });
 
 export const stockInventorySchema = z.object({
@@ -117,9 +117,9 @@ export const stockInventorySchema = z.object({
 });
 
 export const MOVEMENT_KIND_OPTIONS = [
-  { value: 'IN', label: 'Entree' },
+  { value: 'IN', label: 'Entrée' },
   { value: 'OUT', label: 'Sortie' },
-  { value: 'TRANSFER_IN', label: 'Transfert (reception)' },
+  { value: 'TRANSFER_IN', label: 'Transfert (réception)' },
   { value: 'TRANSFER_OUT', label: 'Transfert (expedition)' },
   { value: 'INVENTORY', label: 'Inventaire' },
   { value: 'ADJUSTMENT', label: 'Ajustement' },

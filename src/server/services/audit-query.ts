@@ -7,9 +7,9 @@ import { prisma } from '@/server/db';
 
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
   LOGIN: 'Connexion',
-  LOGIN_FAILED: 'Echec de connexion',
-  LOGOUT: 'Deconnexion',
-  CREATE: 'Creation',
+  LOGIN_FAILED: 'Échec de connexion',
+  LOGOUT: 'Déconnexion',
+  CREATE: 'Création',
   UPDATE: 'Modification',
   DELETE: 'Suppression',
   PAYMENT: 'Paiement',

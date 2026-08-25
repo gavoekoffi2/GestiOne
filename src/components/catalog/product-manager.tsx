@@ -405,6 +405,13 @@ export function ProductManager({
           <EmptyState
             title="Aucun article"
             description="Ajoutez vos produits et services pour pouvoir les vendre, les facturer et suivre leur stock."
+            action={
+              canWrite ? (
+                <Button type="button" onClick={() => startEdit('new')}>
+                  Ajouter un article
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
           <>

@@ -170,7 +170,7 @@ export async function openCashSession(
       action: 'CREATE',
       entityType: 'CashSession',
       entityId: session.id,
-      summary: `Caisse ouverte a ${location.name}`,
+      summary: `Caisse ouverte à ${location.name}`,
       metadata: { openingAmount: input.openingAmount.toString() },
     });
 
@@ -184,7 +184,7 @@ export async function closeCashSession(
   input: { countedAmount: bigint; notes?: string },
 ) {
   if (input.countedAmount < 0n) {
-    throw new ValidationError('Le montant compte ne peut pas être négatif.');
+    throw new ValidationError('Le montant compté ne peut pas être négatif.');
   }
 
   const session = await prisma.cashSession.findFirst({
@@ -224,8 +224,8 @@ export async function closeCashSession(
       entityId: sessionId,
       summary:
         difference === 0n
-          ? `Caisse fermée a ${session.location.name}, sans écart`
-          : `Caisse fermée a ${session.location.name} — écart de ${difference > 0n ? '+' : ''}${difference}`,
+          ? `Caisse fermée à ${session.location.name}, sans écart`
+          : `Caisse fermée à ${session.location.name} — écart de ${difference > 0n ? '+' : ''}${difference}`,
       metadata: {
         expected: expected.toString(),
         counted: input.countedAmount.toString(),
@@ -288,7 +288,7 @@ export async function recordCashMovement(
       action: 'PAYMENT',
       entityType: 'CashMovement',
       entityId: movement.id,
-      summary: `${CASH_MOVEMENT_LABELS[input.kind]} de caisse a ${location.name} : ${input.reason}`,
+      summary: `${CASH_MOVEMENT_LABELS[input.kind]} de caisse à ${location.name} : ${input.reason}`,
       metadata: { amount: signed.toString() },
     });
 

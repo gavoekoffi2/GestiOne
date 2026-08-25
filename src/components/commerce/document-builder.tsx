@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Alert, Button, Card, Field, Input, Select, Textarea } from '@/components/ui/primitives';
@@ -162,7 +163,13 @@ export function DocumentBuilder({
             label="Client"
             htmlFor="doc-customer"
             error={api.fieldErrors.customerId}
-            hint={kind === 'invoice' ? 'Obligatoire pour suivre une créance.' : undefined}
+            hint={
+              customers.length === 0
+                ? undefined
+                : kind === 'invoice'
+                  ? 'Obligatoire pour suivre une créance.'
+                  : undefined
+            }
           >
             <Select
               id="doc-customer"
@@ -176,6 +183,16 @@ export function DocumentBuilder({
                 </option>
               ))}
             </Select>
+            {/* Sans client enregistre, la liste est vide et rien n'indique ou en
+                creer un : on donne le lien plutot que de laisser chercher. */}
+            {customers.length === 0 && (
+              <p className="mt-1 text-xs text-ink-500">
+                Aucun client enregistré.{' '}
+                <Link href="/clients" className="font-semibold text-brand-700 underline">
+                  Ajouter un client
+                </Link>
+              </p>
+            )}
           </Field>
 
           {locations.length > 0 && (

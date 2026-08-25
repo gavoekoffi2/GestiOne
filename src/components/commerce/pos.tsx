@@ -309,6 +309,16 @@ export function PointOfSale({
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter') return;
+                event.preventDefault();
+                // Une douchette tape le code puis envoie Entree : le panier doit
+                // se remplir sans jamais toucher la souris. Le code-barres exact
+                // prime, sinon on prend l'unique article restant.
+                const scanned = products.find((product) => product.barcode === search.trim());
+                const target = scanned ?? (matches.length === 1 ? matches[0] : undefined);
+                if (target) addProduct(target);
+              }}
               placeholder="Nom, référence, ou scannez un code-barres"
               aria-label="Rechercher un article"
               className="pl-9"

@@ -175,7 +175,7 @@ async function assertCreditAllowed(companyId: string, customerId: string): Promi
 
   if (customer.creditLimit <= 0n) {
     throw new ValidationError(
-      `Aucun plafond d'encours n'est accordé a ${customer.name}. Définissez-en un sur sa fiche pour autoriser la vente à crédit.`,
+      `Aucun plafond d'encours n'est accordé à ${customer.name}. Définissez-en un sur sa fiche pour autoriser la vente à crédit.`,
     );
   }
 

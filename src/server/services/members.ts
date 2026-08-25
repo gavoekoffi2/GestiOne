@@ -279,7 +279,7 @@ export async function deleteRole(companyId: string, roleId: string) {
 
   if (role._count.memberships > 0) {
     throw new ValidationError(
-      `Ce rôle est attribué a ${role._count.memberships} utilisateur(s). Réaffectez-les avant de le supprimer.`,
+      `Ce rôle est attribué à ${role._count.memberships} utilisateur(s). Réaffectez-les avant de le supprimer.`,
     );
   }
 

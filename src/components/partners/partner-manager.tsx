@@ -275,7 +275,23 @@ export function PartnerManager(props: PartnerManagerProps) {
 
       <Card>
         {rows.length === 0 ? (
-          <EmptyState title={labels.emptyTitle} description={labels.emptyBody} />
+          <EmptyState
+            title={labels.emptyTitle}
+            description={labels.emptyBody}
+            action={
+              canWrite ? (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    api.reset();
+                    setEditing('new');
+                  }}
+                >
+                  {labels.createCta}
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <>
             <div className="-mx-4 overflow-x-auto sm:-mx-5">

@@ -106,6 +106,7 @@ Invariants garantis par la base ou par transaction :
 | 6 | Rapports : tableau de bord, statistiques, exports | **livrée** |
 | 7 | Administration : paramètres, utilisateurs, audit, notifications, import | **livrée** |
 | 8 | Expérience : responsive, PWA, recherche globale, sécurité, tests | **livrée** |
+| 9 | Audit : correction de bugs, accents, guidage du premier jour, confidentialité des coûts, impression | **livrée** |
 
 À chaque phase : développer → tester → corriger → vérifier → continuer.
 
@@ -195,7 +196,61 @@ croire au commerçant que sa vente est enregistrée alors qu'elle sera rejetée 
 la reconnexion, et il aurait déjà remis la marchandise. GestiOne dit donc
 franchement qu'il faut du réseau pour vendre.
 
-Une quatrième décision relève de la migration plutôt que du bug : les unités de
+
+**Une prop fonction ne franchit pas la frontière serveur → client.** Les pages
+« Nouvelle facture » et « Nouveau devis » passaient `redirectTo={(id) => ...}`
+au composant de saisie. React ne sait pas sérialiser une fonction : les deux
+pages répondaient 500, et comme aucun bouton ne menait à « Nouvelle facture »,
+personne ne l'avait constaté. La destination est maintenant déduite du type de
+document, et un test parcourt les composants serveur pour refuser toute prop
+fonction — la panne était invisible à la relecture, elle ne doit plus l'être.
+
+**React 19 supprime une balise `<style>` rendue dans l'arbre.** La règle `@page`
+qui met les devis au format A5 était posée par un `<style>` dans le rendu. Elle
+figurait bien dans le HTML servi, puis disparaissait à l'hydratation : React
+traite ces balises comme des ressources hoistables. L'impression retombait donc
+sur le format par défaut — un export PDF le montre, aucun test ne l'aurait vu.
+La règle est désormais posée depuis un effet, et retirée en quittant la page
+pour ne pas déborder sur l'impression d'un autre document. Chrome, au passage,
+ignore une hauteur `auto` dans `@page` : le ticket 80 mm donne sa hauteur.
+
+**Masquer un montant à l'écran ne le protège pas.** L'écran des rôles prévient
+que « masquer un bouton ne suffit pas » ; le prix d'achat, lui, était envoyé au
+navigateur puis caché en CSS pour les utilisateurs sans `products.cost.read`.
+Un caissier pouvait lire la marge de l'entreprise dans les outils de
+développement, dans la réponse de l'API et dans un export CSV. La donnée ne
+quitte plus le serveur sans le droit correspondant, et une modification sans ce
+droit conserve la valeur enregistrée au lieu de l'écraser.
+
+**Deux filtres dans le même objet Prisma s'écrasent en silence.** La liste des
+factures posait `status` une première fois pour le statut choisi, puis une
+seconde dans le filtre « impayées ». Le second gagnait : demander « Émise +
+impayées » renvoyait toutes les impayées. Aucune erreur, aucun symptôme —
+seulement un chiffre faux. Les critères qui portent sur le même champ passent
+maintenant par un `AND` explicite.
+
+**Le contexte de requête doit être mémoïsé.** Un affichage traverse le layout,
+la page et plusieurs composants serveur ; chacun réclamait la session, puis
+l'appartenance, l'entreprise et le rôle. La même page relisait cinq à six fois
+les mêmes lignes. `cache` de React memoïse ces lectures pour la durée de la
+requête — le tableau de bord est passé de 171 à 117 requêtes, la liste des
+factures de 69 à 42.
+
+**Le premier obstacle n'est pas une fonctionnalité manquante.** Un commerçant
+qui ouvre GestiOne crée un article, va vendre… et se heurte au refus de vente à
+découvert : un article neuf n'a pas de stock. L'application était complète et
+inutilisable le premier jour. La fiche article accepte donc une quantité
+initiale — enregistrée comme une entrée de stock normale, journalisée comme les
+autres — et le tableau de bord affiche le chemin jusqu'à la première vente tant
+qu'il n'est pas parcouru. Le service qui calcule ces étapes existait depuis la
+phase 1 sans avoir jamais été appelé.
+
+Deux décisions relèvent de la migration plutôt que du bug. La première : les unités de
 mesure sont installées à la création d'une entreprise, ce qui laissait sans
 unités toutes les entreprises créées avant la phase 2. Une migration de
-rattrapage, rejouable, les complète.
+rattrapage, rejouable, les complète. La seconde : les libellés fournis par
+GestiOne — modes de règlement, unités, catégories de dépense, devises —
+s'écrivaient sans accents. Les corriger dans les sources ne change rien aux
+entreprises déjà créées, dont les reçus affichaient encore « Especes » ; une
+migration remet à jour les seules lignes système portant l'ancienne graphie, en
+préservant celles qu'une entreprise a renommées.

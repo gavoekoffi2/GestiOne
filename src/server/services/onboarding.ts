@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { prisma } from '@/server/db';
 
 /**
@@ -41,6 +42,87 @@ export interface CompanyOverview {
   hasActivity: boolean;
 }
 
+/**
+ * Etat des premiers pas, en une seule requete.
+ *
+ * Le tableau de bord n'a besoin que de savoir si chaque etape est franchie, pas
+ * de compter. Quatre `COUNT` a chaque affichage, pour une information qui ne
+ * change plus une fois l'entreprise lancee, ne se justifiaient pas : `EXISTS`
+ * s'arrete a la premiere ligne trouvee, et les quatre tiennent dans un aller
+ * simple vers la base.
+ */
+const firstStepsState = cache(async function firstStepsState(companyId: string) {
+  const [row] = await prisma.$queryRaw<
+    Array<{ products: boolean; stocked: boolean; customers: boolean; invoices: boolean }>
+  >`
+    SELECT
+      EXISTS (SELECT 1 FROM "products" WHERE "companyId" = ${companyId} AND "isActive") AS "products",
+      EXISTS (SELECT 1 FROM "stock_levels" WHERE "companyId" = ${companyId} AND "quantity" > 0) AS "stocked",
+      EXISTS (SELECT 1 FROM "partners" WHERE "companyId" = ${companyId} AND "kind" = 'CUSTOMER') AS "customers",
+      EXISTS (SELECT 1 FROM "invoices" WHERE "companyId" = ${companyId} AND "status" <> 'CANCELLED') AS "invoices"
+  `;
+
+  return {
+    products: row?.products ?? false,
+    stocked: row?.stocked ?? false,
+    customers: row?.customers ?? false,
+    invoices: row?.invoices ?? false,
+  };
+});
+
+/** Etapes menant a la premiere vente, sans le reste du panorama. */
+export async function getFirstSteps(companyId: string): Promise<SetupStep[]> {
+  const state = await firstStepsState(companyId);
+  return buildFirstSteps(state);
+}
+
+function buildFirstSteps(state: {
+  products: boolean;
+  stocked: boolean;
+  customers: boolean;
+  invoices: boolean;
+}): SetupStep[] {
+  return [
+    {
+      key: 'products',
+      label: 'Ajoutez vos articles',
+      description: 'Ce que vous vendez, à quel prix. Sans catalogue, rien ne peut être vendu.',
+      done: state.products,
+      href: '/produits',
+      action: 'Ajouter un article',
+      permission: 'products.write',
+    },
+    {
+      key: 'stock',
+      label: 'Entrez vos quantités en stock',
+      description:
+        'GestiOne refuse une vente sans stock : saisissez ce que vous avez en boutique.',
+      done: state.stocked,
+      href: '/stock',
+      action: 'Faire une entrée de stock',
+      permission: 'stock.write',
+    },
+    {
+      key: 'sale',
+      label: 'Faites votre première vente',
+      description: 'Le panier encaisse, met le stock à jour et édite le reçu en une fois.',
+      done: state.invoices,
+      href: '/ventes',
+      action: 'Vendre',
+      permission: 'sales.create',
+    },
+    {
+      key: 'customers',
+      label: 'Enregistrez vos clients réguliers',
+      description: "Nécessaire pour facturer à crédit et suivre ce que l'on vous doit.",
+      done: state.customers,
+      href: '/clients',
+      action: 'Ajouter un client',
+      permission: 'customers.write',
+    },
+  ];
+}
+
 export async function getCompanyOverview(companyId: string): Promise<CompanyOverview> {
   const [
     company,
@@ -49,10 +131,7 @@ export async function getCompanyOverview(companyId: string): Promise<CompanyOver
     locations,
     roles,
     auditCount,
-    productCount,
-    stockedCount,
-    customerCount,
-    invoiceCount,
+    state,
   ] = await Promise.all([
     prisma.company.findUniqueOrThrow({
       where: { id: companyId },
@@ -70,51 +149,10 @@ export async function getCompanyOverview(companyId: string): Promise<CompanyOver
     prisma.location.count({ where: { companyId, isActive: true } }),
     prisma.role.count({ where: { companyId } }),
     prisma.auditLog.count({ where: { companyId } }),
-    prisma.product.count({ where: { companyId, isActive: true } }),
-    prisma.stockLevel.count({ where: { companyId, quantity: { gt: 0n } } }),
-    prisma.partner.count({ where: { companyId, kind: 'CUSTOMER' } }),
-    prisma.invoice.count({ where: { companyId, status: { not: 'CANCELLED' } } }),
+    firstStepsState(companyId),
   ]);
 
-  const firstSteps: SetupStep[] = [
-    {
-      key: 'products',
-      label: 'Ajoutez vos articles',
-      description: 'Ce que vous vendez, à quel prix. Sans catalogue, rien ne peut être vendu.',
-      done: productCount > 0,
-      href: '/produits',
-      action: 'Ajouter un article',
-      permission: 'products.write',
-    },
-    {
-      key: 'stock',
-      label: 'Entrez vos quantités en stock',
-      description:
-        'GestiOne refuse une vente sans stock : saisissez ce que vous avez en boutique.',
-      done: stockedCount > 0,
-      href: '/stock',
-      action: 'Faire une entrée de stock',
-      permission: 'stock.write',
-    },
-    {
-      key: 'sale',
-      label: 'Faites votre première vente',
-      description: 'Le panier encaisse, met le stock à jour et édite le reçu en une fois.',
-      done: invoiceCount > 0,
-      href: '/ventes',
-      action: 'Vendre',
-      permission: 'sales.create',
-    },
-    {
-      key: 'customers',
-      label: 'Enregistrez vos clients réguliers',
-      description: "Nécessaire pour facturer à crédit et suivre ce que l'on vous doit.",
-      done: customerCount > 0,
-      href: '/clients',
-      action: 'Ajouter un client',
-      permission: 'customers.write',
-    },
-  ];
+  const firstSteps = buildFirstSteps(state);
 
   const steps: SetupStep[] = [
     {
@@ -164,6 +202,6 @@ export async function getCompanyOverview(companyId: string): Promise<CompanyOver
     firstSteps,
     steps,
     completedSteps: steps.filter((step) => step.done).length,
-    hasActivity: invoiceCount > 0 && productCount > 0,
+    hasActivity: state.invoices && state.products,
   };
 }

@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { prisma } from '@/server/db';
 import { ForbiddenError, UnauthorizedError } from '@/server/errors';
@@ -132,16 +133,24 @@ async function readSessionToken(): Promise<string | undefined> {
   return store.get(SESSION_COOKIE_NAME)?.value;
 }
 
-/** Session courante, ou `null` si le visiteur n'est pas connecte. */
-export async function getSessionUser(): Promise<SessionUser | null> {
+/**
+ * Session courante, ou `null` si le visiteur n'est pas connecte.
+ *
+ * Memoisee pour la duree d'une requete (`cache` de React). Un rendu de page
+ * traverse le layout, la page et plusieurs composants serveur, qui reclamaient
+ * chacun le contexte : la meme session etait relue cinq a six fois par
+ * affichage. La memoisation est strictement par requete — deux visiteurs ne
+ * partagent jamais un contexte.
+ */
+export const getSessionUser = cache(async function getSessionUser(): Promise<SessionUser | null> {
   return resolveSession(await readSessionToken());
-}
+});
 
 /**
  * Contexte courant, ou `null`. Utilise par les layouts qui doivent decider
  * eux-memes de la redirection.
  */
-export async function getTenantContext(): Promise<TenantContext | null> {
+export const getTenantContext = cache(async function getTenantContext(): Promise<TenantContext | null> {
   const session = await getSessionUser();
   if (!session) return null;
 
@@ -156,7 +165,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
   if (!membershipId) return null;
 
   return loadTenantContext(session.sessionId, session.userId, membershipId);
-}
+});
 
 /** Contexte courant ou erreur 401 : point d'entree de toute route protegee. */
 export async function requireTenant(): Promise<TenantContext> {

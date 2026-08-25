@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { prisma } from '@/server/db';
-import { getCompanyOverview } from '@/server/services/onboarding';
+import { getCompanyOverview, getFirstSteps } from '@/server/services/onboarding';
 import { createProduct } from '@/server/services/catalog';
 import { createPartner } from '@/server/services/partners';
 import { createInvoice } from '@/server/services/invoices';
@@ -124,6 +124,18 @@ describe('guide de demarrage', () => {
 
     const overview = await getCompanyOverview(company.companyId);
     expect(step(overview.firstSteps, 'sale').done).toBe(false);
+  });
+
+  it('donne le meme etat par le chemin leger du tableau de bord', async () => {
+    const company = await createTestCompany();
+    await createProduct(company.companyId, { ...product, initialStock: 3_000n }, company.userId);
+
+    const complet = await getCompanyOverview(company.companyId);
+    const leger = await getFirstSteps(company.companyId);
+
+    expect(leger.map((entry) => [entry.key, entry.done])).toEqual(
+      complet.firstSteps.map((entry) => [entry.key, entry.done]),
+    );
   });
 
   it("n'observe que l'entreprise demandee", async () => {

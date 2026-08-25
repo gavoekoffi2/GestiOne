@@ -24,7 +24,7 @@ import { stockSummary } from '@/server/services/stock-query';
 import { listInvoices } from '@/server/services/invoices';
 import { listLocations } from '@/server/services/locations';
 import { getCompanyProfile } from '@/server/services/companies';
-import { getCompanyOverview } from '@/server/services/onboarding';
+import { getFirstSteps } from '@/server/services/onboarding';
 import { can, requireTenantWith } from '@/server/tenant';
 
 export const metadata: Metadata = { title: 'Tableau de bord' };
@@ -53,12 +53,12 @@ export default async function DashboardPage({
   const granularity: 'day' | 'month' =
     query.period === 'year' || query.period === 'quarter' ? 'month' : 'day';
 
-  const [data, currency, company, locations, overview] = await Promise.all([
+  const [data, currency, company, locations, firstSteps] = await Promise.all([
     dashboardData(context.companyId, period, granularity, query.locationId || undefined),
     getCurrencyFormat(context.currencyCode),
     getCompanyProfile(context.companyId),
     listLocations(context.companyId),
-    getCompanyOverview(context.companyId),
+    getFirstSteps(context.companyId),
   ]);
 
   const activeLocations = locations.filter((location) => location.isActive);
@@ -104,7 +104,7 @@ export default async function DashboardPage({
 
       {/* Avant la premiere vente, le chemin a suivre vaut mieux que huit
           indicateurs a zero. Le bloc s'efface une fois les etapes franchies. */}
-      <FirstSteps steps={overview.firstSteps} permissions={context.permissions} />
+      <FirstSteps steps={firstSteps} permissions={context.permissions} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile

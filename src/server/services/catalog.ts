@@ -16,7 +16,7 @@ import { applyMovement } from '@/server/services/stock';
  */
 export const DEFAULT_UNITS = [
   { name: 'Unité', symbol: 'u' },
-  { name: 'Piece', symbol: 'pce' },
+  { name: 'Pièce', symbol: 'pce' },
   { name: 'Carton', symbol: 'crt' },
   { name: 'Sac', symbol: 'sac' },
   { name: 'Paquet', symbol: 'paq' },

@@ -90,7 +90,7 @@ export default async function InvoicesPage({
 
       {/* Recherche et filtres s'appliquent seuls, comme sur les autres listes. */}
       <ListToolbar
-        placeholder="Rechercher une facture (numéro ou client)"
+        placeholder="Numéro de facture ou client"
         filters={[
           {
             name: 'status',

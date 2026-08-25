@@ -67,7 +67,7 @@ export default async function QuotesPage({
       {/* Recherche et filtres s'appliquent seuls : un bouton "Filtrer" de plus a
           cliquer n'apporte rien et laisse croire que la liste n'a pas bouge. */}
       <ListToolbar
-        placeholder="Rechercher un devis (numéro ou client)"
+        placeholder="Numéro de devis ou client"
         filters={[
           {
             name: 'status',

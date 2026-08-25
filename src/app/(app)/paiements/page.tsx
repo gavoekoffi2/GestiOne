@@ -161,7 +161,7 @@ export default async function PaymentsPage({
       )}
 
       <ListToolbar
-        placeholder="Rechercher un paiement (numéro, référence, client)"
+        placeholder="Numéro, référence ou client"
         filters={[
           {
             name: 'methodId',

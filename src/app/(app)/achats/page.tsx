@@ -132,7 +132,7 @@ export default async function PurchasesPage({
       )}
 
       <ListToolbar
-        placeholder="Rechercher une commande (numéro, référence, fournisseur)"
+        placeholder="Numéro, référence ou fournisseur"
         filters={[
           {
             name: 'status',

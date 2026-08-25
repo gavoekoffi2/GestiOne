@@ -122,7 +122,7 @@ export function Pagination({
   }
 
   if (pageCount <= 1) {
-    return <p className="text-sm text-ink-500">{total} resultat(s).</p>;
+    return <p className="text-sm text-ink-500">{total} résultat(s).</p>;
   }
 
   return (

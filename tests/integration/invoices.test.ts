@@ -589,6 +589,52 @@ describe('listInvoices et retards', () => {
     expect(unpaid.sums.balance).toBe(30_000n);
   });
 
+  /**
+   * Le filtre "impayees" porte lui aussi sur le statut. Tant qu'il etait pose
+   * dans le meme objet que le statut choisi, il l'ecrasait silencieusement :
+   * demander "Payee + impayees" renvoyait toutes les impayees.
+   */
+  it('combine le statut choisi et le filtre impayees au lieu de l ecraser', async () => {
+    const s = await setup();
+    const paid = await createInvoice(s.ctx, {
+      customerId: s.customerId,
+      locationId: s.locationId,
+      issue: true,
+      lines: [{ productId: s.productId, quantity: 1_000n }],
+    });
+    await recordPayment(s.ctx, {
+      direction: 'IN',
+      amount: 15_000n,
+      invoiceId: paid.id,
+      methodId: s.cashId,
+    });
+    await createInvoice(s.ctx, {
+      customerId: s.customerId,
+      locationId: s.locationId,
+      issue: true,
+      lines: [{ productId: s.productId, quantity: 2_000n }],
+    });
+
+    // Une facture soldee ne peut pas etre impayee : la combinaison est vide.
+    const paidAndUnpaid = await listInvoices(s.companyId, {
+      page: 1,
+      pageSize: 25,
+      status: 'PAID',
+      unpaidOnly: true,
+    });
+    expect(paidAndUnpaid.total).toBe(0);
+
+    // Et la combinaison coherente ne remonte que la facture concernee.
+    const issuedAndUnpaid = await listInvoices(s.companyId, {
+      page: 1,
+      pageSize: 25,
+      status: 'ISSUED',
+      unpaidOnly: true,
+    });
+    expect(issuedAndUnpaid.total).toBe(1);
+    expect(issuedAndUnpaid.items[0]?.balanceDue).toBe(30_000n);
+  });
+
   it('deduit le retard de la date, sans statut stocke', () => {
     const past = new Date(Date.now() - 86_400_000);
     const future = new Date(Date.now() + 86_400_000);

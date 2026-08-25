@@ -168,6 +168,90 @@ describe('categories', () => {
   });
 });
 
+describe('stock initial a la creation', () => {
+  it('cree le mouvement d entree et rend l article vendable aussitot', async () => {
+    const company = await createTestCompany();
+
+    const created = await createProduct(
+      company.companyId,
+      { ...product, initialStock: 24_000n },
+      company.userId,
+    );
+
+    const level = await prisma.stockLevel.findFirstOrThrow({
+      where: { companyId: company.companyId, productId: created.id },
+    });
+    expect(level.quantity).toBe(24_000n);
+    expect(level.locationId).toBe(company.locationId);
+
+    // La quantite passe par le journal, comme n'importe quelle entree : elle
+    // reste explicable et l'inventaire reste opposable.
+    const movements = await prisma.stockMovement.findMany({
+      where: { companyId: company.companyId, productId: created.id },
+    });
+    expect(movements).toHaveLength(1);
+    expect(movements[0]?.kind).toBe('IN');
+    expect(movements[0]?.quantity).toBe(24_000n);
+    expect(movements[0]?.userId).toBe(company.userId);
+  });
+
+  it('ne touche pas au stock quand la quantite est absente ou nulle', async () => {
+    const company = await createTestCompany();
+
+    const sansValeur = await createProduct(company.companyId, product, company.userId);
+    const aZero = await createProduct(
+      company.companyId,
+      { ...product, name: 'Bidon d huile', initialStock: 0n },
+      company.userId,
+    );
+
+    const movements = await prisma.stockMovement.count({
+      where: { companyId: company.companyId, productId: { in: [sansValeur.id, aZero.id] } },
+    });
+    expect(movements).toBe(0);
+  });
+
+  it('ignore le stock initial d un service, qui ne se stocke pas', async () => {
+    const company = await createTestCompany();
+
+    const service = await createProduct(
+      company.companyId,
+      { ...product, kind: 'SERVICE', name: 'Livraison a domicile', initialStock: 10_000n },
+      company.userId,
+    );
+
+    expect(
+      await prisma.stockMovement.count({
+        where: { companyId: company.companyId, productId: service.id },
+      }),
+    ).toBe(0);
+  });
+
+  it('place le stock dans le point de vente demande', async () => {
+    const company = await createTestCompany();
+    const depot = await prisma.location.create({
+      data: {
+        companyId: company.companyId,
+        name: 'Depot',
+        code: 'DEP',
+        kind: 'WAREHOUSE',
+        isActive: true,
+      },
+    });
+
+    const created = await createProduct(
+      company.companyId,
+      { ...product, initialStock: 5_000n, initialStockLocationId: depot.id },
+      company.userId,
+    );
+
+    const level = await prisma.stockLevel.findFirstOrThrow({
+      where: { companyId: company.companyId, productId: created.id },
+    });
+    expect(level.locationId).toBe(depot.id);
+  });
+});
+
 describe('articles', () => {
   it('genere une reference lisible a partir du nom', async () => {
     const company = await createTestCompany();

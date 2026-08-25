@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/primitives';
@@ -23,10 +24,18 @@ export function ShareActions({
   summary,
   phone,
   title,
+  /** Lien vers la version ticket de caisse 80 mm, si le document en propose une. */
+  ticketHref,
+  /** Retour a la feuille pleine page depuis le ticket. */
+  sheetHref,
+  isTicket = false,
 }: {
   summary: string;
   phone: string;
   title: string;
+  ticketHref?: string;
+  sheetHref?: string;
+  isTicket?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const searchParams = useSearchParams();
@@ -72,8 +81,30 @@ export function ShareActions({
     <div className="flex flex-wrap gap-2 no-print">
       <Button type="button" variant="secondary" onClick={() => window.print()}>
         <Icon name="printer" className="size-4" />
-        Imprimer
+        {isTicket ? 'Imprimer le ticket' : 'Imprimer'}
       </Button>
+
+      {/* Une boutique imprime sur une bobine 80 mm, pas sur du A4. Les deux
+          formats restent accessibles : le materiel varie d'un commerce a
+          l'autre, et le meme document doit servir dans les deux cas. */}
+      {ticketHref && !isTicket && (
+        <Link
+          href={ticketHref}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-ink-800 ring-1 ring-inset ring-ink-300 transition hover:bg-ink-50"
+        >
+          <Icon name="receipt" className="size-4" />
+          Ticket 80 mm
+        </Link>
+      )}
+      {sheetHref && isTicket && (
+        <Link
+          href={sheetHref}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-ink-800 ring-1 ring-inset ring-ink-300 transition hover:bg-ink-50"
+        >
+          <Icon name="file" className="size-4" />
+          Feuille A4
+        </Link>
+      )}
 
       <Button type="button" variant="secondary" onClick={share}>
         <Icon name="switch" className="size-4" />

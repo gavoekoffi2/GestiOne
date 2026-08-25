@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Badge, Card } from '@/components/ui/primitives';
 import { InvoiceActions } from '@/components/commerce/invoice-actions';
+import { PrintPageFormat } from '@/components/commerce/print-page-format';
 import { ShareActions } from '@/components/commerce/share-actions';
 import { countryLabel } from '@/lib/countries';
 import { formatMoney, toDecimalString } from '@/lib/money';
@@ -22,11 +23,22 @@ export const dynamic = 'force-dynamic';
 
 export default async function InvoiceDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const context = await requireTenantWith('invoices.read');
   const { id } = await params;
+  const query = await searchParams;
+
+  /*
+   * Deux impressions possibles pour un meme document : la feuille A4 que l'on
+   * classe ou que l'on envoie, et le ticket de caisse 80 mm que la boutique
+   * remet au client. Le contenu est le meme — seule la mise en page change,
+   * pilotee par ?format=ticket.
+   */
+  const asTicket = query.format === 'ticket';
 
   const [invoice, company, currency, methods] = await Promise.all([
     getInvoice(context.companyId, id),
@@ -95,6 +107,9 @@ export default async function InvoiceDetailPage({
           title={`Facture ${invoice.number}`}
           summary={summary}
           phone={invoice.customer?.phone ?? ''}
+          ticketHref={`/factures/${invoice.id}?format=ticket&imprimer=1`}
+          sheetHref={`/factures/${invoice.id}`}
+          isTicket={asTicket}
         />
       </div>
 
@@ -120,8 +135,17 @@ export default async function InvoiceDetailPage({
         }))}
       />
 
+      {/* Chrome ignore une hauteur "auto" dans @page et retombe alors sur le
+          format par defaut : la hauteur est donc donnee explicitement. Un ticket
+          plus long deborde simplement sur la longueur suivante de bobine. */}
+      {asTicket && <PrintPageFormat size="80mm 150mm" margin="3mm" rootFontSize="7.5px" />}
+
       {/* Le document imprimable proprement dit. */}
-      <article className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-ink-200 sm:p-8">
+      <article
+        className={`doc-sheet rounded-xl bg-white p-6 shadow-sm ring-1 ring-ink-200 sm:p-8 ${
+          asTicket ? 'doc-ticket mx-auto w-full max-w-md' : ''
+        }`}
+      >
         <header className="flex flex-wrap items-start justify-between gap-6 border-b border-ink-200 pb-6">
           <div>
             <h2 className="text-xl font-bold" style={{ color: company.primaryColor }}>
@@ -176,53 +200,55 @@ export default async function InvoiceDetailPage({
           </section>
         )}
 
-        <div className="-mx-2 overflow-x-auto py-4">
-          <table className="w-full min-w-[36rem] text-left text-sm">
+        <div className="overflow-x-auto py-5">
+          <table className="doc-table w-full min-w-[34rem] text-left text-sm">
             <thead>
               <tr className="border-b border-ink-300 text-xs uppercase tracking-wide text-ink-500">
-                <th className="px-2 py-2 font-medium">Désignation</th>
-                <th className="px-2 py-2 text-right font-medium">Qte</th>
-                <th className="px-2 py-2 text-right font-medium">P.U.</th>
+                <th className="py-3 pr-5 font-medium">Désignation</th>
+                <th className="px-5 py-3 text-right font-medium">Qte</th>
+                <th className="px-5 py-3 text-right font-medium">P.U.</th>
                 {invoice.lines.some((line) => line.discountRate > 0) && (
-                  <th className="px-2 py-2 text-right font-medium">Remise</th>
+                  <th className="px-5 py-3 text-right font-medium">Remise</th>
                 )}
                 {invoice.taxTotal > 0n && (
-                  <th className="px-2 py-2 text-right font-medium">Taxe</th>
+                  <th className="px-5 py-3 text-right font-medium">Taxe</th>
                 )}
-                <th className="px-2 py-2 text-right font-medium">Total</th>
+                <th className="py-3 pl-5 text-right font-medium">Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
               {invoice.lines.map((line) => (
                 <tr key={line.id}>
-                  <td className="px-2 py-2">
+                  <td className="py-3 pr-5">
                     <p className="text-ink-900">{line.description}</p>
                     {line.product?.sku && (
-                      <p className="font-mono text-xs text-ink-400">{line.product.sku}</p>
+                      <p className="doc-line-sku font-mono text-xs text-ink-400">
+                        {line.product.sku}
+                      </p>
                     )}
                   </td>
-                  <td className="tabular px-2 py-2 text-right text-ink-700">
+                  <td className="tabular px-5 py-3 text-right text-ink-700">
                     {formatQuantity(line.quantity, context.locale)}
                     {line.product?.unit?.symbol && (
                       <span className="ml-1 text-xs text-ink-400">{line.product.unit.symbol}</span>
                     )}
                   </td>
-                  <td className="tabular px-2 py-2 text-right text-ink-700">
+                  <td className="tabular px-5 py-3 text-right text-ink-700">
                     {money(line.unitPrice)}
                   </td>
                   {invoice.lines.some((entry) => entry.discountRate > 0) && (
-                    <td className="tabular px-2 py-2 text-right text-ink-600">
+                    <td className="tabular px-5 py-3 text-right text-ink-600">
                       {line.discountRate > 0
                         ? `${(line.discountRate / 100).toString().replace('.', ',')} %`
                         : '—'}
                     </td>
                   )}
                   {invoice.taxTotal > 0n && (
-                    <td className="tabular px-2 py-2 text-right text-ink-600">
+                    <td className="tabular px-5 py-3 text-right text-ink-600">
                       {line.taxAmount > 0n ? money(line.taxAmount) : '—'}
                     </td>
                   )}
-                  <td className="tabular px-2 py-2 text-right font-medium text-ink-900">
+                  <td className="tabular py-3 pl-5 text-right font-medium text-ink-900">
                     {money(line.lineTotal)}
                   </td>
                 </tr>

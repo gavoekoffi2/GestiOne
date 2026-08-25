@@ -44,6 +44,34 @@ body { background: var(--color-ink-100); color: var(--color-ink-800); font-famil
   }
   .doc-sheet .doc-table { min-width: 0 !important; }
   .doc-sheet tr { break-inside: avoid; }
+
+  /* Ticket de caisse : une bobine fait 80 mm de large, dont 72 imprimables.
+     Le document reste le meme, mais tout ce qui vaut sur une feuille A4 —
+     colonnes larges, en-tete sur deux blocs, filets — y devient illisible. */
+  .doc-ticket { text-align: center; }
+  .doc-ticket header,
+  .doc-ticket header > div { display: block !important; text-align: center; }
+  .doc-ticket header .text-right { text-align: center !important; }
+  .doc-ticket .doc-table { table-layout: auto !important; }
+  .doc-ticket .doc-table th,
+  .doc-ticket .doc-table td { padding: 2px 0 !important; }
+  .doc-ticket .doc-table th:not(:first-child),
+  .doc-ticket .doc-table td:not(:first-child) { padding-left: 6px !important; }
+  /* La reference sous le libelle double la hauteur du ticket sans rien
+     apprendre au client, qui a l'article sous les yeux. */
+  .doc-ticket .doc-line-sku { display: none !important; }
+  .doc-ticket dl { margin-left: auto; margin-right: auto; }
+  /* Les lignes d'en-tete sont alignees a droite sur une feuille ; sur 74 mm de
+     large, elles doivent pouvoir revenir a la ligne plutot que sortir du
+     ticket. */
+  .doc-ticket header dl > div {
+    justify-content: center !important;
+    flex-wrap: wrap;
+  }
+  .doc-ticket th,
+  .doc-ticket td { overflow-wrap: anywhere; }
+  .doc-ticket .doc-table th:first-child,
+  .doc-ticket .doc-table td:first-child { width: 42%; }
 }
 
 /* Hallmark · macrostructure: Marquee Hero · tone: editorial-modern · anchor hue: teal */

@@ -55,6 +55,8 @@ export default async function InvoicesPage({
     getCurrencyFormat(context.currencyCode),
   ]);
 
+  const canCollect = can(context, 'payments.create');
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -124,7 +126,7 @@ export default async function InvoicesPage({
         ) : (
           <>
             <div className="-mx-4 overflow-x-auto sm:-mx-5">
-              <table className="w-full min-w-[52rem] text-left text-sm">
+              <table className="w-full min-w-[56rem] text-left text-sm">
                 <thead>
                   <tr className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-500">
                     <th className="px-4 py-2 font-medium sm:px-5">Numéro</th>
@@ -144,7 +146,7 @@ export default async function InvoicesPage({
                         <td className="px-4 py-3 sm:px-5">
                           <Link
                             href={`/factures/${invoice.id}`}
-                            className="font-mono text-xs font-semibold text-brand-700 hover:underline"
+                            className="whitespace-nowrap font-mono text-xs font-semibold text-brand-700 hover:underline"
                           >
                             {invoice.number}
                           </Link>
@@ -163,25 +165,38 @@ export default async function InvoicesPage({
                         <td className="px-4 py-3 text-ink-700">
                           {invoice.customer?.name ?? 'Client de passage'}
                         </td>
-                        <td className="tabular px-4 py-3 text-right font-medium text-ink-900">
+                        <td className="tabular whitespace-nowrap px-4 py-3 text-right font-medium text-ink-900">
                           {formatMoney(invoice.total, currency, context.locale)}
                         </td>
-                        <td className="tabular px-4 py-3 text-right text-ink-600">
+                        <td className="tabular whitespace-nowrap px-4 py-3 text-right text-ink-600">
                           {formatMoney(invoice.paidAmount, currency, context.locale)}
                         </td>
                         <td
-                          className={`tabular px-4 py-3 text-right font-medium ${
+                          className={`tabular whitespace-nowrap px-4 py-3 text-right font-medium ${
                             invoice.balanceDue > 0n ? 'text-amber-700' : 'text-ink-400'
                           }`}
                         >
                           {formatMoney(invoice.balanceDue, currency, context.locale)}
                         </td>
                         <td className="px-4 py-3 sm:px-5">
-                          <Badge tone={statusTone(invoice.status, overdue)}>
-                            {overdue
-                              ? 'En retard'
-                              : INVOICE_STATUS_LABELS[invoice.status as InvoiceStatus] ?? invoice.status}
-                          </Badge>
+                          <div className="flex items-center justify-between gap-3">
+                            <Badge tone={statusTone(invoice.status, overdue)}>
+                              {overdue
+                                ? 'En retard'
+                                : INVOICE_STATUS_LABELS[invoice.status as InvoiceStatus] ?? invoice.status}
+                            </Badge>
+                            {/* Relancer un impaye est l'action la plus frequente
+                                depuis cette liste : elle ouvre directement le
+                                formulaire d'encaissement. */}
+                            {canCollect && invoice.balanceDue > 0n && invoice.status !== 'DRAFT' && (
+                              <Link
+                                href={`/factures/${invoice.id}?encaisser=1`}
+                                className="whitespace-nowrap text-xs font-semibold text-brand-700 hover:underline"
+                              >
+                                Encaisser
+                              </Link>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );

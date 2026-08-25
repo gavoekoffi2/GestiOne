@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Alert, Button, Card, Field, Input, Select, Textarea } from '@/components/ui/primitives';
 import { MoneyInput } from '@/components/ui/money-input';
 import { useApi } from '@/components/ui/use-api';
@@ -46,6 +46,7 @@ export function InvoiceActions({
   payments: Array<{ id: string; label: string }>;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const api = useApi();
   const [panel, setPanel] = useState<'none' | 'pay' | 'cancel'>('none');
   const [methodId, setMethodId] = useState(methods.find((m) => !m.isCredit)?.id ?? '');
@@ -54,6 +55,18 @@ export function InvoiceActions({
   const isDraft = status === 'DRAFT';
   const isCancelled = status === 'CANCELLED';
   const isSettled = status === 'PAID';
+
+  /*
+   * `?encaisser=1` ouvre directement le formulaire de paiement. La liste des
+   * factures y renvoie depuis chaque ligne impayee : relancer un client se
+   * fait alors en un clic, sans chercher le bouton sur la fiche.
+   */
+  const askedToPay = searchParams.get('encaisser') === '1';
+  useEffect(() => {
+    if (askedToPay && canPay && status !== 'DRAFT' && status !== 'CANCELLED' && status !== 'PAID') {
+      setPanel('pay');
+    }
+  }, [askedToPay, canPay, status]);
 
   async function pay(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

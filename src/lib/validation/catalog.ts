@@ -141,6 +141,14 @@ export function productSchema(decimals: number) {
       specialPrice: optionalMoneyField(decimals, 'Le prix spécial'),
       minStock: quantityField('Le stock minimum'),
       isActive: z.coerce.boolean().default(true),
+      /**
+       * Quantite deja presente en boutique au moment ou l'article est cree.
+       * Sans elle, un article tout juste saisi est invendable : GestiOne refuse
+       * une sortie de stock a decouvert, et le commercant se retrouve bloque
+       * des sa premiere vente sans comprendre pourquoi.
+       */
+      initialStock: quantityField('Le stock initial').optional(),
+      initialStockLocationId: optionalText(64),
     })
     .superRefine((value, ctx) => {
       // Un prix de gros superieur au prix de detail est presque toujours une

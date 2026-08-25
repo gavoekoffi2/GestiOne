@@ -28,6 +28,10 @@ const PATHS: Record<string, string> = {
   close: 'M6 6l12 12M18 6 6 18',
   search: 'M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15Zm5.5-2 5 5',
   switch: 'M7.5 3.75 3.75 7.5m0 0L7.5 11.25M3.75 7.5h16.5m-4.5 12 3.75-3.75m0 0-3.75-3.75m3.75 3.75H3.75',
+  check: 'm4.5 12.75 6 6 9-13.5',
+  printer:
+    'M6.75 7.5V3.75h10.5V7.5m0 9v3.75H6.75V16.5m-3-1.5v-4.5a1.5 1.5 0 0 1 1.5-1.5h13.5a1.5 1.5 0 0 1 1.5 1.5V15a1.5 1.5 0 0 1-1.5 1.5H5.25A1.5 1.5 0 0 1 3.75 15Z',
+  plus: 'M12 5.25v13.5M5.25 12h13.5',
 };
 
 export function Icon({ name, className = 'size-5' }: { name: string; className?: string }) {

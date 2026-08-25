@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/primitives';
 import { Icon } from '@/components/layout/icons';
 
@@ -28,6 +29,20 @@ export function ShareActions({
   title: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const searchParams = useSearchParams();
+
+  /*
+   * Au comptoir, le reflexe apres un encaissement est d'imprimer le ticket.
+   * L'ecran de fin de vente amene donc directement ici avec `?imprimer=1`, et
+   * la boite d'impression s'ouvre seule : un clic de moins, et surtout plus
+   * d'hesitation sur l'endroit ou trouver le bouton.
+   */
+  const autoPrint = searchParams.get('imprimer') === '1';
+  useEffect(() => {
+    if (!autoPrint) return;
+    const timer = setTimeout(() => window.print(), 400);
+    return () => clearTimeout(timer);
+  }, [autoPrint]);
 
   const canWhatsApp = phone.trim().startsWith('+');
   const whatsappHref = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(summary)}`;
@@ -56,7 +71,7 @@ export function ShareActions({
   return (
     <div className="flex flex-wrap gap-2 no-print">
       <Button type="button" variant="secondary" onClick={() => window.print()}>
-        <Icon name="receipt" className="size-4" />
+        <Icon name="printer" className="size-4" />
         Imprimer
       </Button>
 

@@ -128,6 +128,7 @@ export function ProductManager({
       specialPrice: String(form.get('specialPrice') ?? ''),
       minStock: String(form.get('minStock') ?? '0'),
       isActive: form.get('isActive') === 'on',
+      initialStock: String(form.get('initialStock') ?? ''),
     };
 
     const isNew = editing === 'new';
@@ -307,20 +308,44 @@ export function ProductManager({
               qui ne serait jamais utilisee.
             */}
             {kind === 'GOOD' && (
-              <Field
-                label="Stock minimum (alerte de rupture)"
-                htmlFor="minStock"
-                error={api.fieldErrors.minStock}
-                hint="GestiOne vous alertera lorsque le stock passera sous ce seuil."
-              >
-                <Input
-                  id="minStock"
-                  name="minStock"
-                  inputMode="decimal"
-                  defaultValue={values.minStock}
-                  className="max-w-40 text-right tabular"
-                />
-              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {/*
+                  Sans stock, GestiOne refuse la vente. Saisir la quantite ici
+                  evite d'enchainer creation de l'article puis entree de stock
+                  pour pouvoir vendre — l'obstacle numero un d'un premier jour.
+                */}
+                {editing === 'new' && (
+                  <Field
+                    label="Stock actuel en boutique"
+                    htmlFor="initialStock"
+                    error={api.fieldErrors.initialStock}
+                    hint="Enregistré comme une entrée de stock. Laissez 0 si vous n'en avez pas encore."
+                  >
+                    <Input
+                      id="initialStock"
+                      name="initialStock"
+                      inputMode="decimal"
+                      defaultValue="0"
+                      className="max-w-40 text-right tabular"
+                    />
+                  </Field>
+                )}
+
+                <Field
+                  label="Stock minimum (alerte de rupture)"
+                  htmlFor="minStock"
+                  error={api.fieldErrors.minStock}
+                  hint="GestiOne vous alertera lorsque le stock passera sous ce seuil."
+                >
+                  <Input
+                    id="minStock"
+                    name="minStock"
+                    inputMode="decimal"
+                    defaultValue={values.minStock}
+                    className="max-w-40 text-right tabular"
+                  />
+                </Field>
+              </div>
             )}
 
             <label className="flex items-center gap-2 text-sm text-ink-700">
@@ -372,6 +397,7 @@ export function ProductManager({
             options: categories.map((option) => ({ value: option.id, label: option.label })),
           },
         ]}
+        showInactive
       />
 
       <Card>

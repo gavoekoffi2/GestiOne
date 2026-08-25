@@ -60,7 +60,11 @@ export function StatTile({
         </p>
       )}
 
-      {delta === null && deltaLabel && <p className="mt-1 text-xs text-ink-400">{deltaLabel}</p>}
+      {/* Sans periode de comparaison, afficher "vs periode precedente" seul ne
+          veut rien dire : on le dit explicitement. */}
+      {delta === null && deltaLabel && (
+        <p className="mt-1 text-xs text-ink-400">Pas de comparaison disponible</p>
+      )}
       {hint && <p className="mt-1 text-xs text-ink-400">{hint}</p>}
     </div>
   );

@@ -3,6 +3,7 @@ import type { Prisma } from '@/generated/prisma/client';
 import { ConflictError, NotFoundError, ValidationError } from '@/server/errors';
 import { slugify } from '@/lib/validation/common';
 import type { CategoryInput, ProductInput, UnitInput } from '@/lib/validation/catalog';
+import { applyMovement } from '@/server/services/stock';
 
 /**
  * Catalogue : categories, unites de mesure et articles.
@@ -325,7 +326,7 @@ function toProductData(input: ProductInput) {
   };
 }
 
-export async function createProduct(companyId: string, input: ProductInput) {
+export async function createProduct(companyId: string, input: ProductInput, userId?: string) {
   await assertRelations(companyId, input);
 
   if (input.barcode) {
@@ -336,6 +337,20 @@ export async function createProduct(companyId: string, input: ProductInput) {
     if (duplicate) {
       throw new ConflictError(`Ce code-barres est déjà utilisé par l'article "${duplicate.name}".`);
     }
+  }
+
+  // Le stock initial n'a de sens que pour un article suivi, et il faut savoir
+  // dans quel point de vente il se trouve.
+  const initialStock = input.kind === 'GOOD' ? (input.initialStock ?? 0n) : 0n;
+  const stockLocationId =
+    initialStock > 0n
+      ? input.initialStockLocationId || (await defaultLocationId(companyId))
+      : null;
+
+  if (initialStock > 0n && !stockLocationId) {
+    throw new ValidationError(
+      'Aucun point de vente actif : impossible de saisir un stock initial.',
+    );
   }
 
   return prisma.$transaction(async (tx) => {
@@ -351,8 +366,37 @@ export async function createProduct(companyId: string, input: ProductInput) {
       if (taken) throw new ConflictError(`La référence "${sku}" est déjà utilisée.`);
     }
 
-    return tx.product.create({ data: { ...toProductData(input), companyId, sku } });
+    const product = await tx.product.create({
+      data: { ...toProductData(input), companyId, sku },
+    });
+
+    // Le stock passe par le journal des mouvements comme n'importe quelle
+    // entree : la quantite reste explicable, et l'inventaire reste opposable.
+    if (initialStock > 0n && stockLocationId) {
+      await applyMovement(tx, {
+        companyId,
+        productId: product.id,
+        locationId: stockLocationId,
+        kind: 'IN',
+        delta: initialStock,
+        unitCost: input.costPrice,
+        reason: 'Stock initial a la creation de l article',
+        userId,
+      });
+    }
+
+    return product;
   });
+}
+
+/** Point de vente par defaut d'une entreprise, pour un stock initial. */
+async function defaultLocationId(companyId: string): Promise<string | null> {
+  const location = await prisma.location.findFirst({
+    where: { companyId, isActive: true },
+    orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
+    select: { id: true },
+  });
+  return location?.id ?? null;
 }
 
 export async function updateProduct(companyId: string, productId: string, input: ProductInput) {

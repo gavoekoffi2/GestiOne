@@ -62,7 +62,8 @@ export const NAVIGATION: NavSection[] = [
   {
     label: 'Administration',
     items: [
-      { href: '/parametres', label: "Paramètres de l'entreprise", permission: 'settings.company', icon: 'settings' },
+      // Libelle court : "Parametres de l'entreprise" etait tronque dans le menu.
+      { href: '/parametres', label: 'Paramètres', permission: 'settings.company', icon: 'settings' },
       { href: '/parametres/commerce', label: 'Règlements et taxes', permission: 'settings.company', icon: 'wallet' },
       { href: '/parametres/points-de-vente', label: 'Points de vente', permission: 'settings.locations', icon: 'pin' },
       { href: '/parametres/utilisateurs', label: 'Utilisateurs', permission: 'settings.users', icon: 'user-plus' },

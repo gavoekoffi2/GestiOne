@@ -5,6 +5,7 @@ import { Badge, Card, EmptyState } from '@/components/ui/primitives';
 import { Icon } from '@/components/layout/icons';
 import { PeriodFilter } from '@/components/layout/period-filter';
 import { AlertsPanel } from '@/components/layout/alerts-panel';
+import { FirstSteps } from '@/components/layout/first-steps';
 import { RevenueChart } from '@/components/charts/revenue-chart';
 import { RankingBars } from '@/components/charts/ranking-bars';
 import { StatTile } from '@/components/charts/stat-tile';
@@ -23,6 +24,7 @@ import { stockSummary } from '@/server/services/stock-query';
 import { listInvoices } from '@/server/services/invoices';
 import { listLocations } from '@/server/services/locations';
 import { getCompanyProfile } from '@/server/services/companies';
+import { getCompanyOverview } from '@/server/services/onboarding';
 import { can, requireTenantWith } from '@/server/tenant';
 
 export const metadata: Metadata = { title: 'Tableau de bord' };
@@ -51,11 +53,12 @@ export default async function DashboardPage({
   const granularity: 'day' | 'month' =
     query.period === 'year' || query.period === 'quarter' ? 'month' : 'day';
 
-  const [data, currency, company, locations] = await Promise.all([
+  const [data, currency, company, locations, overview] = await Promise.all([
     dashboardData(context.companyId, period, granularity, query.locationId || undefined),
     getCurrencyFormat(context.currencyCode),
     getCompanyProfile(context.companyId),
     listLocations(context.companyId),
+    getCompanyOverview(context.companyId),
   ]);
 
   const activeLocations = locations.filter((location) => location.isActive);
@@ -99,13 +102,17 @@ export default async function DashboardPage({
           une action aujourd'hui. */}
       <AlertsPanel companyId={context.companyId} permissions={context.permissions} />
 
+      {/* Avant la premiere vente, le chemin a suivre vaut mieux que huit
+          indicateurs a zero. Le bloc s'efface une fois les etapes franchies. */}
+      <FirstSteps steps={overview.firstSteps} permissions={context.permissions} />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
           label="Chiffre d'affaires"
           value={money(data.sales.revenue)}
           icon="chart"
           delta={variation(data.sales.revenue, data.previousSales.revenue)}
-          deltaLabel="vs periode precedente"
+          deltaLabel="vs période précédente"
         />
         <StatTile
           label="Encaisse"
@@ -144,7 +151,7 @@ export default async function DashboardPage({
           value={money(data.outstanding.overdue)}
           icon="list"
           tone={data.outstanding.overdue > 0n ? 'danger' : undefined}
-          hint={`${data.outstanding.overdueCount} facture(s) echue(s)`}
+          hint={`${data.outstanding.overdueCount} facture(s) échue(s)`}
         />
         <StatTile
           label="Dettes fournisseur"
@@ -169,7 +176,7 @@ export default async function DashboardPage({
 
       <Card
         title="Évolution"
-        description="Chiffre d'affaires facture et dépenses engagées sur la période."
+        description="Chiffre d'affaires facturé et dépenses engagées sur la période."
       >
         <RevenueChart
           currency={currency}

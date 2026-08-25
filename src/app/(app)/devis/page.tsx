@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { z } from 'zod';
-import { Badge, ButtonLink, Card, EmptyState, Select } from '@/components/ui/primitives';
+import { Badge, ButtonLink, Card, EmptyState } from '@/components/ui/primitives';
+import { ListToolbar } from '@/components/ui/list-toolbar';
 import { formatMoney } from '@/lib/money';
 import { getCurrencyFormat } from '@/server/currency';
 import { QUOTE_STATUS_LABELS, isExpired, listQuotes, type QuoteStatus } from '@/server/services/quotes';
@@ -63,31 +64,20 @@ export default async function QuotesPage({
         )}
       </div>
 
-      <Card
-        title={`${result.total} devis`}
-        action={
-          <form method="get" className="flex flex-wrap items-center gap-2">
-            <input
-              type="search"
-              name="search"
-              defaultValue={query.search}
-              placeholder="Numéro ou client"
-              aria-label="Rechercher un devis"
-              className="min-h-9 rounded-lg border-0 px-3 text-sm ring-1 ring-inset ring-ink-300"
-            />
-            <label htmlFor="status" className="sr-only">Statut</label>
-            <Select id="status" name="status" defaultValue={query.status ?? ''} className="min-h-9 text-sm">
-              <option value="">Tous les statuts</option>
-              {Object.entries(QUOTE_STATUS_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </Select>
-            <button type="submit" className="min-h-9 rounded-lg bg-ink-800 px-3 text-sm font-semibold text-white">
-              Filtrer
-            </button>
-          </form>
-        }
-      >
+      {/* Recherche et filtres s'appliquent seuls : un bouton "Filtrer" de plus a
+          cliquer n'apporte rien et laisse croire que la liste n'a pas bouge. */}
+      <ListToolbar
+        placeholder="Rechercher un devis (numéro ou client)"
+        filters={[
+          {
+            name: 'status',
+            label: 'Tous les statuts',
+            options: Object.entries(QUOTE_STATUS_LABELS).map(([value, label]) => ({ value, label })),
+          },
+        ]}
+      />
+
+      <Card title={`${result.total} devis`}>
         {result.items.length === 0 ? (
           <EmptyState
             title="Aucun devis"

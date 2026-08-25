@@ -39,10 +39,19 @@ export const COUNTRIES: Country[] = [
   { code: 'BE', name: 'Belgique', currency: 'EUR', dialCode: '+32' },
   { code: 'CH', name: 'Suisse', currency: 'EUR', dialCode: '+41' },
   { code: 'CA', name: 'Canada', currency: 'CAD', dialCode: '+1' },
-  { code: 'US', name: 'Etats-Unis', currency: 'USD', dialCode: '+1' },
+  { code: 'US', name: 'États-Unis', currency: 'USD', dialCode: '+1' },
   { code: 'GB', name: 'Royaume-Uni', currency: 'GBP', dialCode: '+44' },
 ];
 
 export function findCountry(code: string): Country | undefined {
   return COUNTRIES.find((country) => country.code === code);
+}
+
+/**
+ * Nom lisible d'un pays. Les documents commerciaux affichaient jusqu'ici le
+ * code ISO brut ("CI"), incomprehensible pour le client qui recoit la facture.
+ */
+export function countryLabel(code: string | null | undefined): string {
+  if (!code) return '';
+  return findCountry(code)?.name ?? code;
 }

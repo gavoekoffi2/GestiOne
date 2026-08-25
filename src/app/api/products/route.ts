@@ -17,7 +17,7 @@ export const POST = handler(async (request: NextRequest) => {
   const context = await requireTenantWith('products.write');
   const currency = await getCurrencyFormat(context.currencyCode);
   const input = await readJson(request, productSchema(currency.decimals));
-  const created = await createProduct(context.companyId, input);
+  const created = await createProduct(context.companyId, input, context.userId);
 
   await recordAudit({
     companyId: context.companyId,

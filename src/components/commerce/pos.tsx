@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Alert, Badge, Button, Card, Field, Input, Select } from '@/components/ui/primitives';
@@ -275,6 +276,16 @@ export function PointOfSale({
           <Button type="button" onClick={() => { setReceipt(null); reset(); }}>
             Nouvelle vente
           </Button>
+          {/* Imprimer le ticket est le geste suivant le plus frequent : il a
+              son propre bouton, sans passer par la fiche facture. */}
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => router.push(`/factures/${receipt.invoiceId}?imprimer=1`)}
+          >
+            <Icon name="printer" className="size-4" />
+            Imprimer le reçu
+          </Button>
           <Button
             type="button"
             variant="secondary"
@@ -329,9 +340,24 @@ export function PointOfSale({
               </button>
             ))}
             {matches.length === 0 && (
-              <p className="col-span-full py-4 text-center text-sm text-ink-500">
-                Aucun article ne correspond à &laquo; {search} &raquo;.
-              </p>
+              <div className="col-span-full py-6 text-center text-sm text-ink-500">
+                {products.length === 0 ? (
+                  /* Catalogue vide : dire "aucun article ne correspond a
+                     &laquo;&nbsp;&raquo;" laisse croire a un probleme de
+                     recherche alors qu'il n'y a simplement rien a vendre. */
+                  <>
+                    <p className="font-medium text-ink-700">Votre catalogue est vide.</p>
+                    <p className="mt-1">
+                      Ajoutez ce que vous vendez pour pouvoir encaisser.{' '}
+                      <Link href="/produits" className="font-semibold text-brand-700 underline">
+                        Ajouter un article
+                      </Link>
+                    </p>
+                  </>
+                ) : (
+                  <p>Aucun article ne correspond à &laquo; {search} &raquo;.</p>
+                )}
+              </div>
             )}
           </div>
         </Card>
@@ -448,8 +474,13 @@ export function PointOfSale({
         {stockWarnings.length > 0 && (
           <Alert tone="warning" title="Stock insuffisant">
             {stockWarnings.map((line) => line.name).join(', ')} : la quantité demandée dépasse le
-            stock enregistré. La vente sera refusée. Ajustez la quantité ou faites une entrée de
-            stock.
+            stock enregistré. La vente sera refusée. Ajustez la quantité, ou enregistrez l&apos;entrée
+            de stock correspondante.{' '}
+            {/* Un avertissement sans porte de sortie laisse l'utilisateur bloque :
+                le lien mene directement a l'ecran qui debloque la vente. */}
+            <Link href="/stock" className="font-semibold underline">
+              Ouvrir le stock
+            </Link>
           </Alert>
         )}
 

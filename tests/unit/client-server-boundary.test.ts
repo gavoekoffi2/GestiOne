@@ -89,6 +89,32 @@ describe('frontiere client / serveur', () => {
     expect(violations).toEqual([]);
   });
 
+  /**
+   * Une prop fonction ne franchit pas la frontiere serveur -> client : React
+   * ne sait pas la serialiser et la page entiere tombe en erreur 500. Le cas
+   * s'est produit sur /factures/nouvelle et /devis/nouveau, ou un
+   * `redirectTo={(id) => ...}` rendait la creation de document impossible.
+   */
+  it("aucun composant serveur ne passe une prop fonction a un composant client", () => {
+    const violations: string[] = [];
+    // prop={(x) => ...}, prop={function ...} ou prop={async () => ...}
+    const inlineFunctionProp =
+      /\s([a-zA-Z][\w]*)=\{\s*(?:async\s*)?(?:function\b|\(([^)]*)\)\s*=>|[A-Za-z_$][\w$]*\s*=>)/g;
+
+    for (const file of files) {
+      const source = readFileSync(file, 'utf8');
+      if (isClientModule(source)) continue;
+      if (!file.endsWith('.tsx')) continue;
+
+      let match: RegExpExecArray | null;
+      while ((match = inlineFunctionProp.exec(source)) !== null) {
+        violations.push(`${file} passe la prop ${match[1]} sous forme de fonction`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it('les modules partages ne dependent pas du serveur', () => {
     // `src/lib` est importable des deux cotes : il doit rester neutre.
     const violations: string[] = [];

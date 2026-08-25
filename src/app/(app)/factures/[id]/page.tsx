@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Badge, Card } from '@/components/ui/primitives';
 import { InvoiceActions } from '@/components/commerce/invoice-actions';
 import { ShareActions } from '@/components/commerce/share-actions';
+import { countryLabel } from '@/lib/countries';
 import { formatMoney, toDecimalString } from '@/lib/money';
 import { formatQuantity } from '@/lib/quantity';
 import { getCurrencyFormat } from '@/server/currency';
@@ -129,7 +130,7 @@ export default async function InvoiceDetailPage({
             <div className="mt-1 space-y-0.5 text-sm text-ink-600">
               {company.addressLine && <p>{company.addressLine}</p>}
               {(company.city || company.countryCode) && (
-                <p>{[company.city, company.countryCode].filter(Boolean).join(', ')}</p>
+                <p>{[company.city, countryLabel(company.countryCode)].filter(Boolean).join(', ')}</p>
               )}
               {company.phone && <p>{company.phone}</p>}
               {company.email && <p>{company.email}</p>}

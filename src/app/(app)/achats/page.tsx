@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { z } from 'zod';
-import { Badge, ButtonLink, Card, EmptyState, Select } from '@/components/ui/primitives';
+import { Badge, ButtonLink, Card, EmptyState } from '@/components/ui/primitives';
+import { ListToolbar } from '@/components/ui/list-toolbar';
 import { Icon } from '@/components/layout/icons';
 import { formatMoney } from '@/lib/money';
 import { getCurrencyFormat } from '@/server/currency';
@@ -130,31 +131,23 @@ export default async function PurchasesPage({
         </Card>
       )}
 
-      <Card
-        title={`${result.total} commande(s)`}
-        action={
-          <form method="get" className="flex flex-wrap items-center gap-2">
-            <input
-              type="search"
-              name="search"
-              defaultValue={query.search}
-              placeholder="Numéro, référence, fournisseur"
-              aria-label="Rechercher une commande"
-              className="min-h-9 rounded-lg border-0 px-3 text-sm ring-1 ring-inset ring-ink-300"
-            />
-            <label htmlFor="status" className="sr-only">Statut</label>
-            <Select id="status" name="status" defaultValue={query.status ?? ''} className="min-h-9 text-sm">
-              <option value="">Tous les statuts</option>
-              {Object.entries(PURCHASE_STATUS_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </Select>
-            <button type="submit" className="min-h-9 rounded-lg bg-ink-800 px-3 text-sm font-semibold text-white">
-              Filtrer
-            </button>
-          </form>
-        }
-      >
+      <ListToolbar
+        placeholder="Rechercher une commande (numéro, référence, fournisseur)"
+        filters={[
+          {
+            name: 'status',
+            label: 'Tous les statuts',
+            options: Object.entries(PURCHASE_STATUS_LABELS).map(([value, label]) => ({ value, label })),
+          },
+          {
+            name: 'filter',
+            label: 'Réglées et non réglées',
+            options: [{ value: 'unpaid', label: 'Non réglées' }],
+          },
+        ]}
+      />
+
+      <Card title={`${result.total} commande(s)`}>
         {result.items.length === 0 ? (
           <EmptyState
             title="Aucun achat"

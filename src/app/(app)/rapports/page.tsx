@@ -111,7 +111,7 @@ export default async function ReportsPage({
           value={money(sales.revenue)}
           icon="chart"
           delta={variation(sales.revenue, previousSales.revenue)}
-          deltaLabel="vs periode precedente"
+          deltaLabel="vs période précédente"
         />
         <StatTile
           label="Marge brute"

@@ -131,6 +131,7 @@ export default async function StockPage({
             options: [{ value: 'true', label: 'Alertes uniquement' }],
           },
         ]}
+        showInactive
       />
 
       <Card>

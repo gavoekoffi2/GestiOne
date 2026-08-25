@@ -271,7 +271,7 @@ export function PartnerManager(props: PartnerManagerProps) {
         )
       )}
 
-      <ListToolbar placeholder={`Rechercher (nom, code, téléphone, email)`} />
+      <ListToolbar placeholder={`Rechercher (nom, code, téléphone, email)`} showInactive />
 
       <Card>
         {rows.length === 0 ? (

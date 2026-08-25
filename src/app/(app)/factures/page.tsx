@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { z } from 'zod';
-import { Badge, Card, EmptyState, Select } from '@/components/ui/primitives';
+import { Badge, ButtonLink, Card, EmptyState } from '@/components/ui/primitives';
+import { ListToolbar } from '@/components/ui/list-toolbar';
 import { Icon } from '@/components/layout/icons';
 import { formatMoney } from '@/lib/money';
 import { getCurrencyFormat } from '@/server/currency';
 import { INVOICE_STATUS_LABELS, isOverdue, listInvoices, type InvoiceStatus } from '@/server/services/invoices';
-import { requireTenantWith } from '@/server/tenant';
+import { can, requireTenantWith } from '@/server/tenant';
 
 export const metadata: Metadata = { title: 'Factures' };
 export const dynamic = 'force-dynamic';
@@ -63,9 +64,17 @@ export default async function InvoicesPage({
             Toutes vos factures, y compris celles issues des ventes au comptoir.
           </p>
         </div>
-        <Link href="/ventes" className="text-sm font-semibold text-brand-700 hover:underline">
-          Nouvelle vente
-        </Link>
+        {/* Deux points d'entree distincts : la vente au comptoir (encaissement
+            immediat) et la facture composee ligne par ligne. Cette derniere
+            n'etait accessible depuis aucun ecran. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <ButtonLink href="/ventes" variant="secondary">
+            Vente au comptoir
+          </ButtonLink>
+          {can(context, 'invoices.write') && (
+            <ButtonLink href="/factures/nouvelle">Nouvelle facture</ButtonLink>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -79,41 +88,38 @@ export default async function InvoicesPage({
         />
       </div>
 
-      <Card
-        title={`${result.total} facture(s)`}
-        action={
-          <form method="get" className="flex flex-wrap items-center gap-2">
-            <input
-              type="search"
-              name="search"
-              defaultValue={query.search}
-              placeholder="Numéro ou client"
-              aria-label="Rechercher une facture"
-              className="min-h-9 rounded-lg border-0 px-3 text-sm ring-1 ring-inset ring-ink-300"
-            />
-            <label htmlFor="status" className="sr-only">Statut</label>
-            <Select id="status" name="status" defaultValue={query.status ?? ''} className="min-h-9 text-sm">
-              <option value="">Tous les statuts</option>
-              {Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </Select>
-            <label htmlFor="filter" className="sr-only">Filtre</label>
-            <Select id="filter" name="filter" defaultValue={query.filter ?? ''} className="min-h-9 text-sm">
-              <option value="">Toutes</option>
-              <option value="unpaid">Impayées</option>
-              <option value="overdue">En retard</option>
-            </Select>
-            <button type="submit" className="min-h-9 rounded-lg bg-ink-800 px-3 text-sm font-semibold text-white">
-              Filtrer
-            </button>
-          </form>
-        }
-      >
+      {/* Recherche et filtres s'appliquent seuls, comme sur les autres listes. */}
+      <ListToolbar
+        placeholder="Rechercher une facture (numéro ou client)"
+        filters={[
+          {
+            name: 'status',
+            label: 'Tous les statuts',
+            options: Object.entries(INVOICE_STATUS_LABELS).map(([value, label]) => ({ value, label })),
+          },
+          {
+            name: 'filter',
+            label: 'Payées et impayées',
+            options: [
+              { value: 'unpaid', label: 'Impayées' },
+              { value: 'overdue', label: 'En retard' },
+            ],
+          },
+        ]}
+      />
+
+      <Card title={`${result.total} facture(s)`}>
         {result.items.length === 0 ? (
           <EmptyState
             title="Aucune facture"
             description="Les ventes et les factures que vous émettez apparaîtront ici."
+            action={
+              can(context, 'invoices.write') ? (
+                <ButtonLink href="/factures/nouvelle" variant="secondary">
+                  Créer une facture
+                </ButtonLink>
+              ) : undefined
+            }
           />
         ) : (
           <>

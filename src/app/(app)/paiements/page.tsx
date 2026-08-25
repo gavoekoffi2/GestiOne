@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { z } from 'zod';
-import { Badge, Card, EmptyState, Select } from '@/components/ui/primitives';
+import { Badge, Card, EmptyState } from '@/components/ui/primitives';
+import { ListToolbar } from '@/components/ui/list-toolbar';
 import { Icon } from '@/components/layout/icons';
 import { formatMoney } from '@/lib/money';
 import { getCurrencyFormat } from '@/server/currency';
@@ -159,31 +160,18 @@ export default async function PaymentsPage({
         </Card>
       )}
 
-      <Card
-        title={`${result.total} paiement(s)`}
-        action={
-          <form method="get" className="flex flex-wrap items-center gap-2">
-            <input
-              type="search"
-              name="search"
-              defaultValue={query.search}
-              placeholder="Numéro, référence, client"
-              aria-label="Rechercher un paiement"
-              className="min-h-9 rounded-lg border-0 px-3 text-sm ring-1 ring-inset ring-ink-300"
-            />
-            <label htmlFor="methodId" className="sr-only">Mode</label>
-            <Select id="methodId" name="methodId" defaultValue={query.methodId ?? ''} className="min-h-9 text-sm">
-              <option value="">Tous les modes</option>
-              {methods.map((method) => (
-                <option key={method.id} value={method.id}>{method.name}</option>
-              ))}
-            </Select>
-            <button type="submit" className="min-h-9 rounded-lg bg-ink-800 px-3 text-sm font-semibold text-white">
-              Filtrer
-            </button>
-          </form>
-        }
-      >
+      <ListToolbar
+        placeholder="Rechercher un paiement (numéro, référence, client)"
+        filters={[
+          {
+            name: 'methodId',
+            label: 'Tous les modes',
+            options: methods.map((method) => ({ value: method.id, label: method.name })),
+          },
+        ]}
+      />
+
+      <Card title={`${result.total} paiement(s)`}>
         {result.items.length === 0 ? (
           <EmptyState
             title="Aucun paiement"

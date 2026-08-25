@@ -16,9 +16,16 @@ import { Input, Select } from '@/components/ui/primitives';
 export function ListToolbar({
   placeholder,
   filters,
+  /**
+   * La case "Inclure les inactifs" ne concerne que les listes de referentiel
+   * (articles, clients, points de vente). Elle s'affichait aussi sur les
+   * depenses ou les factures, ou elle ne pilotait rien du tout.
+   */
+  showInactive = false,
 }: {
   placeholder: string;
   filters?: Array<{ name: string; label: string; options: Array<{ value: string; label: string }> }>;
+  showInactive?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -79,15 +86,17 @@ export function ListToolbar({
         </label>
       ))}
 
-      <label className="flex items-center gap-2 whitespace-nowrap text-sm text-ink-600">
-        <input
-          type="checkbox"
-          checked={searchParams.get('includeInactive') === 'true'}
-          onChange={(event) => apply({ includeInactive: event.target.checked ? 'true' : '' })}
-          className="size-4 rounded border-ink-300"
-        />
-        Inclure les inactifs
-      </label>
+      {showInactive && (
+        <label className="flex items-center gap-2 whitespace-nowrap text-sm text-ink-600">
+          <input
+            type="checkbox"
+            checked={searchParams.get('includeInactive') === 'true'}
+            onChange={(event) => apply({ includeInactive: event.target.checked ? 'true' : '' })}
+            className="size-4 rounded border-ink-300"
+          />
+          Inclure les inactifs
+        </label>
+      )}
     </div>
   );
 }

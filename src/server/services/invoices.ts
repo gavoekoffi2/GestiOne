@@ -277,7 +277,7 @@ export async function createInvoice(context: ServiceContext, input: CreateInvoic
       action: 'CREATE',
       entityType: 'Invoice',
       entityId: invoice.id,
-      summary: `Facture ${number} créée (${issue ? 'emise' : 'brouillon'})`,
+      summary: `Facture ${number} créée (${issue ? 'émise' : 'brouillon'})`,
       metadata: { total: totals.total.toString() },
     });
 

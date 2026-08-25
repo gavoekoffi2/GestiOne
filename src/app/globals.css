@@ -30,7 +30,8 @@ body { background: var(--color-ink-100); color: var(--color-ink-800); font-famil
    on laisse la feuille (.doc-sheet) occuper toute la page. */
 @media print {
   .no-print { display: none !important; }
-  body { background: #fff; font-size: 1rem; }
+  html, body { background: #fff; }
+  body { font-size: 1rem; }
   .print-main { padding: 0 !important; }
   /* La mise a l'echelle du document (A5 pour les devis) se fait via la taille
      de police racine, posee par <PrintPageFormat /> : tout le layout etant en

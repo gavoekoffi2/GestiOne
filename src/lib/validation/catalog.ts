@@ -134,7 +134,11 @@ export function productSchema(decimals: number) {
       categoryId: optionalText(64),
       unitId: optionalText(64),
       supplierId: optionalText(64),
-      costPrice: moneyField(decimals, "Le prix d'achat"),
+      // Facultatif dans le schema : le prix d'achat est une donnee reservee.
+      // Quand l'utilisateur n'a pas le droit de le voir, la route ignore ce
+      // qu'il envoie et conserve la valeur enregistree (voir les routes
+      // /api/products). Le formulaire, lui, le pre-remplit toujours a 0.
+      costPrice: moneyField(decimals, "Le prix d'achat").optional(),
       salePrice: moneyField(decimals, 'Le prix de vente'),
       wholesalePrice: optionalMoneyField(decimals, 'Le prix grossiste'),
       wholesaleFrom: quantityField('La quantité minimale pour le prix grossiste'),

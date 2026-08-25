@@ -313,7 +313,7 @@ function toProductData(input: ProductInput) {
     categoryId: input.categoryId ?? null,
     unitId: input.unitId ?? null,
     supplierId: input.supplierId ?? null,
-    costPrice: input.costPrice,
+    costPrice: input.costPrice ?? 0n,
     salePrice: input.salePrice,
     wholesalePrice: input.wholesalePrice ?? null,
     wholesaleFrom: input.wholesalePrice !== undefined ? input.wholesaleFrom : null,
@@ -379,7 +379,7 @@ export async function createProduct(companyId: string, input: ProductInput, user
         locationId: stockLocationId,
         kind: 'IN',
         delta: initialStock,
-        unitCost: input.costPrice,
+        unitCost: input.costPrice ?? 0n,
         reason: 'Stock initial a la creation de l article',
         userId,
       });

@@ -59,6 +59,12 @@ export default async function StockPage({
 
   const activeLocations = locations.filter((location) => location.isActive);
 
+  // La valeur du stock est calculee au prix d'achat : elle revele la marge de
+  // l'entreprise autant que la fiche article. Un caissier a "stock.read" sans
+  // "products.cost.read" — les colonnes chiffrees lui sont donc masquees, et
+  // les montants ne sont meme pas envoyes au navigateur.
+  const canSeeCost = can(context, 'products.cost.read');
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -77,12 +83,14 @@ export default async function StockPage({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Tile label="Articles suivis" value={String(summary.trackedProducts)} icon="box" />
-        <Tile
-          label="Valeur du stock"
-          value={formatMoney(summary.totalValue, currency, context.locale)}
-          icon="cash"
-          hint="Au prix d'achat"
-        />
+        {canSeeCost && (
+          <Tile
+            label="Valeur du stock"
+            value={formatMoney(summary.totalValue, currency, context.locale)}
+            icon="cash"
+            hint="Au prix d'achat"
+          />
+        )}
         <Tile
           label="Stock faible"
           value={String(summary.lowCount)}
@@ -150,7 +158,9 @@ export default async function StockPage({
                     <th className="px-4 py-2 font-medium">Catégorie</th>
                     <th className="px-4 py-2 text-right font-medium">Quantité</th>
                     <th className="px-4 py-2 text-right font-medium">Seuil</th>
-                    <th className="px-4 py-2 text-right font-medium">Valeur</th>
+                    {canSeeCost && (
+                      <th className="px-4 py-2 text-right font-medium">Valeur</th>
+                    )}
                     <th className="px-4 py-2 font-medium sm:px-5">État</th>
                   </tr>
                 </thead>
@@ -171,9 +181,11 @@ export default async function StockPage({
                       <td className="tabular px-4 py-3 text-right text-ink-500">
                         {row.minStock > 0n ? formatQuantity(row.minStock, context.locale) : '—'}
                       </td>
-                      <td className="tabular px-4 py-3 text-right text-ink-600">
-                        {formatMoney(row.value, currency, context.locale)}
-                      </td>
+                      {canSeeCost && (
+                        <td className="tabular px-4 py-3 text-right text-ink-600">
+                          {formatMoney(row.value, currency, context.locale)}
+                        </td>
+                      )}
                       <td className="px-4 py-3 sm:px-5">
                         {row.isOut ? (
                           <Badge tone="danger">Rupture</Badge>

@@ -121,7 +121,7 @@ export function ProductManager({
       categoryId: String(form.get('categoryId') ?? ''),
       unitId: String(form.get('unitId') ?? ''),
       supplierId: String(form.get('supplierId') ?? ''),
-      costPrice: String(form.get('costPrice') ?? '0'),
+      ...(canSeeCost ? { costPrice: String(form.get('costPrice') ?? '0') } : {}),
       salePrice: String(form.get('salePrice') ?? '0'),
       wholesalePrice: String(form.get('wholesalePrice') ?? ''),
       wholesaleFrom: String(form.get('wholesaleFrom') ?? ''),
@@ -244,15 +244,19 @@ export function ProductManager({
             <fieldset className="rounded-lg border border-ink-200 p-4">
               <legend className="px-1 text-sm font-semibold text-ink-800">Prix</legend>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Field label="Prix d'achat" htmlFor="costPrice" required error={api.fieldErrors.costPrice}>
-                  <MoneyInput
-                    id="costPrice"
-                    name="costPrice"
-                    defaultValue={values.costPrice}
-                    decimals={currency.decimals}
-                    symbol={currency.symbol}
-                  />
-                </Field>
+                {/* Sans le droit de voir les prix d'achat, le champ n'est ni affiche
+                    ni soumis : le prix enregistre reste celui de la base. */}
+                {canSeeCost && (
+                  <Field label="Prix d'achat" htmlFor="costPrice" required error={api.fieldErrors.costPrice}>
+                    <MoneyInput
+                      id="costPrice"
+                      name="costPrice"
+                      defaultValue={values.costPrice}
+                      decimals={currency.decimals}
+                      symbol={currency.symbol}
+                    />
+                  </Field>
+                )}
                 <Field label="Prix de vente" htmlFor="salePrice" required error={api.fieldErrors.salePrice}>
                   <MoneyInput
                     id="salePrice"

@@ -4,13 +4,21 @@ import { productListQuerySchema } from '@/lib/validation/list-query';
 import { createProduct, listProducts } from '@/server/services/catalog';
 import { getCurrencyFormat } from '@/server/currency';
 import { recordAudit } from '@/server/audit';
-import { requireTenantWith } from '@/server/tenant';
+import { can, requireTenantWith } from '@/server/tenant';
 import { clientIp, handler, jsonOk, readJson, readQuery } from '@/server/http';
 
 export const GET = handler(async (request: NextRequest) => {
   const context = await requireTenantWith('products.read');
   const query = readQuery(request, productListQuerySchema);
-  return jsonOk(await listProducts(context.companyId, query));
+  const result = await listProducts(context.companyId, query);
+
+  // Meme regle que sur la fiche : sans le droit "products.cost.read", le prix
+  // d'achat ne figure pas dans la reponse.
+  if (can(context, 'products.cost.read')) return jsonOk(result);
+  return jsonOk({
+    ...result,
+    items: result.items.map(({ costPrice: _hidden, ...rest }) => rest),
+  });
 });
 
 export const POST = handler(async (request: NextRequest) => {

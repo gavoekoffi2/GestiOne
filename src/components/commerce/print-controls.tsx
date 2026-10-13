@@ -30,9 +30,11 @@ import { DOCUMENT_FORMATS, type DocumentFormat } from '@/lib/validation/company'
 const PAGE_RULES: Record<DocumentFormat, string> = {
   A4: '@page { size: A4; margin: 0; } :root { --doc-print-margin: 12mm; }',
   A5: '@page { size: A5; margin: 0; } :root { --doc-print-margin: 8mm; }',
-  // Rouleau thermique : largeur fixe, hauteur libre — un ticket n'a pas de
-  // longueur de page, il s'arrete ou le contenu s'arrete.
-  RECEIPT: '@page { size: 80mm auto; margin: 0; } :root { --doc-print-margin: 3mm; }',
+  // Rouleau thermique, 80 mm de large. Chrome ignore une hauteur "auto" et
+  // retombe alors en silence sur le format Letter (verifie par export PDF) :
+  // la hauteur est donc explicite, un ticket plus long continue sur la suite
+  // du rouleau.
+  RECEIPT: '@page { size: 80mm 200mm; margin: 0; } :root { --doc-print-margin: 3mm; }',
 };
 
 export function PrintControls({ defaultFormat }: { defaultFormat: string }) {

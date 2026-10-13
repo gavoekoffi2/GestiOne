@@ -533,11 +533,14 @@ export async function listPurchaseOrders(companyId: string, query: PurchaseListQ
   const search = query.search?.trim();
   const where: Prisma.PurchaseOrderWhereInput = {
     companyId,
-    ...(query.status ? { status: query.status } : {}),
     ...(query.supplierId ? { supplierId: query.supplierId } : {}),
-    ...(query.unpaidOnly
-      ? { balanceDue: { gt: 0n }, status: { notIn: ['CANCELLED', 'DRAFT'] } }
-      : {}),
+    // Meme piege que les factures : deux `status` dans un objet s'ecrasent.
+    AND: [
+      ...(query.status ? [{ status: query.status }] : []),
+      ...(query.unpaidOnly
+        ? [{ balanceDue: { gt: 0n }, status: { notIn: ['CANCELLED', 'DRAFT'] } }]
+        : []),
+    ],
     ...(search
       ? {
           OR: [

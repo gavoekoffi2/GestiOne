@@ -776,3 +776,35 @@ describe("facture d'avance (sans sortie de stock)", () => {
     expect(await stockOf(s)).toBe(100_000n);
   });
 });
+
+describe('listInvoices : filtres combines', () => {
+  it('statut + impayees garde le statut demande (le second filtre ecrasait le premier)', async () => {
+    const s = await setup();
+    const issued = await createInvoice(s.ctx, {
+      customerId: s.customerId,
+      locationId: s.locationId,
+      issue: true,
+      lines: [{ productId: s.productId, quantity: 1_000n }],
+    });
+    const partial = await createInvoice(s.ctx, {
+      customerId: s.customerId,
+      locationId: s.locationId,
+      issue: true,
+      lines: [{ productId: s.productId, quantity: 2_000n }],
+    });
+    await recordPayment(s.ctx, {
+      direction: 'IN',
+      amount: 1_000n,
+      invoiceId: partial.id,
+      methodId: s.cashId,
+    });
+
+    const result = await listInvoices(s.companyId, {
+      page: 1,
+      pageSize: 25,
+      status: 'ISSUED',
+      unpaidOnly: true,
+    });
+    expect(result.items.map((invoice) => invoice.id)).toEqual([issued.id]);
+  });
+});

@@ -591,11 +591,16 @@ export async function listInvoices(companyId: string, query: InvoiceListQuery) {
   const search = query.search?.trim();
   const where: Prisma.InvoiceWhereInput = {
     companyId,
-    ...(query.status ? { status: query.status } : {}),
     ...(query.customerId ? { customerId: query.customerId } : {}),
-    ...(query.unpaidOnly || query.overdueOnly
-      ? { balanceDue: { gt: 0n }, status: { notIn: ['CANCELLED', 'DRAFT'] } }
-      : {}),
+    // Deux conditions sur `status` dans le meme objet : la seconde ecrasait la
+    // premiere, et "Emise + impayees" renvoyait toutes les impayees. Un AND
+    // garde les deux.
+    AND: [
+      ...(query.status ? [{ status: query.status }] : []),
+      ...(query.unpaidOnly || query.overdueOnly
+        ? [{ balanceDue: { gt: 0n }, status: { notIn: ['CANCELLED', 'DRAFT'] } }]
+        : []),
+    ],
     ...(query.overdueOnly ? { dueDate: { lt: new Date() } } : {}),
     ...(search
       ? {

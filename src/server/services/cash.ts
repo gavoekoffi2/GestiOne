@@ -2,6 +2,8 @@ import { prisma } from '@/server/db';
 import type { Prisma } from '@/generated/prisma/client';
 import { ConflictError, NotFoundError, ValidationError } from '@/server/errors';
 import { recordAuditTx } from '@/server/audit';
+import { getCurrencyFormat } from '@/server/currency';
+import { formatMoney } from '@/lib/money';
 
 /**
  * Caisse.
@@ -196,6 +198,13 @@ export async function closeCashSession(
     throw new ConflictError('Cette caisse est deja fermee.');
   }
 
+  // L'ecart etait journalise en unite mineure brute ("+150" pour 1,50 EUR).
+  const company = await prisma.company.findUniqueOrThrow({
+    where: { id: context.companyId },
+    select: { currencyCode: true, locale: true },
+  });
+  const currency = await getCurrencyFormat(company.currencyCode);
+
   return prisma.$transaction(async (tx) => {
     const expected = await sessionExpectedAmount(tx, sessionId);
     const difference = input.countedAmount - expected;
@@ -225,7 +234,7 @@ export async function closeCashSession(
       summary:
         difference === 0n
           ? `Caisse fermee a ${session.location.name}, sans ecart`
-          : `Caisse fermee a ${session.location.name} — ecart de ${difference > 0n ? '+' : ''}${difference}`,
+          : `Caisse fermee a ${session.location.name} — ecart de ${difference > 0n ? '+' : ''}${formatMoney(difference, currency, company.locale)}`,
       metadata: {
         expected: expected.toString(),
         counted: input.countedAmount.toString(),

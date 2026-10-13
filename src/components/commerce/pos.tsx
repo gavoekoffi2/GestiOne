@@ -395,7 +395,10 @@ export function PointOfSale({
             <ul className="divide-y divide-ink-100">
               {cart.map((line, index) => {
                 const quantity = safeQuantity(line.quantityText);
-                const lineTotal = totals?.lines[index]?.total ?? 0n;
+                // Avant remise globale : celle-ci s'affiche une fois, sous le sous-total.
+                const lineTotal = totals?.lines[index]
+                  ? totals.lines[index]!.gross - totals.lines[index]!.lineDiscount
+                  : 0n;
                 const short = line.trackStock && quantity > line.stock;
 
                 return (

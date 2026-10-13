@@ -5,9 +5,9 @@ import { QuoteActions } from '@/components/commerce/quote-actions';
 import { ShareActions } from '@/components/commerce/share-actions';
 import { InvoiceDocument } from '@/components/commerce/invoice-document';
 import { PrintControls } from '@/components/commerce/print-controls';
-import { PrintPageFormat } from '@/components/commerce/print-page-format';
 import { formatMoney } from '@/lib/money';
 import { formatQuantity } from '@/lib/quantity';
+import { lineDisplayAmount } from '@/lib/totals';
 import { getCurrencyFormat } from '@/server/currency';
 import { getCompanyProfile } from '@/server/services/companies';
 import { listLocations } from '@/server/services/locations';
@@ -47,7 +47,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
     '',
     ...quote.lines.map(
       (line) =>
-        `${formatQuantity(line.quantity, context.locale)} x ${line.description} — ${money(line.lineTotal)}`,
+        `${formatQuantity(line.quantity, context.locale)} x ${line.description} — ${money(lineDisplayAmount(line))}`,
     ),
     '',
     `Total : ${money(quote.total)}`,
@@ -100,7 +100,9 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
             summary={summary}
             phone={quote.customer?.phone ?? ''}
           />
-          <PrintControls defaultFormat={company.documentFormat} />
+          {/* Le devis sort en A5 par defaut, a la demande du client ; le format
+              reste modifiable devant le document. */}
+          <PrintControls defaultFormat="A5" />
         </div>
       </div>
 
@@ -114,7 +116,6 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
         locations={activeLocations.map((location) => ({ id: location.id, label: location.name }))}
       />
 
-      <PrintPageFormat />
       {/* Meme document que la facture : un devis accepte devient une facture,
           les deux doivent se ressembler pour que le client s'y retrouve. */}
       <InvoiceDocument

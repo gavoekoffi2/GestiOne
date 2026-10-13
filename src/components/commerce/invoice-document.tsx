@@ -1,5 +1,6 @@
 import { formatMoney, type CurrencyFormat } from '@/lib/money';
 import { formatQuantity } from '@/lib/quantity';
+import { lineDisplayAmount } from '@/lib/totals';
 
 /**
  * La facture telle qu'elle sort de l'imprimante.
@@ -49,6 +50,7 @@ export interface DocumentLine {
   discountRate: number;
   /** `null` quand le document ne detaille pas la taxe ligne par ligne (devis). */
   taxAmount: bigint | null;
+  /** Total enregistre (remise globale et taxe comprises), pour l'export. */
   lineTotal: bigint;
 }
 
@@ -174,7 +176,7 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
               <th className="doc-num">P.U.</th>
               {hasDiscountColumn && <th className="doc-num">Remise</th>}
               {hasTaxColumn && <th className="doc-num">Taxe</th>}
-              <th className="doc-num">Total</th>
+              <th className="doc-num">{hasTaxColumn ? 'Total HT' : 'Total'}</th>
             </tr>
           </thead>
           <tbody>
@@ -201,7 +203,7 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
                     {line.taxAmount !== null && line.taxAmount > 0n ? money(line.taxAmount) : '—'}
                   </td>
                 )}
-                <td className="doc-num doc-line-total">{money(line.lineTotal)}</td>
+                <td className="doc-num doc-line-total">{money(lineDisplayAmount(line))}</td>
               </tr>
             ))}
           </tbody>

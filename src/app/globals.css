@@ -136,7 +136,11 @@ body { background: var(--color-ink-100); color: var(--color-ink-800); font-famil
     max-width: none !important;
     width: auto !important;
     margin: 0 !important;
-    padding: 0 !important;
+    /* Marge de page nulle (voir PrintControls) : la marge est ici, et se
+       repete en haut de chaque page d un document long. */
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    padding: var(--doc-print-margin, 12mm) !important;
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;

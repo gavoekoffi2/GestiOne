@@ -309,7 +309,13 @@ export function DocumentBuilder({
 
                 <div className="flex flex-col items-end gap-2">
                   <span className="tabular font-semibold text-ink-900">
-                    {formatMoney(totals?.lines[index]?.total ?? 0n, currency, locale)}
+                    {formatMoney(
+                      totals?.lines[index]
+                        ? totals.lines[index]!.gross - totals.lines[index]!.lineDiscount
+                        : 0n,
+                      currency,
+                      locale,
+                    )}
                   </span>
                   {lines.length > 1 && (
                     <button

@@ -19,12 +19,20 @@ import { DOCUMENT_FORMATS, type DocumentFormat } from '@/lib/validation/company'
  * sortira de l'imprimante.
  */
 
+/*
+ * La marge de page est volontairement nulle. Le navigateur imprime de lui-meme,
+ * dans cette marge, l'adresse de la page, la date, le titre et "1/1" : sur un
+ * devis ou une facture remis au client, ces mentions n'ont rien a faire. La
+ * case qui les retire dans la boite d'impression se recoche d'un poste ou
+ * d'une session a l'autre ; sans marge, le navigateur n'a plus ou les ecrire.
+ * La marge visible est portee par la feuille elle-meme (`--doc-print-margin`).
+ */
 const PAGE_RULES: Record<DocumentFormat, string> = {
-  A4: '@page { size: A4; margin: 12mm; }',
-  A5: '@page { size: A5; margin: 8mm; }',
+  A4: '@page { size: A4; margin: 0; } :root { --doc-print-margin: 12mm; }',
+  A5: '@page { size: A5; margin: 0; } :root { --doc-print-margin: 8mm; }',
   // Rouleau thermique : largeur fixe, hauteur libre — un ticket n'a pas de
   // longueur de page, il s'arrete ou le contenu s'arrete.
-  RECEIPT: '@page { size: 80mm auto; margin: 3mm; }',
+  RECEIPT: '@page { size: 80mm auto; margin: 0; } :root { --doc-print-margin: 3mm; }',
 };
 
 export function PrintControls({ defaultFormat }: { defaultFormat: string }) {

@@ -7,6 +7,7 @@ import { InvoiceDocument } from '@/components/commerce/invoice-document';
 import { PrintControls } from '@/components/commerce/print-controls';
 import { formatMoney, toDecimalString } from '@/lib/money';
 import { formatQuantity } from '@/lib/quantity';
+import { lineDisplayAmount } from '@/lib/totals';
 import { getCurrencyFormat } from '@/server/currency';
 import { getCompanyProfile } from '@/server/services/companies';
 import { listPaymentMethods } from '@/server/services/commerce-setup';
@@ -48,7 +49,7 @@ export default async function InvoiceDetailPage({
     '',
     ...invoice.lines.map(
       (line) =>
-        `${formatQuantity(line.quantity, context.locale)} x ${line.description} — ${money(line.lineTotal)}`,
+        `${formatQuantity(line.quantity, context.locale)} x ${line.description} — ${money(lineDisplayAmount(line))}`,
     ),
     '',
     `Total : ${money(invoice.total)}`,

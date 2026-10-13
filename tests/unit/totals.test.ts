@@ -5,6 +5,7 @@ import {
   changeDue,
   computeTotals,
   distributeProportionally,
+  lineDisplayAmount,
   paymentStatus,
   resolveUnitPrice,
   splitEvenly,
@@ -297,5 +298,34 @@ describe('changeDue', () => {
       expect(change === 0n || remaining === 0n).toBe(true);
       expect(tendered - change).toBe(total - remaining);
     }
+  });
+});
+
+describe('lineDisplayAmount', () => {
+  it('n impute pas la remise globale a la ligne (cas du devis signale par le client)', () => {
+    // 1 200 porte-cles a 400 F, remise globale de 10 000 F.
+    const line = { quantity: 1_200_000n, unitPrice: 400n, discountRate: 0 };
+    const totals = computeTotals([line], { amount: 10_000n });
+
+    expect(lineDisplayAmount(line)).toBe(480_000n);
+    expect(totals.subtotal).toBe(480_000n);
+    expect(totals.total).toBe(470_000n);
+  });
+
+  it('deduit la remise propre a la ligne', () => {
+    expect(lineDisplayAmount({ quantity: 2_000n, unitPrice: 1_000n, discountRate: 1_000 })).toBe(
+      1_800n,
+    );
+  });
+
+  it('la colonne des lignes retombe toujours sur le sous-total', () => {
+    const lines = [
+      { quantity: 3_000n, unitPrice: 1_250n, discountRate: 500 },
+      { quantity: 1_500n, unitPrice: 999n, discountRate: 0 },
+      { quantity: 7_000n, unitPrice: 333n, discountRate: 1_250 },
+    ];
+    const totals = computeTotals(lines, { rate: 1_000 });
+    const column = lines.reduce((sum, line) => sum + lineDisplayAmount(line), 0n);
+    expect(column).toBe(totals.subtotal);
   });
 });

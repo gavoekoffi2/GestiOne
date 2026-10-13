@@ -4,6 +4,7 @@ import { Badge, Card } from '@/components/ui/primitives';
 import { PurchaseActions } from '@/components/finance/purchase-actions';
 import { formatMoney, toDecimalString } from '@/lib/money';
 import { formatQuantity, toQuantityString } from '@/lib/quantity';
+import { lineDisplayAmount } from '@/lib/totals';
 import { getCurrencyFormat } from '@/server/currency';
 import { listPaymentMethods } from '@/server/services/commerce-setup';
 import {
@@ -117,7 +118,7 @@ export default async function PurchaseDetailPage({
                     {money(line.unitCost)}
                   </td>
                   <td className="tabular px-4 py-3 text-right font-medium text-ink-900 sm:px-5">
-                    {money(line.lineTotal)}
+                    {money(lineDisplayAmount({ quantity: line.quantity, unitPrice: line.unitCost, discountRate: line.discountRate }))}
                   </td>
                 </tr>
               ))}

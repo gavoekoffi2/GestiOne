@@ -206,6 +206,24 @@ export function computeTotals(
 }
 
 /**
+ * Montant d'une ligne tel qu'il s'affiche sur un document : quantite x prix,
+ * moins la remise propre a la ligne.
+ *
+ * La remise globale n'y figure pas : elle apparait une seule fois, sous le
+ * sous-total. L'imputer aussi sur chaque ligne la faisait lire deux fois
+ * (1 200 x 400 affichait 470 000, puis "Remise - 10 000"), et la colonne ne
+ * tombait plus sur le sous-total.
+ */
+export function lineDisplayAmount(line: {
+  quantity: Quantity;
+  unitPrice: Money;
+  discountRate?: number;
+}): Money {
+  const gross = multiplyByQuantity(line.unitPrice, line.quantity);
+  return gross - applyRate(gross, line.discountRate ?? 0);
+}
+
+/**
  * Prix unitaire applicable selon la quantite commandee.
  *
  * Un prix special negocie prime sur tout ; sinon le prix de gros s'applique a

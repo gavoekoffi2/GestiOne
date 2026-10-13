@@ -32,6 +32,9 @@ export function InvoiceActions({
   canCancel,
   canDeletePayment,
   payments,
+  stockPending = false,
+  locations = [],
+  defaultLocationId = '',
 }: {
   invoiceId: string;
   status: string;
@@ -44,10 +47,17 @@ export function InvoiceActions({
   canCancel: boolean;
   canDeletePayment: boolean;
   payments: Array<{ id: string; label: string }>;
+  /** Facture d'avance dont la marchandise n'est pas encore sortie du stock. */
+  stockPending?: boolean;
+  locations?: Array<{ id: string; label: string }>;
+  defaultLocationId?: string;
 }) {
   const router = useRouter();
   const api = useApi();
-  const [panel, setPanel] = useState<'none' | 'pay' | 'cancel'>('none');
+  const [panel, setPanel] = useState<'none' | 'pay' | 'cancel' | 'deliver'>('none');
+  const [deliveryLocationId, setDeliveryLocationId] = useState(
+    defaultLocationId || locations[0]?.id || '',
+  );
   const [methodId, setMethodId] = useState(methods.find((m) => !m.isCredit)?.id ?? '');
 
   const method = methods.find((entry) => entry.id === methodId);
@@ -79,9 +89,24 @@ export function InvoiceActions({
   async function issue() {
     const result = await api.send(`/api/invoices/${invoiceId}/emettre`, {
       method: 'POST',
-      successMessage: 'Facture emise. Le stock a ete mis a jour.',
+      successMessage: stockPending
+        ? 'Facture emise. Le stock ne bouge pas : facture d avance.'
+        : 'Facture emise. Le stock a ete mis a jour.',
     });
     if (result) router.refresh();
+  }
+
+  async function deliver(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const result = await api.send(`/api/invoices/${invoiceId}/sortir-stock`, {
+      method: 'POST',
+      body: { locationId: deliveryLocationId || undefined },
+      successMessage: 'Livraison enregistree : le stock a ete mis a jour.',
+    });
+    if (result) {
+      setPanel('none');
+      router.refresh();
+    }
   }
 
   async function cancel(event: FormEvent<HTMLFormElement>) {
@@ -127,6 +152,15 @@ export function InvoiceActions({
           {canPay && !isDraft && !isCancelled && !isSettled && (
             <Button type="button" onClick={() => { api.reset(); setPanel('pay'); }}>
               Enregistrer un paiement
+            </Button>
+          )}
+          {canIssue && stockPending && !isDraft && !isCancelled && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => { api.reset(); setPanel('deliver'); }}
+            >
+              Sortir le stock maintenant
             </Button>
           )}
           {canCancel && !isCancelled && (
@@ -198,11 +232,52 @@ export function InvoiceActions({
         </Card>
       )}
 
+      {panel === 'deliver' && (
+        <Card title="Livrer la marchandise">
+          <form onSubmit={deliver} className="space-y-4" noValidate>
+            <Alert tone="info">
+              Cette facture d&apos;avance n&apos;a pas encore deduit le stock. Confirmez la
+              livraison : les articles suivis sortiront du stock du point de vente choisi.
+            </Alert>
+            {locations.length > 0 && (
+              <Field
+                label="Point de vente"
+                htmlFor="delivery-location"
+                error={api.fieldErrors.locationId}
+              >
+                <Select
+                  id="delivery-location"
+                  value={deliveryLocationId}
+                  onChange={(event) => setDeliveryLocationId(event.target.value)}
+                >
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" disabled={api.pending}>
+                {api.pending ? 'Enregistrement...' : 'Confirmer la sortie de stock'}
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => { setPanel('none'); api.reset(); }}>
+                Revenir
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
+
       {panel === 'cancel' && (
         <Card title="Annuler la facture">
           <form onSubmit={cancel} className="space-y-4" noValidate>
             <Alert tone="warning">
-              Le stock sorti sera restitue. Les paiements deja recus sont conserves : leur
+              {stockPending
+                ? 'Aucun stock n a ete sorti pour cette facture d avance : rien ne sera restitue.'
+                : 'Le stock sorti sera restitue.'}{' '}
+              Les paiements deja recus sont conserves : leur
               remboursement est une decision commerciale, a enregistrer separement.
             </Alert>
             <Field label="Motif" htmlFor="reason" required error={api.fieldErrors.reason}>

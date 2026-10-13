@@ -184,6 +184,8 @@ export function invoiceSchema(decimals: number) {
       notes: optionalText(1000),
       terms: optionalText(1000),
       issue: z.coerce.boolean().default(false),
+      /** false : facture d'avance, encaissable sans sortie de stock. */
+      affectsStock: z.boolean().default(true),
     },
     decimals,
   );
@@ -252,6 +254,12 @@ export const convertQuoteSchema = z.object({
   issue: z.coerce.boolean().default(true),
   locationId: optionalId,
   dueDate: optionalDate,
+  /** false : facture d'avance, encaissable sans sortie de stock. */
+  affectsStock: z.boolean().default(true),
+});
+
+export const releaseStockSchema = z.object({
+  locationId: optionalId,
 });
 
 export const cancelSchema = z.object({

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Alert, Button, Card, Field, Select } from '@/components/ui/primitives';
 import { useApi } from '@/components/ui/use-api';
+import { AdvanceInvoiceOption } from '@/components/commerce/advance-invoice-option';
 
 /**
  * Actions sur un devis. Seules les transitions reellement autorisees par le
@@ -31,6 +32,7 @@ export function QuoteActions({
   const [converting, setConverting] = useState(false);
   const [locationId, setLocationId] = useState(defaultLocationId);
   const [issueNow, setIssueNow] = useState(true);
+  const [advance, setAdvance] = useState(false);
 
   async function setStatus(status: string) {
     const result = await api.send(`/api/quotes/${quoteId}/statut`, {
@@ -44,7 +46,7 @@ export function QuoteActions({
   async function convert() {
     const result = await api.send<{ invoiceId: string }>(`/api/quotes/${quoteId}/convertir`, {
       method: 'POST',
-      body: { issue: issueNow, locationId: locationId || undefined },
+      body: { issue: issueNow, locationId: locationId || undefined, affectsStock: !advance },
     });
     if (result) router.push(`/factures/${result.invoiceId}`);
   }
@@ -91,6 +93,8 @@ export function QuoteActions({
                 </span>
               </span>
             </label>
+
+            <AdvanceInvoiceOption checked={advance} onChange={setAdvance} />
 
             <div className="flex flex-wrap gap-2">
               <Button type="button" onClick={convert} disabled={api.pending}>

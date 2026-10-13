@@ -7,6 +7,7 @@ import { Combobox, EMPTY_COMBOBOX, type ComboboxValue } from '@/components/ui/co
 import { Icon } from '@/components/layout/icons';
 import { MoneyInput } from '@/components/ui/money-input';
 import { useApi } from '@/components/ui/use-api';
+import { AdvanceInvoiceOption } from '@/components/commerce/advance-invoice-option';
 import { computeTotals, type LineInput } from '@/lib/totals';
 import { formatMoney, parseAmount, type CurrencyFormat } from '@/lib/money';
 import { parseQuantity } from '@/lib/quantity';
@@ -105,6 +106,7 @@ export function DocumentBuilder({
   const [locationId, setLocationId] = useState(defaultLocationId);
   const [globalDiscount, setGlobalDiscount] = useState('');
   const [issueNow, setIssueNow] = useState(kind === 'invoice');
+  const [advance, setAdvance] = useState(false);
 
   const totals = useMemo(() => {
     const input: LineInput[] = lines.map((line) => {
@@ -159,7 +161,10 @@ export function DocumentBuilder({
           taxRateId: line.taxRateId || undefined,
         })),
     };
-    if (kind === 'invoice') payload.issue = issueNow;
+    if (kind === 'invoice') {
+      payload.issue = issueNow;
+      payload.affectsStock = !advance;
+    }
 
     const result = await api.send<{ id: string }>(endpoint, { method: 'POST', body: payload });
     if (result) router.push(`${basePath}/${result.id}`);
@@ -194,7 +199,9 @@ export function DocumentBuilder({
               error={api.fieldErrors.locationId}
               hint={
                 kind === 'invoice'
-                  ? "Le stock des articles suivis sortira de ce point de vente a l'emission."
+                  ? advance
+                    ? 'Facture d avance : le stock ne sortira qu a la livraison.'
+                    : "Le stock des articles suivis sortira de ce point de vente a l'emission."
                   : undefined
               }
             >
@@ -367,6 +374,8 @@ export function DocumentBuilder({
                 </span>
               </label>
             )}
+
+            {kind === 'invoice' && <AdvanceInvoiceOption checked={advance} onChange={setAdvance} />}
           </div>
 
           <dl className="space-y-1 rounded-lg bg-ink-50 p-3 text-sm">

@@ -292,7 +292,7 @@ export async function changeQuoteStatus(
 export async function convertQuoteToInvoice(
   context: QuoteContext,
   quoteId: string,
-  options: { issue?: boolean; locationId?: string; dueDate?: Date } = {},
+  options: { issue?: boolean; locationId?: string; dueDate?: Date; affectsStock?: boolean } = {},
 ) {
   const quote = await prisma.quote.findFirst({
     where: { id: quoteId, companyId: context.companyId },
@@ -314,6 +314,7 @@ export async function convertQuoteToInvoice(
     locationId: options.locationId ?? quote.locationId ?? undefined,
     dueDate: options.dueDate,
     issue: options.issue ?? false,
+    affectsStock: options.affectsStock ?? true,
     notes: quote.notes ?? undefined,
     terms: quote.terms ?? undefined,
     // La remise globale est reprise telle qu'elle a ete accordee au client :

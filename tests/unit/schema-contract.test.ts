@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { paymentSchema, invoiceSchema, saleSchema } from '@/lib/validation/commerce';
+import {
+  convertQuoteSchema,
+  invoiceSchema,
+  paymentSchema,
+  releaseStockSchema,
+  saleSchema,
+} from '@/lib/validation/commerce';
 import { purchaseSchema, expenseSchema } from '@/lib/validation/finance';
 import { quoteSchema } from '@/lib/validation/commerce';
 import { updateCompanySchema } from '@/lib/validation/company';
@@ -92,6 +98,20 @@ describe('invoiceSchema', () => {
       discountRate: 1_000,
       taxRateId: 'tax_1',
     });
+  });
+
+  it("conserve le choix 'facture d avance' et sort le stock par defaut", () => {
+    const line = { quantity: '1', unitPrice: '100' };
+    expect(invoiceSchema(0).parse({ lines: [line] }).affectsStock).toBe(true);
+    expect(invoiceSchema(0).parse({ lines: [line], affectsStock: false }).affectsStock).toBe(false);
+  });
+});
+
+describe('convertQuoteSchema et releaseStockSchema', () => {
+  it('transmettent la facture d avance et le point de livraison', () => {
+    expect(convertQuoteSchema.parse({ affectsStock: false }).affectsStock).toBe(false);
+    expect(convertQuoteSchema.parse({}).affectsStock).toBe(true);
+    expect(releaseStockSchema.parse({ locationId: 'loc_1' }).locationId).toBe('loc_1');
   });
 });
 

@@ -52,6 +52,12 @@ export interface CreateInvoiceInput {
   terms?: string;
   /** Emettre immediatement : sort le stock et rend la facture exigible. */
   issue?: boolean;
+  /**
+   * `false` : facture d'avance. Elle s'encaisse sans sortir le stock ; la
+   * marchandise sortira a la livraison (`releaseInvoiceStock`). Par defaut,
+   * une facture sort son stock comme toujours.
+   */
+  affectsStock?: boolean;
   origin?: 'INVOICE' | 'POS';
 }
 
@@ -192,7 +198,13 @@ export async function createInvoice(context: ServiceContext, input: CreateInvoic
   if (input.locationId) await assertLocation(context.companyId, input.locationId);
 
   const issue = input.issue ?? false;
-  if (issue && !input.locationId && resolved.some((line) => line.product?.trackStock)) {
+  const affectsStock = input.affectsStock ?? true;
+  if (
+    issue &&
+    affectsStock &&
+    !input.locationId &&
+    resolved.some((line) => line.product?.trackStock)
+  ) {
     throw new ValidationError(
       'Precisez le point de vente : les articles suivis en stock doivent en sortir de quelque part.',
     );
@@ -244,6 +256,7 @@ export async function createInvoice(context: ServiceContext, input: CreateInvoic
         paidAmount: 0n,
         balanceDue: issue ? totals.total : 0n,
         costTotal,
+        affectsStock,
         notes: input.notes ?? null,
         terms: input.terms ?? null,
         userId: context.userId,
@@ -267,7 +280,7 @@ export async function createInvoice(context: ServiceContext, input: CreateInvoic
       include: { lines: true },
     });
 
-    if (issue) {
+    if (issue && affectsStock) {
       await releaseStock(tx, context, invoice.id, input.locationId ?? null, resolved, number);
     }
 
@@ -277,7 +290,9 @@ export async function createInvoice(context: ServiceContext, input: CreateInvoic
       action: 'CREATE',
       entityType: 'Invoice',
       entityId: invoice.id,
-      summary: `Facture ${number} creee (${issue ? 'emise' : 'brouillon'})`,
+      summary: `Facture ${number} creee (${issue ? 'emise' : 'brouillon'}${
+        affectsStock ? '' : ', sans sortie de stock'
+      })`,
       metadata: { total: totals.total.toString() },
     });
 
@@ -326,7 +341,10 @@ export async function issueInvoice(context: ServiceContext, invoiceId: string) {
     throw new ConflictError(`Cette facture est deja ${INVOICE_STATUS_LABELS[invoice.status as InvoiceStatus].toLowerCase()}.`);
   }
 
-  const tracked = invoice.lines.filter((line) => line.product?.trackStock);
+  // Une facture d'avance s'emet sans toucher au stock.
+  const tracked = invoice.affectsStock
+    ? invoice.lines.filter((line) => line.product?.trackStock)
+    : [];
   if (tracked.length > 0 && !invoice.locationId) {
     throw new ValidationError(
       'Precisez le point de vente de la facture avant de l emettre : les articles suivis en stock doivent en sortir.',
@@ -366,6 +384,79 @@ export async function issueInvoice(context: ServiceContext, invoiceId: string) {
 }
 
 /**
+ * Sort le stock d'une facture d'avance, a la livraison de la marchandise.
+ *
+ * L'operation n'a lieu qu'une fois : le passage de `affectsStock` a `true` est
+ * conditionne a sa valeur precedente dans la meme transaction, si bien que
+ * deux clics simultanes ne sortent pas le stock deux fois. Une fois sorti, le
+ * stock suit le sort habituel de la facture (rendu en cas d'annulation).
+ */
+export async function releaseInvoiceStock(
+  context: ServiceContext,
+  invoiceId: string,
+  options: { locationId?: string } = {},
+) {
+  const invoice = await prisma.invoice.findFirst({
+    where: { id: invoiceId, companyId: context.companyId },
+    include: { lines: { include: { product: true } } },
+  });
+  if (!invoice) throw new NotFoundError('Facture introuvable.');
+  if (invoice.affectsStock) {
+    throw new ConflictError('Le stock de cette facture est deja sorti.');
+  }
+  if (invoice.status === 'DRAFT') {
+    throw new ValidationError("Emettez d'abord la facture.");
+  }
+  if (invoice.status === 'CANCELLED') {
+    throw new ConflictError('Cette facture est annulee : aucun stock ne doit en sortir.');
+  }
+
+  const locationId = options.locationId ?? invoice.locationId ?? undefined;
+  if (options.locationId) await assertLocation(context.companyId, options.locationId);
+
+  const tracked = invoice.lines.filter((line) => line.product?.trackStock);
+  if (tracked.length > 0 && !locationId) {
+    throw new ValidationError(
+      'Precisez le point de vente : les articles suivis en stock doivent en sortir de quelque part.',
+    );
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const claimed = await tx.invoice.updateMany({
+      where: { id: invoiceId, affectsStock: false, status: { notIn: ['DRAFT', 'CANCELLED'] } },
+      data: { affectsStock: true, locationId: locationId ?? null },
+    });
+    if (claimed.count === 0) {
+      throw new ConflictError('Le stock de cette facture vient deja d etre sorti.');
+    }
+
+    for (const line of tracked) {
+      await applyMovement(tx, {
+        companyId: context.companyId,
+        productId: line.productId as string,
+        locationId: locationId as string,
+        kind: 'OUT',
+        delta: -line.quantity,
+        reason: `Livraison facture ${invoice.number}`,
+        reference: invoice.number,
+        userId: context.userId,
+      });
+    }
+
+    await recordAuditTx(tx, {
+      companyId: context.companyId,
+      userId: context.userId,
+      action: 'UPDATE',
+      entityType: 'Invoice',
+      entityId: invoiceId,
+      summary: `Facture ${invoice.number} : stock sorti a la livraison`,
+    });
+
+    return tx.invoice.findUniqueOrThrow({ where: { id: invoiceId } });
+  });
+}
+
+/**
  * Annule une facture : le stock sorti est **rendu** par des mouvements
  * inverses, et les paiements deja recus sont conserves — les rembourser est une
  * decision commerciale, pas une consequence automatique de l'annulation.
@@ -387,7 +478,9 @@ export async function cancelInvoice(
   }
 
   return prisma.$transaction(async (tx) => {
-    if (invoice.status !== 'DRAFT' && invoice.locationId) {
+    // Rien n'est rendu au stock pour une facture d'avance dont la marchandise
+    // n'est jamais sortie.
+    if (invoice.status !== 'DRAFT' && invoice.affectsStock && invoice.locationId) {
       for (const line of invoice.lines) {
         if (!line.product?.trackStock) continue;
         await applyMovement(tx, {

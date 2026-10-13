@@ -7,6 +7,7 @@ import {
   isOverdue,
   issueInvoice,
   listInvoices,
+  releaseInvoiceStock,
 } from '@/server/services/invoices';
 import { recordPayment, deletePayment, partnerBalance } from '@/server/services/payments';
 import { createProduct } from '@/server/services/catalog';
@@ -610,5 +611,168 @@ describe('listInvoices et retards', () => {
     });
 
     expect((await listInvoices(alpha.companyId, { page: 1, pageSize: 25 })).total).toBe(0);
+  });
+});
+
+describe("facture d'avance (sans sortie de stock)", () => {
+  const stockOf = (s: { companyId: string; productId: string; locationId: string }) =>
+    recomputeStockFromMovements(s.companyId, s.productId, s.locationId);
+
+  it('par defaut, une facture emise sort toujours le stock', async () => {
+    const s = await setup();
+    const invoice = await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      issue: true,
+      lines: [{ productId: s.productId, quantity: 5_000n }],
+    });
+    expect(invoice.affectsStock).toBe(true);
+    expect(await stockOf(s)).toBe(95_000n);
+  });
+
+  it('s emet et s encaisse sans toucher au stock', async () => {
+    const s = await setup();
+    const invoice = await createInvoice(s.ctx, {
+      customerId: s.customerId,
+      locationId: s.locationId,
+      issue: true,
+      affectsStock: false,
+      lines: [{ productId: s.productId, quantity: 5_000n }],
+    });
+    expect(invoice.status).toBe('ISSUED');
+    expect(invoice.affectsStock).toBe(false);
+
+    await recordPayment(s.ctx, {
+      direction: 'IN',
+      amount: 30_000n,
+      invoiceId: invoice.id,
+      methodId: s.cashId,
+    });
+
+    const after = await getInvoice(s.companyId, invoice.id);
+    expect(after.status).toBe('PARTIALLY_PAID');
+    expect(after.paidAmount).toBe(30_000n);
+    expect(await stockOf(s)).toBe(100_000n);
+  });
+
+  it('n exige pas de point de vente', async () => {
+    const s = await setup();
+    const invoice = await createInvoice(s.ctx, {
+      issue: true,
+      affectsStock: false,
+      lines: [{ productId: s.productId, quantity: 5_000n }],
+    });
+    expect(invoice.status).toBe('ISSUED');
+  });
+
+  it('un brouillon d avance emis plus tard ne sort pas non plus le stock', async () => {
+    const s = await setup();
+    const draft = await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      affectsStock: false,
+      lines: [{ productId: s.productId, quantity: 5_000n }],
+    });
+    await issueInvoice(s.ctx, draft.id);
+    expect(await stockOf(s)).toBe(100_000n);
+  });
+
+  it('sort le stock a la livraison, une seule fois', async () => {
+    const s = await setup();
+    const invoice = await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      issue: true,
+      affectsStock: false,
+      lines: [{ productId: s.productId, quantity: 5_000n }],
+    });
+
+    const delivered = await releaseInvoiceStock(s.ctx, invoice.id);
+    expect(delivered.affectsStock).toBe(true);
+    expect(await stockOf(s)).toBe(95_000n);
+
+    await expect(releaseInvoiceStock(s.ctx, invoice.id)).rejects.toThrow(ConflictError);
+    expect(await stockOf(s)).toBe(95_000n);
+  });
+
+  it('deux livraisons simultanees ne sortent le stock qu une fois', async () => {
+    const s = await setup();
+    const invoice = await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      issue: true,
+      affectsStock: false,
+      lines: [{ productId: s.productId, quantity: 5_000n }],
+    });
+
+    const results = await Promise.allSettled([
+      releaseInvoiceStock(s.ctx, invoice.id),
+      releaseInvoiceStock(s.ctx, invoice.id),
+    ]);
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect(await stockOf(s)).toBe(95_000n);
+  });
+
+  it('exige un point de vente a la livraison quand la facture n en a pas', async () => {
+    const s = await setup();
+    const invoice = await createInvoice(s.ctx, {
+      issue: true,
+      affectsStock: false,
+      lines: [{ productId: s.productId, quantity: 5_000n }],
+    });
+
+    await expect(releaseInvoiceStock(s.ctx, invoice.id)).rejects.toThrow(ValidationError);
+    await releaseInvoiceStock(s.ctx, invoice.id, { locationId: s.locationId });
+    expect(await stockOf(s)).toBe(95_000n);
+  });
+
+  it('refuse la livraison d un brouillon ou d une facture annulee', async () => {
+    const s = await setup();
+    const draft = await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      affectsStock: false,
+      lines: [{ productId: s.productId, quantity: 5_000n }],
+    });
+    await expect(releaseInvoiceStock(s.ctx, draft.id)).rejects.toThrow(ValidationError);
+
+    await issueInvoice(s.ctx, draft.id);
+    await cancelInvoice(s.ctx, draft.id, 'Commande abandonnee');
+    await expect(releaseInvoiceStock(s.ctx, draft.id)).rejects.toThrow(ConflictError);
+    expect(await stockOf(s)).toBe(100_000n);
+  });
+
+  it('l annulation ne rend rien tant que le stock n est pas sorti', async () => {
+    const s = await setup();
+    const invoice = await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      issue: true,
+      affectsStock: false,
+      lines: [{ productId: s.productId, quantity: 5_000n }],
+    });
+    await cancelInvoice(s.ctx, invoice.id, 'Avance remboursee');
+    expect(await stockOf(s)).toBe(100_000n);
+  });
+
+  it('une fois livree, l annulation rend le stock comme d habitude', async () => {
+    const s = await setup();
+    const invoice = await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      issue: true,
+      affectsStock: false,
+      lines: [{ productId: s.productId, quantity: 5_000n }],
+    });
+    await releaseInvoiceStock(s.ctx, invoice.id);
+    await cancelInvoice(s.ctx, invoice.id, 'Retour marchandise');
+    expect(await stockOf(s)).toBe(100_000n);
+  });
+
+  it('ne livre pas la facture d une autre entreprise', async () => {
+    const s = await setup();
+    const other = await createTestCompany();
+    const otherCtx = await serviceContext(other.companyId, other.userId);
+    const invoice = await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      issue: true,
+      affectsStock: false,
+      lines: [{ productId: s.productId, quantity: 5_000n }],
+    });
+    await expect(releaseInvoiceStock(otherCtx, invoice.id)).rejects.toThrow(NotFoundError);
+    expect(await stockOf(s)).toBe(100_000n);
   });
 });

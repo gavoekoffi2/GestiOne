@@ -632,6 +632,10 @@ model Invoice {
   balanceDue     BigInt @default(0)
   /// Cout d'achat total des lignes, fige a l'emission (marge des rapports).
   costTotal      BigInt @default(0)
+  /// false : facture d'avance (acompte). Elle s'encaisse normalement mais ne
+  /// sort pas le stock ; la marchandise sortira a la livraison, depuis la
+  /// facture. Repasse a true une fois le stock sorti.
+  affectsStock   Boolean @default(true)
 
   notes      String?
   terms      String?

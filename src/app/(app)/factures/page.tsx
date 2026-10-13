@@ -145,6 +145,9 @@ export default async function InvoicesPage({
                           {invoice.origin === 'POS' && (
                             <p className="text-xs text-ink-400">Vente au comptoir</p>
                           )}
+                          {!invoice.affectsStock && invoice.status !== 'CANCELLED' && (
+                            <p className="text-xs text-amber-700">Avance · stock non sorti</p>
+                          )}
                         </td>
                         <td className="tabular whitespace-nowrap px-4 py-3 text-ink-600">
                           {invoice.issueDate.toLocaleDateString('fr-FR')}

@@ -11,6 +11,7 @@ import { lineDisplayAmount } from '@/lib/totals';
 import { getCurrencyFormat } from '@/server/currency';
 import { getCompanyProfile } from '@/server/services/companies';
 import { listPaymentMethods } from '@/server/services/commerce-setup';
+import { listLocations } from '@/server/services/locations';
 import {
   INVOICE_STATUS_LABELS,
   getInvoice,
@@ -30,12 +31,14 @@ export default async function InvoiceDetailPage({
   const context = await requireTenantWith('invoices.read');
   const { id } = await params;
 
-  const [invoice, company, currency, methods] = await Promise.all([
+  const [invoice, company, currency, methods, locations] = await Promise.all([
     getInvoice(context.companyId, id),
     getCompanyProfile(context.companyId),
     getCurrencyFormat(context.currencyCode),
     listPaymentMethods(context.companyId),
+    listLocations(context.companyId),
   ]);
+  const activeLocations = locations.filter((location) => location.isActive);
 
   const overdue = isOverdue(invoice);
   const money = (amount: bigint) => formatMoney(amount, currency, context.locale);
@@ -91,6 +94,9 @@ export default async function InvoiceDetailPage({
                 : INVOICE_STATUS_LABELS[invoice.status as InvoiceStatus] ?? invoice.status}
             </Badge>
             {invoice.origin === 'POS' && <Badge>Vente au comptoir</Badge>}
+            {!invoice.affectsStock && invoice.status !== 'CANCELLED' && (
+              <Badge tone="warning">Facture d&apos;avance · stock non sorti</Badge>
+            )}
           </div>
         </div>
         <div className="flex flex-wrap items-end gap-2">
@@ -123,6 +129,11 @@ export default async function InvoiceDetailPage({
           id: payment.id,
           label: `${payment.number} · ${money(payment.amount)} · ${payment.paidAt.toLocaleDateString('fr-FR')}`,
         }))}
+        stockPending={!invoice.affectsStock}
+        locations={activeLocations.map((location) => ({ id: location.id, label: location.name }))}
+        defaultLocationId={
+          invoice.locationId ?? context.defaultLocationId ?? activeLocations[0]?.id ?? ''
+        }
       />
 
       {/* Le document imprimable proprement dit. */}

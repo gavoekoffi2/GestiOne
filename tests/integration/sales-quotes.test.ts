@@ -170,6 +170,25 @@ describe('conversion devis vers facture', () => {
     expect(converted.invoiceId).toBe(invoice.id);
   });
 
+  it('convertit en facture d avance sans sortir le stock', async () => {
+    const s = await setup();
+    const quote = await createQuote(s.ctx, {
+      customerId: s.customerId,
+      locationId: s.locationId,
+      lines: [{ productId: s.productId, quantity: 10_000n }],
+    });
+    await changeQuoteStatus(s.ctx, quote.id, 'ACCEPTED');
+
+    const invoice = await convertQuoteToInvoice(s.ctx, quote.id, {
+      issue: true,
+      affectsStock: false,
+    });
+
+    expect(invoice.status).toBe('ISSUED');
+    expect(invoice.affectsStock).toBe(false);
+    expect(await recomputeStockFromMovements(s.companyId, s.productId, s.locationId)).toBe(100_000n);
+  });
+
   it('conserve le prix accepte meme si le catalogue a change', async () => {
     const s = await setup();
     const quote = await createQuote(s.ctx, {

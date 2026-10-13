@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { z } from 'zod';
-import { Badge, Card, EmptyState, Select } from '@/components/ui/primitives';
+import { Badge, ButtonLink, Card, EmptyState, Select } from '@/components/ui/primitives';
 import { Icon } from '@/components/layout/icons';
 import { formatMoney } from '@/lib/money';
 import { getCurrencyFormat } from '@/server/currency';
 import { INVOICE_STATUS_LABELS, isOverdue, listInvoices, type InvoiceStatus } from '@/server/services/invoices';
-import { requireTenantWith } from '@/server/tenant';
+import { can, requireTenantWith } from '@/server/tenant';
 
 export const metadata: Metadata = { title: 'Factures' };
 export const dynamic = 'force-dynamic';
@@ -63,9 +63,18 @@ export default async function InvoicesPage({
             Toutes vos factures, y compris celles issues des ventes au comptoir.
           </p>
         </div>
-        <Link href="/ventes" className="text-sm font-semibold text-brand-700 hover:underline">
-          Nouvelle vente
-        </Link>
+        {/* La page n'offrait que la vente au comptoir : impossible d'y creer une
+            facture classique (ni, donc, une facture d'avance). */}
+        <div className="flex flex-wrap gap-2">
+          {can(context, 'sales.create') && (
+            <ButtonLink href="/ventes" variant="secondary">
+              Vente au comptoir
+            </ButtonLink>
+          )}
+          {can(context, 'invoices.write') && (
+            <ButtonLink href="/factures/nouvelle">Nouvelle facture</ButtonLink>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">

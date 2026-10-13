@@ -15,7 +15,7 @@ export const GET = handler(async (request: NextRequest) => {
 });
 
 export const POST = handler(async (request: NextRequest) => {
-  const context = await requireTenantWith('products.write');
+  const context = await requireTenantWith('products.create');
   const currency = await getCurrencyFormat(context.currencyCode);
   const input = await readJson(request, productSchema(currency.decimals));
   if ((input.initialQuantity ?? 0n) > 0n && !can(context, 'stock.move')) {

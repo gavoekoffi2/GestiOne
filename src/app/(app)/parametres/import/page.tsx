@@ -29,7 +29,7 @@ export default async function ImportPage() {
         <ImportWizard target="clients" label="Clients" requiredColumns={['Nom']} />
       )}
 
-      {can(context, 'products.write') && (
+      {can(context, 'products.create') && (
         <ImportWizard
           target="produits"
           label="Produits"

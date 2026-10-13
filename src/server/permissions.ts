@@ -35,7 +35,11 @@ export const PERMISSION_GROUPS = [
     label: 'Produits et services',
     permissions: [
       { key: 'products.read', label: 'Consulter le catalogue' },
-      { key: 'products.write', label: 'Creer et modifier les articles' },
+      // Creer et modifier sont deux droits distincts : un employe peut saisir de
+      // nouveaux articles sans pouvoir les retoucher ensuite, meme les siens.
+      // Une erreur de saisie se corrige alors par un administrateur.
+      { key: 'products.create', label: 'Creer des articles' },
+      { key: 'products.update', label: 'Modifier les articles existants' },
       { key: 'products.delete', label: 'Supprimer les articles' },
       { key: 'products.cost.read', label: "Voir les prix d'achat" },
     ],
@@ -216,7 +220,8 @@ export const SYSTEM_ROLES: SystemRoleDefinition[] = [
     permissions: [
       'dashboard.view',
       'products.read',
-      'products.write',
+      'products.create',
+      'products.update',
       'products.cost.read',
       'suppliers.read',
       'stock.read',

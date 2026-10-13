@@ -84,7 +84,8 @@ export function ProductManager({
   page,
   pageCount,
   total,
-  canWrite,
+  canCreate,
+  canUpdate,
   canDelete,
   canSeeCost,
 }: {
@@ -97,7 +98,10 @@ export function ProductManager({
   page: number;
   pageCount: number;
   total: number;
-  canWrite: boolean;
+  /** Ajouter un article. */
+  canCreate: boolean;
+  /** Modifier un article existant — droit distinct de la creation. */
+  canUpdate: boolean;
   canDelete: boolean;
   canSeeCost: boolean;
 }) {
@@ -397,7 +401,7 @@ export function ProductManager({
           </form>
         </Card>
       ) : (
-        canWrite && (
+        canCreate && (
           <Button type="button" onClick={() => startEdit('new')}>
             Ajouter un article
           </Button>
@@ -476,7 +480,7 @@ export function ProductManager({
                       )}
                       <td className="px-4 py-3 text-right sm:px-5">
                         <div className="flex justify-end gap-1">
-                          {canWrite && (
+                          {canUpdate && (
                             <Button
                               type="button"
                               variant="ghost"

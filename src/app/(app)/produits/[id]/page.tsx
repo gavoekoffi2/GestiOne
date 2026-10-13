@@ -78,7 +78,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           </p>
         </div>
 
-        {can(context, 'products.write') && (
+        {can(context, 'products.update') && (
           <ButtonLink href="/produits" variant="secondary">
             Modifier dans le catalogue
           </ButtonLink>

@@ -33,12 +33,14 @@ export interface UnitRow {
 export function OrganisationManager({
   categories,
   units,
-  canWrite,
+  canCreate,
+  canUpdate,
   canDelete,
 }: {
   categories: CategoryRow[];
   units: UnitRow[];
-  canWrite: boolean;
+  canCreate: boolean;
+  canUpdate: boolean;
   canDelete: boolean;
 }) {
   const router = useRouter();
@@ -107,7 +109,7 @@ export function OrganisationManager({
         title="Categories"
         description="Classez vos articles pour les retrouver plus vite et analyser vos ventes par famille."
         action={
-          canWrite &&
+          canCreate &&
           !category && (
             <Button
               type="button"
@@ -184,7 +186,7 @@ export function OrganisationManager({
                   </p>
                   <p className="text-xs text-ink-500">{row.productCount} article(s)</p>
                 </div>
-                {canWrite && (
+                {canUpdate && (
                   <Button
                     type="button"
                     variant="ghost"
@@ -215,7 +217,7 @@ export function OrganisationManager({
         title="Unites de mesure"
         description="GestiOne fournit les unites courantes. Ajoutez les votres : regime, casier, botte, bidon de 20 L..."
         action={
-          canWrite &&
+          canCreate &&
           !unit && (
             <Button
               type="button"
@@ -280,7 +282,7 @@ export function OrganisationManager({
                 <Badge tone="info">Fournie</Badge>
               ) : (
                 <>
-                  {canWrite && (
+                  {canUpdate && (
                     <Button
                       type="button"
                       variant="ghost"

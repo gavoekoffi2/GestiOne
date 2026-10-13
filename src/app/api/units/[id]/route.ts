@@ -6,7 +6,7 @@ import { requireTenantWith } from '@/server/tenant';
 import { clientIp, handler, jsonOk, readJson } from '@/server/http';
 
 export const PUT = handler(async (request: NextRequest, { params }) => {
-  const context = await requireTenantWith('products.write');
+  const context = await requireTenantWith('products.update');
   const { id } = await params;
   const unit = await updateUnit(context.companyId, id as string, await readJson(request, unitSchema));
 

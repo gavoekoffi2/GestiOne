@@ -28,7 +28,8 @@ export default async function OrganisationPage() {
       </div>
 
       <OrganisationManager
-        canWrite={can(context, 'products.write')}
+        canCreate={can(context, 'products.create')}
+        canUpdate={can(context, 'products.update')}
         canDelete={can(context, 'products.delete')}
         categories={categories.map((category) => ({
           id: category.id,

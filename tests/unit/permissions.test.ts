@@ -71,7 +71,21 @@ describe('roles systeme', () => {
   it('donne au caissier la caisse mais pas la modification du catalogue', () => {
     const cashier = SYSTEM_ROLES.find((role) => role.key === 'CASHIER')!;
     expect(hasPermission(cashier.permissions, 'cash.operate')).toBe(true);
-    expect(hasPermission(cashier.permissions, 'products.write')).toBe(false);
+    expect(hasPermission(cashier.permissions, 'products.create')).toBe(false);
+    expect(hasPermission(cashier.permissions, 'products.update')).toBe(false);
+  });
+
+  it('separe la creation et la modification des articles', () => {
+    // Un role qui ne peut que creer ne peut pas retoucher, meme ses propres articles.
+    const creatorOnly = ['products.read', 'products.create'];
+    expect(hasPermission(creatorOnly, 'products.create')).toBe(true);
+    expect(hasPermission(creatorOnly, 'products.update')).toBe(false);
+    expect(hasPermission(creatorOnly, 'products.delete')).toBe(false);
+
+    // Le gestionnaire de stock garde les deux droits qu'il avait deja.
+    const stock = SYSTEM_ROLES.find((role) => role.key === 'STOCK')!;
+    expect(hasPermission(stock.permissions, 'products.create')).toBe(true);
+    expect(hasPermission(stock.permissions, 'products.update')).toBe(true);
   });
 
   it('donne au gestionnaire de stock les mouvements mais pas les ventes', () => {

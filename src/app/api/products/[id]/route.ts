@@ -13,7 +13,7 @@ export const GET = handler(async (_request: NextRequest, { params }) => {
 });
 
 export const PUT = handler(async (request: NextRequest, { params }) => {
-  const context = await requireTenantWith('products.write');
+  const context = await requireTenantWith('products.update');
   const { id } = await params;
   const currency = await getCurrencyFormat(context.currencyCode);
   const input = await readJson(request, productSchema(currency.decimals));

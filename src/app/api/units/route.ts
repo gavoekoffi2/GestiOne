@@ -11,7 +11,7 @@ export const GET = handler(async () => {
 });
 
 export const POST = handler(async (request: NextRequest) => {
-  const context = await requireTenantWith('products.write');
+  const context = await requireTenantWith('products.create');
   const input = await readJson(request, unitSchema);
   const unit = await createUnit(context.companyId, input);
 

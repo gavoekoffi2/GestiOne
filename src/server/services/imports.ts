@@ -67,7 +67,7 @@ const PRODUCT_COLUMNS: ColumnDefinition[] = [
 
 export const IMPORT_TARGETS = {
   clients: { label: 'Clients', columns: CUSTOMER_COLUMNS, permission: 'customers.write' },
-  produits: { label: 'Produits', columns: PRODUCT_COLUMNS, permission: 'products.write' },
+  produits: { label: 'Produits', columns: PRODUCT_COLUMNS, permission: 'products.create' },
 } as const;
 
 export type ImportTarget = keyof typeof IMPORT_TARGETS;

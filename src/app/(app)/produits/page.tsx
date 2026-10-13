@@ -69,7 +69,8 @@ export default async function ProductsPage({
         pageCount={result.pageCount}
         total={result.total}
         currency={{ symbol: currency.symbol, decimals: currency.decimals }}
-        canWrite={can(context, 'products.write')}
+        canCreate={can(context, 'products.create')}
+        canUpdate={can(context, 'products.update')}
         canDelete={can(context, 'products.delete')}
         canSeeCost={canSeeCost}
         categories={categories.map((category) => ({

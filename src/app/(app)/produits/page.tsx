@@ -102,7 +102,9 @@ export default async function ProductsPage({
             supplierId: item.supplierId ?? '',
             supplierName: item.supplier?.name ?? '',
             imageUrl: item.imageUrl ?? '',
-            costPrice: toDecimalString(item.costPrice, currency.decimals),
+            // Jamais envoye a qui n'a pas le droit de le voir : masquer la
+            // colonne cote navigateur laisserait la valeur dans la charge utile.
+            costPrice: canSeeCost ? toDecimalString(item.costPrice, currency.decimals) : '',
             salePrice: toDecimalString(item.salePrice, currency.decimals),
             wholesalePrice:
               item.wholesalePrice === null

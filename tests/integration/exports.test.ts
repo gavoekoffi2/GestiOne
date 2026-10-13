@@ -118,11 +118,46 @@ describe('exports', () => {
     return { ...company, ctx, productId: product.id, customerId: customer.id };
   }
 
+  it("retire les colonnes de cout quand l'utilisateur n'y a pas droit", async () => {
+    const s = await setup();
+
+    const avec = await runExport(
+      'produits',
+      { companyId: s.companyId, currency: XOF, locale: 'fr', canSeeCost: true },
+      wholeYear(),
+    );
+    const sans = await runExport(
+      'produits',
+      { companyId: s.companyId, currency: XOF, locale: 'fr', canSeeCost: false },
+      wholeYear(),
+    );
+
+    expect(avec).toContain("Prix d'achat");
+    expect(sans).not.toContain("Prix d'achat");
+    // Le reste du fichier reste exploitable : seul le cout disparait.
+    expect(sans).toContain('Prix de vente');
+    expect(sans.split('\r\n').length).toBe(avec.split('\r\n').length);
+  });
+
+  it("retire aussi le cout et la valeur de l'etat du stock", async () => {
+    const s = await setup();
+
+    const sans = await runExport(
+      'stock',
+      { companyId: s.companyId, currency: XOF, locale: 'fr', canSeeCost: false },
+      wholeYear(),
+    );
+
+    expect(sans).not.toContain("Prix d'achat");
+    expect(sans).not.toContain('Valeur');
+    expect(sans).toContain('Quantite');
+  });
+
   it('exporte les clients avec un point decimal', async () => {
     const s = await setup();
     const csv = await runExport(
       'clients',
-      { companyId: s.companyId, currency: EUR, locale: 'fr' },
+      { companyId: s.companyId, currency: EUR, locale: 'fr', canSeeCost: true },
       wholeYear(),
     );
 
@@ -138,7 +173,7 @@ describe('exports', () => {
     const s = await setup();
     const csv = await runExport(
       'produits',
-      { companyId: s.companyId, currency: XOF, locale: 'fr' },
+      { companyId: s.companyId, currency: XOF, locale: 'fr', canSeeCost: true },
       wholeYear(),
     );
 
@@ -158,7 +193,7 @@ describe('exports', () => {
 
     const csv = await runExport(
       'factures',
-      { companyId: s.companyId, currency: XOF, locale: 'fr' },
+      { companyId: s.companyId, currency: XOF, locale: 'fr', canSeeCost: true },
       wholeYear(),
     );
     expect(csv).toContain('FAC-');
@@ -176,7 +211,7 @@ describe('exports', () => {
 
     const csv = await runExport(
       'lignes-de-vente',
-      { companyId: s.companyId, currency: XOF, locale: 'fr' },
+      { companyId: s.companyId, currency: XOF, locale: 'fr', canSeeCost: true },
       wholeYear(),
     );
     expect(csv).toContain('Sac de riz 25 kg');
@@ -196,7 +231,7 @@ describe('exports', () => {
 
     const csv = await runExport(
       'creances',
-      { companyId: s.companyId, currency: XOF, locale: 'fr' },
+      { companyId: s.companyId, currency: XOF, locale: 'fr', canSeeCost: true },
       wholeYear(),
     );
     expect(csv).toContain('+225 07 11 22 33 44');
@@ -207,7 +242,7 @@ describe('exports', () => {
     const s = await setup();
     const csv = await runExport(
       'stock',
-      { companyId: s.companyId, currency: XOF, locale: 'fr' },
+      { companyId: s.companyId, currency: XOF, locale: 'fr', canSeeCost: true },
       wholeYear(),
     );
     expect(csv).toContain('Sac de riz 25 kg');
@@ -235,7 +270,7 @@ describe('exports', () => {
 
     const csv = await runExport(
       'clients',
-      { companyId: alpha.companyId, currency: XOF, locale: 'fr' },
+      { companyId: alpha.companyId, currency: XOF, locale: 'fr', canSeeCost: true },
       wholeYear(),
     );
     expect(csv).not.toContain('Client secret de Beta');
@@ -254,7 +289,7 @@ describe('exports', () => {
 
     const csv = await runExport(
       'clients',
-      { companyId: s.companyId, currency: XOF, locale: 'fr' },
+      { companyId: s.companyId, currency: XOF, locale: 'fr', canSeeCost: true },
       wholeYear(),
     );
     expect(csv).toContain("'=cmd");

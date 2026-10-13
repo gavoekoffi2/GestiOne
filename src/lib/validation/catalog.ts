@@ -158,7 +158,10 @@ export function productSchema(decimals: number) {
       unitId: optionalText(64),
       supplierId: optionalText(64),
       imageUrl: imageField,
-      costPrice: moneyField(decimals, "Le prix d'achat"),
+      // Facultatif dans le schema : le prix d'achat est une donnee reservee.
+      // Quand l'utilisateur n'a pas le droit de le voir, la route ignore ce
+      // qu'il envoie et conserve la valeur enregistree (voir /api/products).
+      costPrice: moneyField(decimals, "Le prix d'achat").optional(),
       salePrice: moneyField(decimals, 'Le prix de vente'),
       wholesalePrice: optionalMoneyField(decimals, 'Le prix grossiste'),
       wholesaleFrom: quantityField('La quantite minimale pour le prix grossiste'),

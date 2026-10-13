@@ -76,6 +76,15 @@ export interface ExportContext {
   companyId: string;
   currency: CurrencyFormat;
   locale: string;
+  /**
+   * L'utilisateur a-t-il le droit "products.cost.read" ?
+   *
+   * Un export est une lecture de masse : il doit obeir aux memes regles que la
+   * consultation. Sans ce droit, les colonnes de prix d'achat et de valeur de
+   * stock sont retirees du fichier — sinon le telechargement contournerait la
+   * confidentialite appliquee a l'ecran.
+   */
+  canSeeCost: boolean;
 }
 
 export async function exportCustomers(context: ExportContext): Promise<string> {
@@ -146,7 +155,8 @@ export async function exportProducts(context: ExportContext): Promise<string> {
   return toCsv(
     [
       'Reference', 'Nom', 'Type', 'Categorie', 'Unite', 'Code-barres',
-      "Prix d'achat", 'Prix de vente', 'Prix grossiste', 'A partir de',
+      ...(context.canSeeCost ? ["Prix d'achat"] : []),
+      'Prix de vente', 'Prix grossiste', 'A partir de',
       'Prix special', 'Stock minimum', 'Fournisseur', 'Actif',
     ],
     products.map((product) => [
@@ -156,7 +166,7 @@ export async function exportProducts(context: ExportContext): Promise<string> {
       product.category?.name ?? '',
       product.unit?.symbol ?? '',
       product.barcode ?? '',
-      toDecimalString(product.costPrice, decimals),
+      ...(context.canSeeCost ? [toDecimalString(product.costPrice, decimals)] : []),
       toDecimalString(product.salePrice, decimals),
       product.wholesalePrice === null ? '' : toDecimalString(product.wholesalePrice, decimals),
       product.wholesaleFrom === null ? '' : toQuantityString(product.wholesaleFrom),
@@ -308,7 +318,11 @@ export async function exportStock(context: ExportContext, locationId?: string): 
   const stock = await listStock(context.companyId, { page: 1, pageSize: 10_000, locationId });
 
   return toCsv(
-    ['Reference', 'Article', 'Categorie', 'Unite', 'Quantite', 'Stock minimum', "Prix d'achat", 'Valeur', 'Etat'],
+    [
+      'Reference', 'Article', 'Categorie', 'Unite', 'Quantite', 'Stock minimum',
+      ...(context.canSeeCost ? ["Prix d'achat", 'Valeur'] : []),
+      'Etat',
+    ],
     stock.items.map((row) => [
       row.sku,
       row.name,
@@ -316,8 +330,12 @@ export async function exportStock(context: ExportContext, locationId?: string): 
       row.unitSymbol,
       toQuantityString(row.quantity),
       toQuantityString(row.minStock),
-      toDecimalString(row.costPrice, context.currency.decimals),
-      toDecimalString(row.value, context.currency.decimals),
+      ...(context.canSeeCost
+        ? [
+            toDecimalString(row.costPrice, context.currency.decimals),
+            toDecimalString(row.value, context.currency.decimals),
+          ]
+        : []),
       row.isOut ? 'Rupture' : row.isLow ? 'Stock faible' : 'Disponible',
     ]),
   );

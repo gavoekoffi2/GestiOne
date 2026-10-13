@@ -4,7 +4,7 @@ import { resolvePeriod, type PeriodKey } from '@/server/services/reports';
 import { getCurrencyFormat } from '@/server/currency';
 import { recordAudit } from '@/server/audit';
 import { NotFoundError } from '@/server/errors';
-import { requireTenant, requirePermission } from '@/server/tenant';
+import { can, requireTenant, requirePermission } from '@/server/tenant';
 import { clientIp, handler } from '@/server/http';
 import type { PermissionKey } from '@/server/permissions';
 
@@ -42,7 +42,12 @@ export const GET = handler(async (request: NextRequest, { params }) => {
 
   const csv = await runExport(
     key as keyof typeof EXPORTS,
-    { companyId: context.companyId, currency, locale: context.locale },
+    {
+      companyId: context.companyId,
+      currency,
+      locale: context.locale,
+      canSeeCost: can(context, 'products.cost.read'),
+    },
     period,
     url.searchParams.get('locationId') || undefined,
   );

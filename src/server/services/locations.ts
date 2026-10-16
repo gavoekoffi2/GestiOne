@@ -64,6 +64,24 @@ export async function updateLocation(companyId: string, locationId: string, inpu
   });
 }
 
+/** Vrai si le point de vente apparait dans un document ou un journal. */
+async function locationHasHistory(companyId: string, locationId: string): Promise<boolean> {
+  const where = { companyId, locationId };
+  const counts = await Promise.all([
+    prisma.membership.count({ where: { companyId, defaultLocationId: locationId } }),
+    prisma.stockLevel.count({ where }),
+    prisma.stockMovement.count({ where }),
+    prisma.cashSession.count({ where }),
+    prisma.cashMovement.count({ where }),
+    prisma.invoice.count({ where }),
+    prisma.quote.count({ where }),
+    prisma.payment.count({ where }),
+    prisma.purchaseOrder.count({ where }),
+    prisma.expense.count({ where }),
+  ]);
+  return counts.some((count) => count > 0);
+}
+
 export async function deleteLocation(companyId: string, locationId: string) {
   const location = await getLocation(companyId, locationId);
 
@@ -74,11 +92,12 @@ export async function deleteLocation(companyId: string, locationId: string) {
     );
   }
 
-  // Le point de vente est reference par les appartenances (et, a partir de la
-  // phase 3, par les mouvements de stock). Le supprimer effacerait un historique
-  // comptable : on le desactive.
-  const attached = await prisma.membership.count({ where: { defaultLocationId: locationId } });
-  if (attached > 0 || location.isDefault) {
+  // Le point de vente porte tout un historique. La base supprime EN CASCADE ses
+  // soldes et mouvements de stock, ses sessions et mouvements de caisse : un
+  // DELETE effacerait donc la preuve de chaque entree, sortie et encaissement.
+  // Des qu'il a servi, on le desactive ; seul un point de vente jamais utilise
+  // est reellement supprime.
+  if (location.isDefault || (await locationHasHistory(companyId, locationId))) {
     return prisma.location.update({
       where: { id: locationId },
       data: { isActive: false, isDefault: false },

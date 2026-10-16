@@ -199,10 +199,19 @@ export async function updatePartner(
 export async function deletePartner(companyId: string, kind: PartnerKind, partnerId: string) {
   await getPartner(companyId, kind, partnerId);
 
-  // Un fournisseur reference par des articles ne peut pas disparaitre sans
-  // detruire l'information d'approvisionnement : on le desactive.
-  const referenced = await prisma.product.count({ where: { companyId, supplierId: partnerId } });
-  if (referenced > 0) {
+  // Les documents pointent vers le partenaire avec "ON DELETE SET NULL" : le
+  // supprimer rendrait ses factures anonymes, et sa dette disparaitrait de son
+  // compte sans avoir ete payee. Des qu'il figure sur un document (ou comme
+  // fournisseur d'un article), on le desactive au lieu de le supprimer.
+  const counts = await Promise.all([
+    prisma.product.count({ where: { companyId, supplierId: partnerId } }),
+    prisma.invoice.count({ where: { companyId, customerId: partnerId } }),
+    prisma.quote.count({ where: { companyId, customerId: partnerId } }),
+    prisma.payment.count({ where: { companyId, partnerId } }),
+    prisma.purchaseOrder.count({ where: { companyId, supplierId: partnerId } }),
+    prisma.expense.count({ where: { companyId, supplierId: partnerId } }),
+  ]);
+  if (counts.some((count) => count > 0)) {
     return prisma.partner.update({ where: { id: partnerId }, data: { isActive: false } });
   }
 

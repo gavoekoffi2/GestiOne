@@ -358,14 +358,14 @@ describe('vente au comptoir', () => {
       creditLimit: 40_000n,
     });
 
-    // Premiere vente a credit : 45 000, au-dela du plafond mais autorisee car
-    // l'encours etait nul au moment de la vente.
+    // Premiere vente a credit : 30 000, sous le plafond.
     await recordSale(s.ctx, {
       customerId: s.customerId,
       locationId: s.locationId,
-      lines: [{ productId: s.productId, quantity: 3_000n }],
+      lines: [{ productId: s.productId, quantity: 2_000n }],
     });
 
+    // La suivante porterait l'encours a 45 000 : refusee.
     await expect(
       recordSale(s.ctx, {
         customerId: s.customerId,
@@ -373,6 +373,79 @@ describe('vente au comptoir', () => {
         lines: [{ productId: s.productId, quantity: 1_000n }],
       }),
     ).rejects.toThrow(/plafond/);
+  });
+
+  it('refuse une vente a credit qui depasse a elle seule le plafond', async () => {
+    const s = await setup();
+    await updatePartner(s.companyId, 'CUSTOMER', s.customerId, {
+      ...customerInput,
+      creditLimit: 40_000n,
+    });
+
+    // Encours nul, mais 45 000 a credit pour un plafond de 40 000 : l'ancienne
+    // regle laissait passer n'importe quel montant tant que l'encours etait nul.
+    await expect(
+      recordSale(s.ctx, {
+        customerId: s.customerId,
+        locationId: s.locationId,
+        lines: [{ productId: s.productId, quantity: 3_000n }],
+      }),
+    ).rejects.toThrow(/plafond/);
+    expect(await recomputeStockFromMovements(s.companyId, s.productId, s.locationId)).toBe(100_000n);
+  });
+
+  it('un reglement refuse ne laisse ni facture ni sortie de stock', async () => {
+    const s = await setup();
+    // Mobile Money sans reference : refuse. Avant la correction, la facture
+    // etait deja emise et le stock deja sorti quand le refus tombait.
+    await expect(
+      recordSale(s.ctx, {
+        locationId: s.locationId,
+        lines: [{ productId: s.productId, quantity: 1_000n }],
+        payment: { methodId: s.momoId },
+      }),
+    ).rejects.toThrow(/reference/);
+    expect(await prisma.invoice.count({ where: { companyId: s.companyId } })).toBe(0);
+    expect(await recomputeStockFromMovements(s.companyId, s.productId, s.locationId)).toBe(100_000n);
+  });
+
+  it('un paiement partiel sans client est refuse : le reste serait du par personne', async () => {
+    const s = await setup();
+    await expect(
+      recordSale(s.ctx, {
+        locationId: s.locationId,
+        lines: [{ productId: s.productId, quantity: 2_000n }],
+        payment: { methodId: s.cashId, amount: 10_000n },
+      }),
+    ).rejects.toThrow(/client/);
+    expect(await prisma.invoice.count({ where: { companyId: s.companyId } })).toBe(0);
+  });
+
+  it('un paiement partiel avec client respecte le plafond sur le reste du', async () => {
+    const s = await setup();
+    await updatePartner(s.companyId, 'CUSTOMER', s.customerId, {
+      ...customerInput,
+      creditLimit: 20_000n,
+    });
+
+    // 30 000 de vente, 5 000 recus : 25 000 de credit > 20 000.
+    await expect(
+      recordSale(s.ctx, {
+        customerId: s.customerId,
+        locationId: s.locationId,
+        lines: [{ productId: s.productId, quantity: 2_000n }],
+        payment: { methodId: s.cashId, amount: 5_000n },
+      }),
+    ).rejects.toThrow(/plafond/);
+
+    // 15 000 recus : 15 000 de credit, accepte.
+    const sale = await recordSale(s.ctx, {
+      customerId: s.customerId,
+      locationId: s.locationId,
+      lines: [{ productId: s.productId, quantity: 2_000n }],
+      payment: { methodId: s.cashId, amount: 15_000n },
+    });
+    expect(sale.balanceDue).toBe(15_000n);
   });
 
   it('exige une reference pour un reglement Mobile Money', async () => {

@@ -1,6 +1,11 @@
 import { prisma } from '@/server/db';
 import { NotFoundError, ValidationError } from '@/server/errors';
-import { createInvoice, type ServiceContext } from '@/server/services/invoices';
+import {
+  cancelInvoice,
+  createInvoice,
+  previewInvoiceTotal,
+  type ServiceContext,
+} from '@/server/services/invoices';
 import { recordPayment } from '@/server/services/payments';
 import { partnerBalance } from '@/server/services/payments';
 import { changeDue as computeChangeDue } from '@/lib/totals';
@@ -69,38 +74,58 @@ export async function recordSale(context: SaleContext, input: SaleInput): Promis
   });
   if (!location) throw new NotFoundError('Point de vente introuvable ou inactif.');
 
-  // Une vente non reglee est une vente a credit : elle exige un client
-  // identifie, faute de quoi la creance ne serait rattachee a personne et
-  // deviendrait irrecouvrable dans les faits.
-  const isCredit = !input.payment;
-  if (isCredit && !input.customerId) {
-    throw new ValidationError(
-      "Une vente a credit doit etre rattachee a un client : sans cela, personne ne pourra etre relance.",
-    );
-  }
-
-  let method: { id: string; name: string; isCredit: boolean; affectsCash: boolean } | null = null;
+  let method: {
+    id: string;
+    name: string;
+    isCredit: boolean;
+    affectsCash: boolean;
+    requiresReference: boolean;
+  } | null = null;
   if (input.payment) {
     const found = await prisma.paymentMethod.findFirst({
       where: { id: input.payment.methodId, companyId: context.companyId, isActive: true },
-      select: { id: true, name: true, isCredit: true, affectsCash: true },
+      select: { id: true, name: true, isCredit: true, affectsCash: true, requiresReference: true },
     });
     if (!found) throw new NotFoundError('Mode de reglement introuvable ou desactive.');
-
-    // Choisir "Credit" comme mode de reglement revient a ne pas payer : on
-    // enregistre la vente sans paiement plutot que de creer un encaissement
-    // fictif qui ferait croire la facture soldee.
-    if (found.isCredit && !input.customerId) {
-      throw new ValidationError(
-        "Une vente a credit doit etre rattachee a un client : sans cela, personne ne pourra etre relance.",
-      );
-    }
     method = found;
   }
 
-  // Controle du plafond d'encours, avant d'engager quoi que ce soit.
-  if (input.customerId && (isCredit || method?.isCredit)) {
-    await assertCreditAllowed(context.companyId, input.customerId);
+  // Tout ce qui peut refuser l'encaissement est verifie AVANT de creer la
+  // facture. Auparavant, une reference Mobile Money manquante ou un montant nul
+  // etaient detectes apres coup : la facture restait emise, le stock sorti, et
+  // la vente apparaissait comme un credit accorde a personne.
+  const total = await previewInvoiceTotal(context.companyId, input);
+  const paying = method !== null && !method.isCredit;
+
+  let tendered = 0n;
+  if (paying) {
+    tendered = input.payment?.amount ?? total;
+    if (tendered <= 0n) {
+      throw new ValidationError('Le montant recu doit etre superieur a zero.');
+    }
+    if (method!.requiresReference && !input.payment?.reference?.trim()) {
+      throw new ValidationError(
+        `Le mode "${method!.name}" exige une reference (numero de transaction, de cheque ou de bordereau).`,
+      );
+    }
+  }
+
+  // Ce qui n'est pas regle aujourd'hui est un credit, que la vente soit
+  // entierement a credit ou seulement partiellement payee. Un reste du sans
+  // client identifie ne pourrait etre reclame a personne.
+  const credited = paying ? (tendered >= total ? 0n : total - tendered) : total;
+  if (credited > 0n) {
+    if (!input.customerId) {
+      throw new ValidationError(
+        paying
+          ? "Le montant recu ne couvre pas la vente : le reste est un credit, qui doit etre rattache a un client."
+          : "Une vente a credit doit etre rattachee a un client : sans cela, personne ne pourra etre relance.",
+      );
+    }
+    // Le plafond porte sur l'encours APRES la vente : verifier seulement
+    // l'encours deja constate laissait vendre a credit n'importe quel montant
+    // a un client encore sous son plafond.
+    await assertCreditAllowed(context.companyId, input.customerId, credited);
   }
 
   const invoice = await createInvoice(context, {
@@ -117,29 +142,32 @@ export async function recordSale(context: SaleContext, input: SaleInput): Promis
   let paymentId: string | null = null;
   let changeDue = 0n;
 
-  if (method && !method.isCredit) {
-    const tendered = input.payment?.amount ?? invoice.total;
-    if (tendered <= 0n) {
-      throw new ValidationError('Le montant recu doit etre superieur a zero.');
-    }
-
+  if (paying) {
     // Le client peut tendre un billet superieur au total : on encaisse le du et
     // on annonce la monnaie a rendre. Enregistrer le montant tendu creerait un
     // trop-percu fictif.
     const applied = tendered > invoice.total ? invoice.total : tendered;
     changeDue = computeChangeDue(invoice.total, tendered);
 
-    const payment = await recordPayment(context, {
-      direction: 'IN',
-      amount: applied,
-      invoiceId: invoice.id,
-      partnerId: input.customerId,
-      methodId: method.id,
-      locationId: input.locationId,
-      reference: input.payment?.reference,
-    });
-
-    paymentId = payment.id;
+    try {
+      const payment = await recordPayment(context, {
+        direction: 'IN',
+        amount: applied,
+        invoiceId: invoice.id,
+        partnerId: input.customerId,
+        methodId: method!.id,
+        locationId: input.locationId,
+        reference: input.payment?.reference,
+      });
+      paymentId = payment.id;
+    } catch (error) {
+      // Filet de securite : si l'encaissement echoue malgre les controles, la
+      // vente n'a pas eu lieu. La facture est annulee et le stock rendu.
+      await cancelInvoice(context, invoice.id, "Encaissement refuse lors de la vente").catch(
+        () => undefined,
+      );
+      throw error;
+    }
   }
 
   const refreshed = await prisma.invoice.findUniqueOrThrow({
@@ -165,7 +193,11 @@ export async function recordSale(context: SaleContext, input: SaleInput): Promis
  * defaut, donc le comportement prudent. Le controle porte sur l'encours deja
  * constate ; il previent la derive plutot que de la constater apres coup.
  */
-async function assertCreditAllowed(companyId: string, customerId: string): Promise<void> {
+async function assertCreditAllowed(
+  companyId: string,
+  customerId: string,
+  amount: bigint,
+): Promise<void> {
   const customer = await prisma.partner.findFirst({
     where: { id: customerId, companyId, kind: 'CUSTOMER' },
     select: { id: true, name: true, creditLimit: true },
@@ -179,9 +211,9 @@ async function assertCreditAllowed(companyId: string, customerId: string): Promi
   }
 
   const balance = await partnerBalance(companyId, customerId);
-  if (balance.netOutstanding >= customer.creditLimit) {
+  if (balance.netOutstanding + amount > customer.creditLimit) {
     throw new ValidationError(
-      `${customer.name} a atteint son plafond d'encours. Encaissez un reglement ou relevez le plafond avant d'accorder un nouveau credit.`,
+      `Cette vente porterait l'encours de ${customer.name} au-dela de son plafond. Encaissez un reglement, reduisez le credit accorde ou relevez le plafond.`,
     );
   }
 }

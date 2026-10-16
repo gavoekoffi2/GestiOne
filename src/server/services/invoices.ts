@@ -191,6 +191,27 @@ async function assertLocation(companyId: string, locationId: string) {
   return location;
 }
 
+/**
+ * Total qu'aurait la facture, sans rien enregistrer. Sert a la vente au
+ * comptoir, qui doit verifier le reglement et le plafond de credit **avant**
+ * de creer la facture et de sortir le stock.
+ */
+export async function previewInvoiceTotal(
+  companyId: string,
+  input: Pick<CreateInvoiceInput, 'lines' | 'discountAmount' | 'discountRate'>,
+): Promise<bigint> {
+  const resolved = await resolveLines(companyId, input.lines);
+  return computeTotals(
+    resolved.map((line) => ({
+      quantity: line.input.quantity,
+      unitPrice: line.unitPrice,
+      discountRate: line.input.discountRate ?? 0,
+      taxRate: line.taxRate,
+    })),
+    { amount: input.discountAmount, rate: input.discountRate },
+  ).total;
+}
+
 export async function createInvoice(context: ServiceContext, input: CreateInvoiceInput) {
   const resolved = await resolveLines(context.companyId, input.lines);
 

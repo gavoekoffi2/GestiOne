@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { prisma } from '@/server/db';
 import { createLocation, deleteLocation } from '@/server/services/locations';
 import { createPartner, deletePartner } from '@/server/services/partners';
-import { createProduct } from '@/server/services/catalog';
+import { createProduct, updateProduct } from '@/server/services/catalog';
 import { recordEntry } from '@/server/services/stock';
 import {
   cancelInvoice,
@@ -484,5 +484,17 @@ describe("droits : on n'accorde que ce que l'on possede", () => {
       t.leadPermissions,
     );
     expect(role.permissions).toEqual(['dashboard.view']);
+  });
+});
+
+describe('catalogue', () => {
+  it("refuse de transformer en service un article qui a encore du stock", async () => {
+    const s = await stockSetup();
+    await expect(
+      updateProduct(s.companyId, s.productId, { ...productInput, kind: 'SERVICE' }),
+    ).rejects.toThrow(/stock/);
+    expect((await prisma.product.findUniqueOrThrow({ where: { id: s.productId } })).trackStock).toBe(
+      true,
+    );
   });
 });

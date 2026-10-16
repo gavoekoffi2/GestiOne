@@ -393,8 +393,23 @@ export async function createProduct(companyId: string, input: ProductInput) {
 }
 
 export async function updateProduct(companyId: string, productId: string, input: ProductInput) {
-  await getProduct(companyId, productId);
+  const existing = await getProduct(companyId, productId);
   await assertRelations(companyId, input);
+
+  // Un service n'est pas suivi en stock. Transformer en service un article qui
+  // en a encore laissait ce stock orphelin : invisible, invendable, et jamais
+  // rendu si une vente passee etait annulee.
+  if (existing.kind === 'GOOD' && input.kind === 'SERVICE') {
+    const stock = await prisma.stockLevel.aggregate({
+      where: { companyId, productId },
+      _sum: { quantity: true },
+    });
+    if ((stock._sum.quantity ?? 0n) !== 0n) {
+      throw new ValidationError(
+        `"${existing.name}" a encore du stock. Sortez-le ou faites un inventaire a zero avant d'en faire un service.`,
+      );
+    }
+  }
 
   if (input.barcode) {
     const duplicate = await prisma.product.findFirst({

@@ -1,5 +1,5 @@
 import { prisma } from '@/server/db';
-import { ConflictError, NotFoundError, ValidationError } from '@/server/errors';
+import { ConflictError, NotFoundError, ValidationError, ForbiddenError } from '@/server/errors';
 import { hashPassword } from '@/server/auth/password';
 import { ALL_PERMISSIONS, WILDCARD, isPermissionKey } from '@/server/permissions';
 import type { CreateMemberInput, RoleInput, UpdateMemberInput } from '@/lib/validation/users';
@@ -43,6 +43,29 @@ async function assertLocationBelongsToCompany(companyId: string, locationId: str
   if (!location) throw new NotFoundError('Point de vente introuvable pour cette entreprise.');
 }
 
+/**
+ * On ne peut accorder que ce que l'on possede.
+ *
+ * Le droit "Gerer les utilisateurs" (ou "Gerer les roles") ne doit pas valoir
+ * acces complet : sans cette regle, un employe a qui l'on confiait la gestion de
+ * l'equipe pouvait s'attribuer le role Administrateur, et celui qui gerait les
+ * roles pouvait ajouter "*" au sien.
+ *
+ * `actor` vaut l'acces complet par defaut : c'est le cas des appels internes
+ * (inscription, tests). Les routes transmettent les droits de l'utilisateur.
+ */
+export function assertCanGrant(
+  actor: readonly string[],
+  granted: readonly string[],
+  message = "Vous ne pouvez pas accorder des droits que vous n'avez pas vous-meme.",
+): void {
+  if (actor.includes(WILDCARD)) return;
+  const missing = granted.some((permission) =>
+    permission === WILDCARD ? true : !actor.includes(permission),
+  );
+  if (missing) throw new ForbiddenError(message);
+}
+
 function grantsFullAccess(permissions: readonly string[]): boolean {
   return permissions.includes(WILDCARD) || permissions.includes('settings.users');
 }
@@ -61,8 +84,13 @@ async function countActiveAdmins(companyId: string, excludeMembershipId?: string
   return memberships.filter((membership) => grantsFullAccess(membership.role.permissions)).length;
 }
 
-export async function createMember(companyId: string, input: CreateMemberInput) {
-  await assertRoleBelongsToCompany(companyId, input.roleId);
+export async function createMember(
+  companyId: string,
+  input: CreateMemberInput,
+  actor: readonly string[] = [WILDCARD],
+) {
+  const role = await assertRoleBelongsToCompany(companyId, input.roleId);
+  assertCanGrant(actor, role.permissions);
   if (input.defaultLocationId) {
     await assertLocationBelongsToCompany(companyId, input.defaultLocationId);
   }
@@ -122,6 +150,7 @@ export async function updateMember(
   companyId: string,
   membershipId: string,
   input: UpdateMemberInput,
+  actor: readonly string[] = [WILDCARD],
 ) {
   const membership = await prisma.membership.findFirst({
     where: { id: membershipId, companyId },
@@ -130,6 +159,13 @@ export async function updateMember(
   if (!membership) throw new NotFoundError('Utilisateur introuvable dans cette entreprise.');
 
   const newRole = await assertRoleBelongsToCompany(companyId, input.roleId);
+  assertCanGrant(actor, newRole.permissions);
+  // Ni retrograder ni desactiver quelqu'un qui a plus de droits que soi.
+  assertCanGrant(
+    actor,
+    membership.role.permissions,
+    "Vous ne pouvez pas modifier le compte d'un utilisateur qui a plus de droits que vous.",
+  );
   if (input.defaultLocationId) {
     await assertLocationBelongsToCompany(companyId, input.defaultLocationId);
   }
@@ -158,7 +194,11 @@ export async function updateMember(
   });
 }
 
-export async function removeMember(companyId: string, membershipId: string) {
+export async function removeMember(
+  companyId: string,
+  membershipId: string,
+  actor: readonly string[] = [WILDCARD],
+) {
   const membership = await prisma.membership.findFirst({
     where: { id: membershipId, companyId },
     include: { role: { select: { permissions: true } } },
@@ -170,6 +210,11 @@ export async function removeMember(companyId: string, membershipId: string) {
       "Le proprietaire de l'entreprise ne peut pas etre retire de son equipe.",
     );
   }
+  assertCanGrant(
+    actor,
+    membership.role.permissions,
+    "Vous ne pouvez pas retirer un utilisateur qui a plus de droits que vous.",
+  );
 
   if (grantsFullAccess(membership.role.permissions)) {
     const others = await countActiveAdmins(companyId, membershipId);
@@ -208,15 +253,32 @@ export async function resetMemberPassword(
   companyId: string,
   membershipId: string,
   newPassword: string,
+  actor: readonly string[] = [WILDCARD],
 ): Promise<{ userId: string; fullName: string; revokedSessions: number }> {
   const membership = await prisma.membership.findFirst({
     where: { id: membershipId, companyId },
     select: {
       userId: true,
+      isOwner: true,
+      role: { select: { permissions: true } },
       user: { select: { fullName: true, _count: { select: { memberships: true } } } },
     },
   });
   if (!membership) throw new NotFoundError('Utilisateur introuvable dans cette entreprise.');
+
+  // Reinitialiser le mot de passe d'un administrateur, c'est prendre son
+  // compte : reserve a qui a au moins les memes droits, et jamais sur le
+  // proprietaire, qui change le sien depuis « Mon compte ».
+  if (membership.isOwner && !actor.includes(WILDCARD)) {
+    throw new ForbiddenError(
+      "Le mot de passe du proprietaire ne peut etre change que par lui-meme, depuis « Mon compte ».",
+    );
+  }
+  assertCanGrant(
+    actor,
+    membership.role.permissions,
+    "Vous ne pouvez pas reinitialiser le mot de passe d'un utilisateur qui a plus de droits que vous.",
+  );
 
   if (membership.user._count.memberships > 1) {
     throw new ValidationError(
@@ -262,8 +324,13 @@ export function sanitisePermissions(permissions: readonly string[]): string[] {
   return ALL_PERMISSIONS.filter((permission) => permissions.includes(permission));
 }
 
-export async function createRole(companyId: string, input: RoleInput) {
+export async function createRole(
+  companyId: string,
+  input: RoleInput,
+  actor: readonly string[] = [WILDCARD],
+) {
   const permissions = sanitisePermissions(input.permissions);
+  assertCanGrant(actor, permissions);
   if (permissions.length === 0) {
     throw new ValidationError('Un role doit accorder au moins une permission.');
   }
@@ -284,11 +351,22 @@ export async function createRole(companyId: string, input: RoleInput) {
   });
 }
 
-export async function updateRole(companyId: string, roleId: string, input: RoleInput) {
+export async function updateRole(
+  companyId: string,
+  roleId: string,
+  input: RoleInput,
+  actor: readonly string[] = [WILDCARD],
+) {
   const role = await prisma.role.findFirst({ where: { id: roleId, companyId } });
   if (!role) throw new NotFoundError('Role introuvable.');
 
   const permissions = sanitisePermissions(input.permissions);
+  assertCanGrant(actor, permissions);
+  assertCanGrant(
+    actor,
+    role.permissions,
+    "Vous ne pouvez pas modifier un role qui a plus de droits que le votre.",
+  );
   if (permissions.length === 0) {
     throw new ValidationError('Un role doit accorder au moins une permission.');
   }

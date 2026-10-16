@@ -26,6 +26,14 @@ import { createTaxRate } from '@/server/services/commerce-setup';
 import { dashboardData, resolvePeriod, salesSummary, topProducts } from '@/server/services/reports';
 import { paymentMethodId } from '../helpers';
 import { createTestCompany, resetDatabase, serviceContext } from '../helpers';
+import {
+  createMember,
+  createRole,
+  resetMemberPassword,
+  updateMember,
+  updateRole,
+} from '@/server/services/members';
+import { ForbiddenError } from '@/server/errors';
 
 /**
  * Regressions relevees par l'analyse globale d'octobre 2026.
@@ -404,5 +412,77 @@ describe('rapports', () => {
     expect(data.sales.revenue).toBe(0n);
     expect(data.series.reduce((sum, point) => sum + point.revenue, 0n)).toBe(0n);
     expect(data.topProducts).toHaveLength(0);
+  });
+});
+
+describe("droits : on n'accorde que ce que l'on possede", () => {
+  async function teamSetup() {
+    const company = await createTestCompany();
+    const roleId = async (key: string) =>
+      (await prisma.role.findFirstOrThrow({ where: { companyId: company.companyId, key } })).id;
+    // Un chef d'equipe : il gere les utilisateurs et les roles, sans etre admin.
+    const leadPermissions = ['dashboard.view', 'settings.users', 'settings.roles'];
+    const leadRole = await createRole(company.companyId, {
+      name: "Chef d'equipe",
+      description: undefined,
+      permissions: leadPermissions,
+    });
+    const lead = await createMember(company.companyId, {
+      fullName: 'Chef',
+      email: `chef${Date.now()}@test.local`,
+      phone: undefined,
+      password: 'MotDePasse1',
+      roleId: leadRole.id,
+      defaultLocationId: undefined,
+    });
+    return { company, roleId, leadRole, lead, leadPermissions };
+  }
+
+  it("ne peut pas se nommer administrateur", async () => {
+    const t = await teamSetup();
+    await expect(
+      updateMember(
+        t.company.companyId,
+        t.lead.id,
+        { roleId: await t.roleId('ADMIN'), defaultLocationId: undefined, isActive: true },
+        t.leadPermissions,
+      ),
+    ).rejects.toThrow(ForbiddenError);
+  });
+
+  it("ne peut pas ajouter l'acces complet a son propre role", async () => {
+    const t = await teamSetup();
+    await expect(
+      updateRole(
+        t.company.companyId,
+        t.leadRole.id,
+        { name: "Chef d'equipe", description: undefined, permissions: ['*'] },
+        t.leadPermissions,
+      ),
+    ).rejects.toThrow(ForbiddenError);
+    await expect(
+      createRole(
+        t.company.companyId,
+        { name: 'Caisse+', description: undefined, permissions: ['cash.operate'] },
+        t.leadPermissions,
+      ),
+    ).rejects.toThrow(ForbiddenError);
+  });
+
+  it("ne peut pas reinitialiser le mot de passe du proprietaire", async () => {
+    const t = await teamSetup();
+    await expect(
+      resetMemberPassword(t.company.companyId, t.company.membershipId, 'Pirate123', t.leadPermissions),
+    ).rejects.toThrow(ForbiddenError);
+  });
+
+  it('peut encore creer un role avec ses propres droits', async () => {
+    const t = await teamSetup();
+    const role = await createRole(
+      t.company.companyId,
+      { name: 'Accueil', description: undefined, permissions: ['dashboard.view'] },
+      t.leadPermissions,
+    );
+    expect(role.permissions).toEqual(['dashboard.view']);
   });
 });

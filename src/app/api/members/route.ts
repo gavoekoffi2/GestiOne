@@ -13,7 +13,7 @@ export const GET = handler(async () => {
 export const POST = handler(async (request: NextRequest) => {
   const context = await requireTenantWith('settings.users');
   const input = await readJson(request, createMemberSchema);
-  const membership = await createMember(context.companyId, input);
+  const membership = await createMember(context.companyId, input, context.permissions);
 
   await recordAudit({
     companyId: context.companyId,

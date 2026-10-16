@@ -45,6 +45,28 @@ export function jsonError(error: unknown): NextResponse<ApiErrorBody> {
     return NextResponse.json(body, { status: error.status, headers });
   }
 
+  // Erreurs de contrainte de la base, le plus souvent dues a deux saisies
+  // simultanees : elles meritent un vrai message, pas une "erreur interne".
+  const prismaCode = prismaErrorCode(error);
+  if (prismaCode === 'P2002') {
+    return NextResponse.json(
+      { error: { code: 'CONFLICT', message: 'Cet enregistrement existe deja (meme nom, code ou reference).' } },
+      { status: 409 },
+    );
+  }
+  if (prismaCode === 'P2025') {
+    return NextResponse.json(
+      { error: { code: 'NOT_FOUND', message: "L'element demande n'existe plus. Rechargez la page." } },
+      { status: 404 },
+    );
+  }
+  if (prismaCode === 'P2034') {
+    return NextResponse.json(
+      { error: { code: 'CONFLICT', message: 'Une autre operation etait en cours sur ce document. Reessayez.' } },
+      { status: 409 },
+    );
+  }
+
   // Toute autre erreur est un defaut du serveur : on la journalise en clair
   // mais on ne renvoie qu'un message generique.
   console.error('[api] erreur non geree', error);
@@ -52,6 +74,12 @@ export function jsonError(error: unknown): NextResponse<ApiErrorBody> {
     { error: { code: 'INTERNAL_ERROR', message: 'Une erreur interne est survenue.' } },
     { status: 500 },
   );
+}
+
+function prismaErrorCode(error: unknown): string | null {
+  if (typeof error !== 'object' || error === null || !('code' in error)) return null;
+  const code = (error as { code: unknown }).code;
+  return typeof code === 'string' && /^P\d{4}$/.test(code) ? code : null;
 }
 
 function isRetryDetails(value: unknown): value is { retryAfterSeconds: number } {
@@ -95,13 +123,20 @@ export function readQuery<S extends ZodTypeAny>(request: NextRequest, schema: S)
 
 /**
  * Adresse IP du client, utilisee pour la limitation de debit et l'audit.
- * Derriere un proxy, `x-forwarded-for` contient la chaine complete : seule la
- * premiere adresse est celle du client.
+ *
+ * La PREMIERE adresse de `x-forwarded-for` est celle que le client declare :
+ * il suffisait d'envoyer un en-tete different a chaque essai pour contourner
+ * la limitation des tentatives de connexion. On retient la DERNIERE, ajoutee
+ * par le proxy de l'hebergement, qui a vu la vraie connexion.
  */
 export function clientIp(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0]?.trim() ?? 'inconnu';
-  return request.headers.get('x-real-ip') ?? 'inconnu';
+  if (forwarded) {
+    const chain = forwarded.split(',').map((entry) => entry.trim()).filter(Boolean);
+    const last = chain[chain.length - 1];
+    if (last) return last;
+  }
+  return request.headers.get('x-real-ip')?.trim() || 'inconnu';
 }
 
 /**

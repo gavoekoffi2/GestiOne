@@ -9,7 +9,7 @@ export const PUT = handler(async (request: NextRequest, { params }) => {
   const context = await requireTenantWith('settings.users');
   const { id } = await params;
   const input = await readJson(request, updateMemberSchema);
-  const membership = await updateMember(context.companyId, id as string, input);
+  const membership = await updateMember(context.companyId, id as string, input, context.permissions);
 
   await recordAudit({
     companyId: context.companyId,
@@ -29,7 +29,7 @@ export const PUT = handler(async (request: NextRequest, { params }) => {
 export const DELETE = handler(async (request: NextRequest, { params }) => {
   const context = await requireTenantWith('settings.users');
   const { id } = await params;
-  await removeMember(context.companyId, id as string);
+  await removeMember(context.companyId, id as string, context.permissions);
 
   await recordAudit({
     companyId: context.companyId,

@@ -17,7 +17,12 @@ export const POST = handler(async (request: NextRequest, { params }) => {
   const { id } = await params;
   const input = await readJson(request, resetMemberPasswordSchema);
 
-  const result = await resetMemberPassword(context.companyId, id as string, input.password);
+  const result = await resetMemberPassword(
+    context.companyId,
+    id as string,
+    input.password,
+    context.permissions,
+  );
 
   await recordAudit({
     companyId: context.companyId,

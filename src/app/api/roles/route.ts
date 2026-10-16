@@ -13,7 +13,7 @@ export const GET = handler(async () => {
 export const POST = handler(async (request: NextRequest) => {
   const context = await requireTenantWith('settings.roles');
   const input = await readJson(request, roleSchema);
-  const role = await createRole(context.companyId, input);
+  const role = await createRole(context.companyId, input, context.permissions);
 
   await recordAudit({
     companyId: context.companyId,

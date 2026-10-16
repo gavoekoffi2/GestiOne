@@ -9,7 +9,7 @@ export const PUT = handler(async (request: NextRequest, { params }) => {
   const context = await requireTenantWith('settings.roles');
   const { id } = await params;
   const input = await readJson(request, roleSchema);
-  const role = await updateRole(context.companyId, id as string, input);
+  const role = await updateRole(context.companyId, id as string, input, context.permissions);
 
   await recordAudit({
     companyId: context.companyId,

@@ -15,6 +15,7 @@ export type DocumentType =
   | 'SALE'
   | 'PURCHASE'
   | 'PAYMENT'
+  | 'EXPENSE'
   | 'RECEIPT'
   | 'CUSTOMER'
   | 'SUPPLIER';

@@ -276,7 +276,17 @@ export async function recordCashMovement(
     const balance = await cashBalance(context.companyId, input.locationId);
     if (balance + signed < 0n) {
       throw new ValidationError(
-        `La caisse ne contient pas assez d'especes pour ce retrait (solde : ${balance}).`,
+        `La caisse ne contient pas assez d'especes pour ce retrait (solde : ${formatMoney(
+          balance,
+          await getCurrencyFormat(
+            (
+              await prisma.company.findUniqueOrThrow({
+                where: { id: context.companyId },
+                select: { currencyCode: true },
+              })
+            ).currencyCode,
+          ),
+        )}).`,
       );
     }
   }

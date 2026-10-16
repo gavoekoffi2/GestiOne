@@ -21,6 +21,7 @@ import { recordInventory } from '@/server/services/stock';
 import { recomputeStockFromMovements } from '@/server/services/stock-query';
 import { recordPayment } from '@/server/services/payments';
 import { cashBalance } from '@/server/services/cash';
+import { recordExpense } from '@/server/services/expenses';
 import { paymentMethodId } from '../helpers';
 import { createTestCompany, resetDatabase, serviceContext } from '../helpers';
 
@@ -342,5 +343,27 @@ describe('paiements et caisse', () => {
     );
     expect(ok).toBe(1);
     expect((await getInvoice(s.companyId, invoice.id)).paidAmount).toBe(15_000n);
+  });
+});
+
+describe('numerotation', () => {
+  it('une depense ne cree plus de trou dans la numerotation des paiements', async () => {
+    const s = await stockSetup();
+    const invoice = await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      issue: true,
+      lines: [{ productId: s.productId, quantity: 4_000n }],
+    });
+    const cashId = await paymentMethodId(s.companyId, 'CASH');
+    const pay = () =>
+      recordPayment(s.ctx, { direction: 'IN', amount: 10_000n, invoiceId: invoice.id, methodId: cashId });
+
+    const first = await pay();
+    const expense = await recordExpense(s.ctx, { amount: 1_000n, description: 'Transport' });
+    const second = await pay();
+
+    expect(first.number.endsWith('00001')).toBe(true);
+    expect(second.number.endsWith('00002')).toBe(true);
+    expect(expense.number).toMatch(/-DEP-\d{4}-00001$/);
   });
 });

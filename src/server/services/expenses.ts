@@ -4,6 +4,8 @@ import { ConflictError, NotFoundError, ValidationError } from '@/server/errors';
 import { recordAuditTx } from '@/server/audit';
 import { nextDocumentNumber } from '@/server/sequences';
 import { applyCashMovement, cashBalance } from '@/server/services/cash';
+import { getCurrencyFormat } from '@/server/currency';
+import { formatMoney } from '@/lib/money';
 
 /**
  * Depenses de fonctionnement.
@@ -106,6 +108,15 @@ export interface ExpenseInput {
   notes?: string;
 }
 
+/** Montant formate dans la devise de l'entreprise, pour les messages. */
+async function formatCompanyMoney(companyId: string, amount: bigint): Promise<string> {
+  const company = await prisma.company.findUniqueOrThrow({
+    where: { id: companyId },
+    select: { currencyCode: true, locale: true },
+  });
+  return formatMoney(amount, await getCurrencyFormat(company.currencyCode), company.locale);
+}
+
 export async function recordExpense(context: ExpenseContext, input: ExpenseInput) {
   if (input.amount <= 0n) {
     throw new ValidationError('Le montant de la depense doit etre superieur a zero.');
@@ -159,7 +170,7 @@ export async function recordExpense(context: ExpenseContext, input: ExpenseInput
     const balance = await cashBalance(context.companyId, input.locationId);
     if (balance < input.amount) {
       throw new ValidationError(
-        `La caisse ne contient pas assez d'especes pour cette depense (solde : ${balance}).`,
+        `La caisse ne contient pas assez d'especes pour cette depense (solde : ${await formatCompanyMoney(context.companyId, balance)}).`,
       );
     }
   }
@@ -167,7 +178,10 @@ export async function recordExpense(context: ExpenseContext, input: ExpenseInput
   const spentAt = input.spentAt ?? new Date();
 
   return prisma.$transaction(async (tx) => {
-    const number = await nextDocumentNumber(tx, context.companyId, 'PAYMENT', {
+    // Compteur propre aux depenses. Elles consommaient celui des paiements :
+    // la suite PAI-2026-00001, 00003, 00004... presentait des trous, ce qu'un
+    // controle interprete comme des encaissements supprimes.
+    const number = await nextDocumentNumber(tx, context.companyId, 'EXPENSE', {
       prefix: `${context.paymentPrefix}-DEP`,
       now: spentAt,
     });

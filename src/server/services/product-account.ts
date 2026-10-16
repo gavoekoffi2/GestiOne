@@ -84,7 +84,7 @@ export async function getProductAccount(
     productStockByLocation(companyId, productId),
     prisma.invoiceLine.aggregate({
       where: soldScope,
-      _sum: { quantity: true, lineTotal: true },
+      _sum: { quantity: true, lineTotal: true, taxable: true },
     }),
     prisma.invoiceLine.groupBy({ by: ['invoiceId'], where: soldScope }),
     prisma.stockMovement.findMany({
@@ -129,7 +129,9 @@ export async function getProductAccount(
   const totalQuantity = levels.reduce((total, level) => total + level.quantity, 0n);
   const soldQuantity = sold._sum.quantity ?? 0n;
   const soldRevenue = sold._sum.lineTotal ?? 0n;
-  const margin = soldRevenue - soldCost;
+  // Marge hors taxes : la TVA collectee sur les ventes n'est pas un gain.
+  const soldTaxable = sold._sum.taxable ?? 0n;
+  const margin = soldTaxable - soldCost;
 
   return {
     product,
@@ -150,7 +152,7 @@ export async function getProductAccount(
     soldRevenue,
     soldCost,
     margin,
-    marginPercent: soldRevenue > 0n ? Number((margin * 100n) / soldRevenue) : null,
+    marginPercent: soldTaxable > 0n ? Number((margin * 100n) / soldTaxable) : null,
     invoiceCount: invoiceGroups.length,
     movements: movements.map((movement) => ({
       id: movement.id,

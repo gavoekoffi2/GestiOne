@@ -1,5 +1,5 @@
 import { prisma } from '@/server/db';
-import type { Prisma } from '@/generated/prisma/client';
+import { Prisma } from '@/generated/prisma/client';
 import type { Period, PeriodKey } from '@/lib/periods';
 
 /**
@@ -76,9 +76,15 @@ export function previousPeriod(period: Period): Period {
 export interface SalesSummary {
   /** Montant facture sur la periode, taxes comprises. */
   revenue: bigint;
+  /** Taxes collectees : elles sont dues a l'Etat, pas gagnees. */
+  taxes: bigint;
   /** Cout d'achat des articles vendus, fige a l'emission. */
   cost: bigint;
-  /** revenue - cost. Marge brute, hors depenses de fonctionnement. */
+  /**
+   * Marge brute hors taxes : (revenue - taxes) - cost. Le chiffre d'affaires
+   * est TTC et le cout d'achat HT ; les soustraire directement comptait la
+   * TVA collectee comme de la marge.
+   */
   grossProfit: bigint;
   invoiceCount: number;
   /** Panier moyen. */
@@ -99,18 +105,20 @@ export async function salesSummary(
 
   const aggregate = await prisma.invoice.aggregate({
     where,
-    _sum: { total: true, costTotal: true },
+    _sum: { total: true, costTotal: true, taxTotal: true },
     _count: { _all: true },
   });
 
   const revenue = aggregate._sum.total ?? 0n;
+  const taxes = aggregate._sum.taxTotal ?? 0n;
   const cost = aggregate._sum.costTotal ?? 0n;
   const count = aggregate._count._all;
 
   return {
     revenue,
+    taxes,
     cost,
-    grossProfit: revenue - cost,
+    grossProfit: revenue - taxes - cost,
     invoiceCount: count,
     averageTicket: count > 0 ? revenue / BigInt(count) : 0n,
   };
@@ -214,8 +222,13 @@ export async function revenueSeries(
   companyId: string,
   period: Period,
   granularity: 'day' | 'month',
+  locationId?: string,
 ): Promise<SeriesPoint[]> {
   const unit = granularity === 'day' ? 'day' : 'month';
+  // Meme filtre que les totaux : un tableau de bord filtre sur une boutique
+  // affichait ses totaux, mais la courbe de toute l'entreprise.
+  const invoiceLocation = locationId ? Prisma.sql`AND "locationId" = ${locationId}` : Prisma.empty;
+  const expenseLocation = locationId ? Prisma.sql`AND "locationId" = ${locationId}` : Prisma.empty;
 
   const [revenueRows, expenseRows] = await Promise.all([
     prisma.$queryRaw<Array<{ bucket: Date; total: bigint }>>`
@@ -224,6 +237,7 @@ export async function revenueSeries(
       WHERE "companyId" = ${companyId}
         AND "status" NOT IN ('CANCELLED', 'DRAFT')
         AND "issueDate" >= ${period.from} AND "issueDate" <= ${period.to}
+        ${invoiceLocation}
       GROUP BY bucket
       ORDER BY bucket
     `,
@@ -232,6 +246,7 @@ export async function revenueSeries(
       FROM "expenses"
       WHERE "companyId" = ${companyId}
         AND "spentAt" >= ${period.from} AND "spentAt" <= ${period.to}
+        ${expenseLocation}
       GROUP BY bucket
       ORDER BY bucket
     `,
@@ -292,13 +307,16 @@ export async function topProducts(
   companyId: string,
   period: Period,
   limit = 10,
+  locationId?: string,
 ): Promise<TopProduct[]> {
+  const location = locationId ? Prisma.sql`AND i."locationId" = ${locationId}` : Prisma.empty;
   const rows = await prisma.$queryRaw<
     Array<{
       productId: string | null;
       description: string;
       quantity: bigint;
       revenue: bigint;
+      taxable: bigint;
       cost: bigint;
     }>
   >`
@@ -307,12 +325,14 @@ export async function topProducts(
       MIN(l."description") AS description,
       COALESCE(SUM(l."quantity"), 0)::bigint AS quantity,
       COALESCE(SUM(l."lineTotal"), 0)::bigint AS revenue,
+      COALESCE(SUM(l."taxable"), 0)::bigint AS taxable,
       COALESCE(SUM(l."unitCost" * l."quantity" / 1000), 0)::bigint AS cost
     FROM "invoice_lines" l
     JOIN "invoices" i ON i."id" = l."invoiceId"
     WHERE i."companyId" = ${companyId}
       AND i."status" NOT IN ('CANCELLED', 'DRAFT')
       AND i."issueDate" >= ${period.from} AND i."issueDate" <= ${period.to}
+      ${location}
     GROUP BY l."productId"
     ORDER BY revenue DESC
     LIMIT ${limit}
@@ -335,7 +355,8 @@ export async function topProducts(
       sku: product?.sku ?? '',
       quantity: row.quantity,
       revenue: row.revenue,
-      profit: row.revenue - row.cost,
+      // Marge hors taxes : la base taxable (remise globale deduite) moins le cout.
+      profit: row.taxable - row.cost,
     };
   });
 }
@@ -453,8 +474,8 @@ export async function dashboardData(
       expenseSummary(companyId, period, locationId),
       purchaseSummary(companyId, period),
       outstandingSummary(companyId),
-      revenueSeries(companyId, period, granularity),
-      topProducts(companyId, period, 5),
+      revenueSeries(companyId, period, granularity, locationId),
+      topProducts(companyId, period, 5, locationId),
     ]);
 
   return {

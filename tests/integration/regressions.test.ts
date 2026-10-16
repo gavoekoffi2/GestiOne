@@ -22,6 +22,8 @@ import { recomputeStockFromMovements } from '@/server/services/stock-query';
 import { recordPayment } from '@/server/services/payments';
 import { cashBalance } from '@/server/services/cash';
 import { recordExpense } from '@/server/services/expenses';
+import { createTaxRate } from '@/server/services/commerce-setup';
+import { dashboardData, resolvePeriod, salesSummary, topProducts } from '@/server/services/reports';
 import { paymentMethodId } from '../helpers';
 import { createTestCompany, resetDatabase, serviceContext } from '../helpers';
 
@@ -365,5 +367,42 @@ describe('numerotation', () => {
     expect(first.number.endsWith('00001')).toBe(true);
     expect(second.number.endsWith('00002')).toBe(true);
     expect(expense.number).toMatch(/-DEP-\d{4}-00001$/);
+  });
+});
+
+describe('rapports', () => {
+  it('la marge brute ne compte pas la TVA collectee', async () => {
+    const s = await stockSetup();
+    const tva = await createTaxRate(s.companyId, { name: 'TVA 18 %', rate: 1_800, isDefault: false, isActive: true });
+    // 1 sac : 15 000 HT + 2 700 de TVA = 17 700 TTC ; cout 12 000.
+    await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      issue: true,
+      lines: [{ productId: s.productId, quantity: 1_000n, taxRateId: tva.id }],
+    });
+
+    const period = resolvePeriod('today');
+    const summary = await salesSummary(s.companyId, period);
+    expect(summary.revenue).toBe(17_700n);
+    expect(summary.taxes).toBe(2_700n);
+    expect(summary.grossProfit).toBe(3_000n);
+
+    const [top] = await topProducts(s.companyId, period);
+    expect(top!.profit).toBe(3_000n);
+  });
+
+  it('le filtre par point de vente s applique aussi a la courbe et au classement', async () => {
+    const s = await stockSetup();
+    const depotB = await createLocation(s.companyId, depot);
+    await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      issue: true,
+      lines: [{ productId: s.productId, quantity: 1_000n }],
+    });
+
+    const data = await dashboardData(s.companyId, resolvePeriod('today'), 'day', depotB.id);
+    expect(data.sales.revenue).toBe(0n);
+    expect(data.series.reduce((sum, point) => sum + point.revenue, 0n)).toBe(0n);
+    expect(data.topProducts).toHaveLength(0);
   });
 });

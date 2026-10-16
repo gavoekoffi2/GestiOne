@@ -314,44 +314,60 @@ export async function receiveOrder(
   orderId: string,
   input: ReceiveInput,
 ) {
-  const order = await prisma.purchaseOrder.findFirst({
+  const exists = await prisma.purchaseOrder.findFirst({
     where: { id: orderId, companyId: context.companyId },
-    include: { lines: { include: { product: true } } },
+    select: { id: true },
   });
-  if (!order) throw new NotFoundError('Commande introuvable.');
-  if (order.status === 'CANCELLED') {
-    throw new ConflictError('Cette commande est annulee.');
-  }
-  if (order.status === 'RECEIVED') {
-    throw new ConflictError('Cette commande a deja ete entierement receptionnee.');
-  }
-
-  const locationId = input.locationId ?? order.locationId;
-  const linesById = new Map(order.lines.map((line) => [line.id, line]));
+  if (!exists) throw new NotFoundError('Commande introuvable.');
 
   const receipts = input.lines.filter((entry) => entry.quantity > 0n);
   if (receipts.length === 0) {
     throw new ValidationError('Indiquez au moins une quantite receptionnee.');
   }
 
-  for (const entry of receipts) {
-    const line = linesById.get(entry.lineId);
-    if (!line) throw new NotFoundError('Ligne de commande introuvable.');
-
-    const remaining = line.quantity - line.receivedQuantity;
-    if (entry.quantity > remaining) {
-      throw new ValidationError(
-        `"${line.description}" : vous receptionnez ${formatQuantity(entry.quantity)} alors qu'il ne reste que ${formatQuantity(remaining)} a recevoir.`,
-      );
-    }
-    if (line.product?.trackStock && !locationId) {
-      throw new ValidationError(
-        'Precisez le point de vente : la marchandise receptionnee doit entrer quelque part.',
-      );
-    }
-  }
-
   return prisma.$transaction(async (tx) => {
+    // La commande est verrouillee puis relue DANS la transaction. Lues avant,
+    // deux receptions simultanees voyaient chacune "reste 10", faisaient
+    // entrer 10 chacune en stock, et la ligne ne comptait qu'une reception.
+    await lockOrder(tx, orderId);
+    const order = await tx.purchaseOrder.findUniqueOrThrow({
+      where: { id: orderId },
+      include: { lines: { include: { product: true } } },
+    });
+    if (order.status === 'CANCELLED') {
+      throw new ConflictError('Cette commande est annulee.');
+    }
+    if (order.status === 'RECEIVED') {
+      throw new ConflictError('Cette commande a deja ete entierement receptionnee.');
+    }
+
+    const locationId = input.locationId ?? order.locationId;
+    if (input.locationId) {
+      const location = await tx.location.findFirst({
+        where: { id: input.locationId, companyId: context.companyId, isActive: true },
+        select: { id: true },
+      });
+      if (!location) throw new NotFoundError('Point de vente introuvable ou inactif.');
+    }
+    const linesById = new Map(order.lines.map((line) => [line.id, line]));
+
+    for (const entry of receipts) {
+      const line = linesById.get(entry.lineId);
+      if (!line) throw new NotFoundError('Ligne de commande introuvable.');
+
+      const remaining = line.quantity - line.receivedQuantity;
+      if (entry.quantity > remaining) {
+        throw new ValidationError(
+          `"${line.description}" : vous receptionnez ${formatQuantity(entry.quantity)} alors qu'il ne reste que ${formatQuantity(remaining)} a recevoir.`,
+        );
+      }
+      if (line.product?.trackStock && !locationId) {
+        throw new ValidationError(
+          'Precisez le point de vente : la marchandise receptionnee doit entrer quelque part.',
+        );
+      }
+    }
+
     for (const entry of receipts) {
       const line = linesById.get(entry.lineId)!;
 
@@ -390,7 +406,8 @@ export async function receiveOrder(
         status: fullyReceived ? 'RECEIVED' : anythingReceived ? 'PARTIALLY_RECEIVED' : order.status,
         // Une reception rend la dette exigible, meme si la commande etait encore
         // en brouillon : la marchandise est arrivee, elle sera a payer.
-        balanceDue: order.status === 'DRAFT' ? order.total - order.paidAmount : undefined,
+        balanceDue:
+          order.status === 'DRAFT' ? balanceDue(order.total, order.paidAmount) : undefined,
         locationId: locationId ?? undefined,
       },
     });
@@ -407,6 +424,11 @@ export async function receiveOrder(
 
     return updated;
   });
+}
+
+/** Verrouille une commande fournisseur pour la duree de la transaction. */
+async function lockOrder(tx: Prisma.TransactionClient, orderId: string): Promise<void> {
+  await tx.$queryRaw`SELECT "id" FROM "purchase_orders" WHERE "id" = ${orderId} FOR UPDATE`;
 }
 
 /**
@@ -446,34 +468,53 @@ export async function cancelPurchaseOrder(
 ) {
   if (!reason.trim()) throw new ValidationError("Indiquez le motif de l'annulation.");
 
-  const order = await prisma.purchaseOrder.findFirst({
+  const exists = await prisma.purchaseOrder.findFirst({
     where: { id: orderId, companyId: context.companyId },
-    include: { lines: { include: { product: true } } },
+    select: { id: true },
   });
-  if (!order) throw new NotFoundError('Commande introuvable.');
-  if (order.status === 'CANCELLED') throw new ConflictError('Cette commande est deja annulee.');
+  if (!exists) throw new NotFoundError('Commande introuvable.');
 
   return prisma.$transaction(async (tx) => {
+    // Verrouillee et relue ici : deux annulations simultanees sortaient deux
+    // fois la marchandise receptionnee.
+    await lockOrder(tx, orderId);
+    const order = await tx.purchaseOrder.findUniqueOrThrow({ where: { id: orderId } });
+    if (order.status === 'CANCELLED') throw new ConflictError('Cette commande est deja annulee.');
+
     // La marchandise deja receptionnee ressort du stock : annuler une commande
     // dont le contenu est reste en rayon donnerait un stock imaginaire.
-    if (order.locationId) {
-      for (const line of order.lines) {
-        if (!line.product?.trackStock || line.receivedQuantity <= 0n) continue;
-        await applyMovement(tx, {
-          companyId: context.companyId,
-          productId: line.productId as string,
-          locationId: order.locationId,
-          kind: 'OUT',
-          delta: -line.receivedQuantity,
-          reason: `Annulation commande ${order.number}`,
-          reference: order.number,
-          userId: context.userId,
-          // Le stock a pu etre vendu entre-temps : on constate malgre tout la
-          // sortie, quitte a passer en negatif, plutot que de bloquer une
-          // annulation legitime. L'ecart apparaitra a l'inventaire.
-          allowNegative: true,
-        });
-      }
+    //
+    // On repart des entrees reellement enregistrees, point de vente par point
+    // de vente. Une commande receptionnee en deux fois dans deux depots ne
+    // retirait auparavant tout que du dernier, laissant le premier gonfle.
+    const received = await tx.stockMovement.groupBy({
+      by: ['productId', 'locationId'],
+      where: {
+        companyId: context.companyId,
+        kind: 'IN',
+        reference: order.number,
+        reason: `Reception ${order.number}`,
+      },
+      _sum: { quantity: true },
+    });
+
+    for (const entry of received) {
+      const quantity = entry._sum.quantity ?? 0n;
+      if (quantity <= 0n) continue;
+      await applyMovement(tx, {
+        companyId: context.companyId,
+        productId: entry.productId,
+        locationId: entry.locationId,
+        kind: 'OUT',
+        delta: -quantity,
+        reason: `Annulation commande ${order.number}`,
+        reference: order.number,
+        userId: context.userId,
+        // Le stock a pu etre vendu entre-temps : on constate malgre tout la
+        // sortie, quitte a passer en negatif, plutot que de bloquer une
+        // annulation legitime. L'ecart apparaitra a l'inventaire.
+        allowNegative: true,
+      });
     }
 
     const updated = await tx.purchaseOrder.update({

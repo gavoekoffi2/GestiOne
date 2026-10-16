@@ -373,6 +373,15 @@ export async function issueInvoice(context: ServiceContext, invoiceId: string) {
   }
 
   return prisma.$transaction(async (tx) => {
+    // Le passage DRAFT -> ISSUED est conditionne au statut DANS la transaction :
+    // deux clics simultanes sur "Emettre" sortaient le stock deux fois, chacun
+    // ayant lu "brouillon" avant que l'autre n'ecrive.
+    const claimed = await tx.invoice.updateMany({
+      where: { id: invoiceId, status: 'DRAFT' },
+      data: { status: 'ISSUED', balanceDue: invoice.total },
+    });
+    if (claimed.count === 0) throw new ConflictError('Cette facture vient deja d etre emise.');
+
     for (const line of tracked) {
       await applyMovement(tx, {
         companyId: context.companyId,
@@ -386,10 +395,7 @@ export async function issueInvoice(context: ServiceContext, invoiceId: string) {
       });
     }
 
-    const updated = await tx.invoice.update({
-      where: { id: invoiceId },
-      data: { status: 'ISSUED', balanceDue: invoice.total },
-    });
+    const updated = await tx.invoice.findUniqueOrThrow({ where: { id: invoiceId } });
 
     await recordAuditTx(tx, {
       companyId: context.companyId,
@@ -499,6 +505,28 @@ export async function cancelInvoice(
   }
 
   return prisma.$transaction(async (tx) => {
+    // L'annulation n'a lieu que si la facture est toujours dans l'etat lu
+    // (statut, stock sorti ou non, point de vente) : deux annulations
+    // simultanees rendaient le stock deux fois, et une livraison concurrente
+    // aurait sorti un stock que l'annulation n'aurait pas rendu.
+    const claimed = await tx.invoice.updateMany({
+      where: {
+        id: invoiceId,
+        status: invoice.status,
+        affectsStock: invoice.affectsStock,
+        locationId: invoice.locationId,
+      },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        cancelReason: reason,
+        balanceDue: 0n,
+      },
+    });
+    if (claimed.count === 0) {
+      throw new ConflictError('Cette facture vient d etre modifiee ou annulee. Rechargez la page.');
+    }
+
     // Rien n'est rendu au stock pour une facture d'avance dont la marchandise
     // n'est jamais sortie.
     if (invoice.status !== 'DRAFT' && invoice.affectsStock && invoice.locationId) {
@@ -517,15 +545,7 @@ export async function cancelInvoice(
       }
     }
 
-    const updated = await tx.invoice.update({
-      where: { id: invoiceId },
-      data: {
-        status: 'CANCELLED',
-        cancelledAt: new Date(),
-        cancelReason: reason,
-        balanceDue: 0n,
-      },
-    });
+    const updated = await tx.invoice.findUniqueOrThrow({ where: { id: invoiceId } });
 
     await recordAuditTx(tx, {
       companyId: context.companyId,

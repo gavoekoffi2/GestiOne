@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { prisma } from '@/server/db';
 import type { Prisma } from '@/generated/prisma/client';
 import { NotFoundError, ValidationError } from '@/server/errors';
@@ -66,6 +67,33 @@ async function assertLocation(companyId: string, locationId: string) {
 }
 
 /**
+ * Verrouille le solde d'un article dans un point de vente et le renvoie.
+ *
+ * La ligne est d'abord creee si elle n'existe pas (`ON CONFLICT DO NOTHING`) :
+ * sans cela, deux premieres entrees simultanees ne trouvaient rien a
+ * verrouiller, tentaient chacune de creer la ligne, et la seconde echouait sur
+ * la contrainte d'unicite.
+ */
+export async function lockStockLevel(
+  tx: Prisma.TransactionClient,
+  companyId: string,
+  productId: string,
+  locationId: string,
+): Promise<{ id: string; quantity: bigint }> {
+  await tx.$executeRaw`
+    INSERT INTO "stock_levels" ("id", "companyId", "productId", "locationId", "quantity", "updatedAt")
+    VALUES (${randomUUID()}, ${companyId}, ${productId}, ${locationId}, 0, NOW())
+    ON CONFLICT ("productId", "locationId") DO NOTHING
+  `;
+  const rows = await tx.$queryRaw<Array<{ id: string; quantity: bigint }>>`
+    SELECT "id", "quantity" FROM "stock_levels"
+    WHERE "productId" = ${productId} AND "locationId" = ${locationId}
+    FOR UPDATE
+  `;
+  return rows[0]!;
+}
+
+/**
  * Applique une variation de stock **a l'interieur d'une transaction existante**.
  *
  * `SELECT ... FOR UPDATE` verrouille la ligne de solde : deux ventes simultanees
@@ -90,13 +118,9 @@ export async function applyMovement(
     allowNegative?: boolean;
   },
 ) {
-  const existing = await tx.$queryRaw<Array<{ id: string; quantity: bigint }>>`
-    SELECT "id", "quantity" FROM "stock_levels"
-    WHERE "productId" = ${input.productId} AND "locationId" = ${input.locationId}
-    FOR UPDATE
-  `;
+  const level = await lockStockLevel(tx, input.companyId, input.productId, input.locationId);
 
-  const current = existing[0]?.quantity ?? 0n;
+  const current = level.quantity;
   const next = current + input.delta;
 
   // Un stock negatif signifie qu'on a vendu ce qu'on ne possedait pas : c'est
@@ -108,18 +132,7 @@ export async function applyMovement(
     );
   }
 
-  if (existing[0]) {
-    await tx.stockLevel.update({ where: { id: existing[0].id }, data: { quantity: next } });
-  } else {
-    await tx.stockLevel.create({
-      data: {
-        companyId: input.companyId,
-        productId: input.productId,
-        locationId: input.locationId,
-        quantity: next,
-      },
-    });
-  }
+  await tx.stockLevel.update({ where: { id: level.id }, data: { quantity: next } });
 
   return tx.stockMovement.create({
     data: {
@@ -308,11 +321,11 @@ export async function recordInventory(context: MovementContext, input: Adjustmen
   const location = await assertLocation(context.companyId, input.locationId);
 
   return prisma.$transaction(async (tx) => {
-    const level = await tx.stockLevel.findUnique({
-      where: { productId_locationId: { productId: input.productId, locationId: input.locationId } },
-      select: { quantity: true },
-    });
-    const current = level?.quantity ?? 0n;
+    // Le solde est lu sous verrou : une vente passee entre la lecture et
+    // l'ecriture faussait l'ecart, et le stock ne valait plus la quantite comptee.
+    const current = (
+      await lockStockLevel(tx, context.companyId, input.productId, input.locationId)
+    ).quantity;
     const delta = input.countedQuantity - current;
 
     if (delta === 0n) {

@@ -309,28 +309,47 @@ export async function convertQuoteToInvoice(
     );
   }
 
-  const invoice = await createInvoice(context, {
-    customerId: quote.customerId ?? undefined,
-    locationId: options.locationId ?? quote.locationId ?? undefined,
-    dueDate: options.dueDate,
-    issue: options.issue ?? false,
-    affectsStock: options.affectsStock ?? true,
-    notes: quote.notes ?? undefined,
-    terms: quote.terms ?? undefined,
-    // La remise globale est reprise telle qu'elle a ete accordee au client :
-    // en montant, pour que le total de la facture soit identique a celui du
-    // devis meme si les prix du catalogue ont change entre-temps.
-    discountAmount: quote.discountAmount > 0n ? quote.discountAmount : undefined,
-    lines: quote.lines.map((line) => ({
-      productId: line.productId ?? undefined,
-      description: line.description,
-      quantity: line.quantity,
-      // Le prix accepte par le client prime sur le prix courant du catalogue.
-      unitPrice: line.unitPrice,
-      discountRate: line.discountRate,
-      taxRateId: line.taxRateId ?? undefined,
-    })),
+  // Le devis est reserve AVANT de creer la facture, par une mise a jour
+  // conditionnee a son statut : deux conversions simultanees creaient deux
+  // factures et sortaient le stock deux fois, chacune ayant lu le devis libre.
+  const claimed = await prisma.quote.updateMany({
+    where: { id: quoteId, status: quote.status, invoiceId: null },
+    data: { status: 'CONVERTED' },
   });
+  if (claimed.count === 0) {
+    throw new ConflictError(`Le devis ${quote.number} vient deja d etre converti en facture.`);
+  }
+
+  let invoice: Awaited<ReturnType<typeof createInvoice>>;
+  try {
+    invoice = await createInvoice(context, {
+      customerId: quote.customerId ?? undefined,
+      locationId: options.locationId ?? quote.locationId ?? undefined,
+      dueDate: options.dueDate,
+      issue: options.issue ?? false,
+      affectsStock: options.affectsStock ?? true,
+      notes: quote.notes ?? undefined,
+      terms: quote.terms ?? undefined,
+      // La remise globale est reprise telle qu'elle a ete accordee au client :
+      // en montant, pour que le total de la facture soit identique a celui du
+      // devis meme si les prix du catalogue ont change entre-temps.
+      discountAmount: quote.discountAmount > 0n ? quote.discountAmount : undefined,
+      lines: quote.lines.map((line) => ({
+        productId: line.productId ?? undefined,
+        description: line.description,
+        quantity: line.quantity,
+        // Le prix accepte par le client prime sur le prix courant du catalogue.
+        unitPrice: line.unitPrice,
+        discountRate: line.discountRate,
+        taxRateId: line.taxRateId ?? undefined,
+      })),
+    });
+  } catch (error) {
+    // La facture n'a pas pu etre creee (stock insuffisant, article retire...) :
+    // le devis retrouve son statut et reste convertible.
+    await prisma.quote.update({ where: { id: quoteId }, data: { status: quote.status } });
+    throw error;
+  }
 
   await prisma.$transaction(async (tx) => {
     await tx.quote.update({

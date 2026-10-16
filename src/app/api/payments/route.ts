@@ -27,5 +27,11 @@ export const POST = handler(async (request: NextRequest) => {
   const currency = await getCurrencyFormat(context.currencyCode);
   const input = await readJson(request, paymentSchema(currency.decimals));
 
-  return jsonOk(await recordPayment(await commerceContext(context), input), 201);
+  return jsonOk(
+    await recordPayment(await commerceContext(context), {
+      ...input,
+      fallbackLocationId: context.defaultLocationId,
+    }),
+    201,
+  );
 });

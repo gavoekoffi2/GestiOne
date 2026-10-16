@@ -40,6 +40,11 @@ export interface RecordPaymentInput {
   notes?: string;
   /** Autorise un encaissement superieur au solde restant (acompte, avance). */
   allowOverpayment?: boolean;
+  /**
+   * Point de vente de l'utilisateur, a defaut d'autre indication. Un paiement
+   * en especes doit toujours aboutir dans une caisse.
+   */
+  fallbackLocationId?: string | null;
 }
 
 async function assertMethod(companyId: string, methodId: string) {
@@ -78,13 +83,36 @@ export async function recordPayment(context: PaymentContext, input: RecordPaymen
     );
   }
 
-  let invoice: { id: string; number: string; balanceDue: bigint; status: string; customerId: string | null } | null =
-    null;
+  // Un encaissement regle une facture client, un decaissement une commande
+  // fournisseur. Croiser les deux comptait un decaissement comme un paiement
+  // recu sur la facture, qui apparaissait alors reglee.
+  if (input.direction === 'OUT' && input.invoiceId) {
+    throw new ValidationError('Une facture client se regle par un encaissement, pas un decaissement.');
+  }
+  if (input.direction === 'IN' && input.orderId) {
+    throw new ValidationError('Une commande fournisseur se regle par un decaissement, pas un encaissement.');
+  }
+
+  let invoice: {
+    id: string;
+    number: string;
+    balanceDue: bigint;
+    status: string;
+    customerId: string | null;
+    locationId: string | null;
+  } | null = null;
 
   if (input.invoiceId) {
     const found = await prisma.invoice.findFirst({
       where: { id: input.invoiceId, companyId: context.companyId },
-      select: { id: true, number: true, balanceDue: true, status: true, customerId: true },
+      select: {
+        id: true,
+        number: true,
+        balanceDue: true,
+        status: true,
+        customerId: true,
+        locationId: true,
+      },
     });
     if (!found) throw new NotFoundError('Facture introuvable.');
     if (found.status === 'CANCELLED') {
@@ -105,13 +133,26 @@ export async function recordPayment(context: PaymentContext, input: RecordPaymen
     invoice = found;
   }
 
-  let order: { id: string; number: string; balanceDue: bigint; status: string; supplierId: string | null } | null =
-    null;
+  let order: {
+    id: string;
+    number: string;
+    balanceDue: bigint;
+    status: string;
+    supplierId: string | null;
+    locationId: string | null;
+  } | null = null;
 
   if (input.orderId) {
     const found = await prisma.purchaseOrder.findFirst({
       where: { id: input.orderId, companyId: context.companyId },
-      select: { id: true, number: true, balanceDue: true, status: true, supplierId: true },
+      select: {
+        id: true,
+        number: true,
+        balanceDue: true,
+        status: true,
+        supplierId: true,
+        locationId: true,
+      },
     });
     if (!found) throw new NotFoundError('Commande fournisseur introuvable.');
     if (found.status === 'CANCELLED') {
@@ -153,9 +194,58 @@ export async function recordPayment(context: PaymentContext, input: RecordPaymen
     if (!location) throw new NotFoundError('Point de vente introuvable.');
   }
 
+  // Le point de vente decide de la caisse alimentee. L'ecran de la facture ne
+  // l'envoyait pas : les especes encaissees depuis une facture ou reglees a un
+  // fournisseur n'entraient jamais en caisse, et le tiroir ne correspondait
+  // plus au solde affiche.
+  let locationId = input.locationId ?? invoice?.locationId ?? order?.locationId ?? null;
+  if (!locationId && method?.affectsCash) {
+    // En dernier recours : le point de vente de l'utilisateur, sinon celui
+    // de l'entreprise par defaut.
+    const fallback = await prisma.location.findFirst({
+      where: {
+        companyId: context.companyId,
+        ...(input.fallbackLocationId ? { id: input.fallbackLocationId } : { isDefault: true }),
+      },
+      select: { id: true },
+    });
+    locationId =
+      fallback?.id ??
+      (
+        await prisma.location.findFirst({
+          where: { companyId: context.companyId, isDefault: true },
+          select: { id: true },
+        })
+      )?.id ??
+      null;
+  }
+
   const paidAt = input.paidAt ?? new Date();
 
   return prisma.$transaction(async (tx) => {
+    // Le solde est revalide sous verrou : deux encaissements simultanes du
+    // reste du passaient tous les deux le controle lu plus haut.
+    if (invoice && !input.allowOverpayment) {
+      const [locked] = await tx.$queryRaw<Array<{ balanceDue: bigint }>>`
+        SELECT "balanceDue" FROM "invoices" WHERE "id" = ${invoice.id} FOR UPDATE
+      `;
+      if (locked && input.amount > locked.balanceDue) {
+        throw new ConflictError(
+          `La facture ${invoice.number} vient d'etre reglee en partie : le montant depasse desormais le solde restant.`,
+        );
+      }
+    }
+    if (order && !input.allowOverpayment) {
+      const [locked] = await tx.$queryRaw<Array<{ balanceDue: bigint }>>`
+        SELECT "balanceDue" FROM "purchase_orders" WHERE "id" = ${order.id} FOR UPDATE
+      `;
+      if (locked && input.amount > locked.balanceDue) {
+        throw new ConflictError(
+          `La commande ${order.number} vient d'etre reglee en partie : le montant depasse desormais le solde restant.`,
+        );
+      }
+    }
+
     const number = await nextDocumentNumber(tx, context.companyId, 'PAYMENT', {
       prefix: context.paymentPrefix,
       now: paidAt,
@@ -172,7 +262,7 @@ export async function recordPayment(context: PaymentContext, input: RecordPaymen
         invoiceId: invoice?.id ?? null,
         orderId: order?.id ?? null,
         methodId: input.methodId ?? null,
-        locationId: input.locationId ?? null,
+        locationId,
         amount: input.amount,
         paidAt,
         reference: input.reference ?? null,
@@ -187,10 +277,10 @@ export async function recordPayment(context: PaymentContext, input: RecordPaymen
     // Un reglement en especes alimente ou vide la caisse du point de vente.
     // Sans ce lien, le solde de caisse serait purement decoratif : il ne
     // refleterait aucune des ventes reellement encaissees.
-    if (method?.affectsCash && input.locationId) {
+    if (method?.affectsCash && locationId) {
       await applyCashMovement(tx, {
         companyId: context.companyId,
-        locationId: input.locationId,
+        locationId,
         kind: input.direction === 'IN' ? 'SALE' : 'PURCHASE',
         amount: input.direction === 'IN' ? input.amount : -input.amount,
         reason:

@@ -19,6 +19,9 @@ import {
 } from '@/server/services/purchases';
 import { recordInventory } from '@/server/services/stock';
 import { recomputeStockFromMovements } from '@/server/services/stock-query';
+import { recordPayment } from '@/server/services/payments';
+import { cashBalance } from '@/server/services/cash';
+import { paymentMethodId } from '../helpers';
 import { createTestCompany, resetDatabase, serviceContext } from '../helpers';
 
 /**
@@ -265,5 +268,79 @@ describe('inventaire', () => {
       { productId: s.productId, locationId: s.locationId, countedQuantity: 42_000n, reason: 'Comptage' },
     );
     expect(await s.stock()).toBe(42_000n);
+  });
+});
+
+describe('paiements et caisse', () => {
+  it('des especes encaissees depuis une facture entrent dans la caisse de son point de vente', async () => {
+    const s = await stockSetup();
+    const invoice = await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      issue: true,
+      lines: [{ productId: s.productId, quantity: 2_000n }],
+    });
+
+    // L'ecran de la facture n'envoie pas de point de vente.
+    await recordPayment(s.ctx, {
+      direction: 'IN',
+      amount: 30_000n,
+      invoiceId: invoice.id,
+      methodId: await paymentMethodId(s.companyId, 'CASH'),
+    });
+
+    expect(await cashBalance(s.companyId, s.locationId)).toBe(30_000n);
+  });
+
+  it('un reglement fournisseur en especes sort de la caisse', async () => {
+    const s = await stockSetup();
+    const cashId = await paymentMethodId(s.companyId, 'CASH');
+    const invoice = await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      issue: true,
+      lines: [{ productId: s.productId, quantity: 4_000n }],
+    });
+    await recordPayment(s.ctx, { direction: 'IN', amount: 60_000n, invoiceId: invoice.id, methodId: cashId });
+
+    const order = await createPurchaseOrder(s.ctx, {
+      locationId: s.locationId,
+      order: true,
+      lines: [{ productId: s.productId, quantity: 10_000n, unitCost: 2_000n }],
+    });
+    await recordPayment(s.ctx, { direction: 'OUT', amount: 20_000n, orderId: order.id, methodId: cashId });
+
+    expect(await cashBalance(s.companyId, s.locationId)).toBe(40_000n);
+  });
+
+  it('refuse un decaissement rattache a une facture client', async () => {
+    const s = await stockSetup();
+    const invoice = await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      issue: true,
+      lines: [{ productId: s.productId, quantity: 1_000n }],
+    });
+    await expect(
+      recordPayment(s.ctx, {
+        direction: 'OUT',
+        amount: 15_000n,
+        invoiceId: invoice.id,
+        methodId: await paymentMethodId(s.companyId, 'CASH'),
+      }),
+    ).rejects.toThrow(/encaissement/);
+    expect((await getInvoice(s.companyId, invoice.id)).status).toBe('ISSUED');
+  });
+
+  it('deux encaissements simultanes du solde ne depassent pas le du', async () => {
+    const s = await stockSetup();
+    const invoice = await createInvoice(s.ctx, {
+      locationId: s.locationId,
+      issue: true,
+      lines: [{ productId: s.productId, quantity: 1_000n }],
+    });
+    const cashId = await paymentMethodId(s.companyId, 'CASH');
+    const ok = await twice(() =>
+      recordPayment(s.ctx, { direction: 'IN', amount: 15_000n, invoiceId: invoice.id, methodId: cashId }),
+    );
+    expect(ok).toBe(1);
+    expect((await getInvoice(s.companyId, invoice.id)).paidAmount).toBe(15_000n);
   });
 });
